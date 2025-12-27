@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { ClientLayout } from "@/components/layout/ClientLayout";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -144,11 +143,9 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-jhr-black text-jhr-white min-h-screen flex flex-col`}
+        className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-jhr-black text-jhr-white min-h-screen`}
       >
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );

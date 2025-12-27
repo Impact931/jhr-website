@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle,
@@ -10,7 +9,9 @@ import {
   Shield,
   FileImage,
 } from "lucide-react";
-import { PageHero } from "@/components/ui/HeroBanner";
+import { EditablePageHero } from "@/components/editor/EditablePageHero";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 import {
   FadeUp,
   SlideInLeft,
@@ -86,10 +87,13 @@ const faqs = [
 ];
 
 export default function CorporateEventCoveragePage() {
+  const pageId = "services-corporate-event-coverage";
+
   return (
     <div>
       {/* Hero Banner */}
-      <PageHero
+      <EditablePageHero
+        pageId={pageId}
         title="Your Event, Documented Without Drama"
         subtitle="Corporate Event Coverage™"
         description="You have enough to manage. Photography shouldn't add to your stress. We show up prepared, work invisibly, and deliver assets you can actually use—on time and on brand."
@@ -104,30 +108,55 @@ export default function CorporateEventCoveragePage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <SlideInLeft>
               <div>
-                <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                  What Makes JHR Different
-                </h2>
-                <p className="text-body-lg text-jhr-white-muted mb-6">
-                  Most photographers show up, shoot, and leave you waiting weeks
-                  for images. We operate differently. Our background in
-                  high-stakes operations means we bring agency-grade planning,
-                  redundant equipment, and professional protocols to every event.
-                </p>
-                <p className="text-body-md text-jhr-white-dim mb-6">
-                  We communicate in the language of event professionals—EAC forms,
-                  marshaling yards, load-in schedules. We know Nashville's venues
-                  inside and out. We're not just a creative service; we're a
-                  logistics partner who happens to deliver exceptional photography.
-                </p>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="difference"
+                  contentKey="title"
+                  defaultValue="What Makes JHR Different"
+                  as="h2"
+                  className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="difference"
+                  contentKey="description1"
+                  defaultValue="Most photographers show up, shoot, and leave you waiting weeks for images. We operate differently. Our background in high-stakes operations means we bring agency-grade planning, redundant equipment, and professional protocols to every event."
+                  as="p"
+                  className="text-body-lg text-jhr-white-muted mb-6"
+                  contentType="paragraph"
+                  multiline
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="difference"
+                  contentKey="description2"
+                  defaultValue="We communicate in the language of event professionals—EAC forms, marshaling yards, load-in schedules. We know Nashville's venues inside and out. We're not just a creative service; we're a logistics partner who happens to deliver exceptional photography."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-6"
+                  contentType="paragraph"
+                  multiline
+                />
                 <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-6">
-                  <p className="text-body-md text-jhr-white italic">
-                    "JHR showed up 2 hours before load-in, knew exactly where to
-                    park, and had already coordinated with the venue. That never
-                    happens with photographers."
-                  </p>
-                  <p className="text-body-sm text-jhr-gold mt-4">
-                    — Event Director, National Association
-                  </p>
+                  <EditableText
+                    pageId={pageId}
+                    sectionId="difference"
+                    contentKey="testimonial"
+                    defaultValue="JHR showed up 2 hours before load-in, knew exactly where to park, and had already coordinated with the venue. That never happens with photographers."
+                    as="p"
+                    className="text-body-md text-jhr-white italic"
+                    contentType="testimonial"
+                    multiline
+                  />
+                  <EditableText
+                    pageId={pageId}
+                    sectionId="difference"
+                    contentKey="testimonialAuthor"
+                    defaultValue="— Event Director, National Association"
+                    as="p"
+                    className="text-body-sm text-jhr-gold mt-4"
+                    contentType="paragraph"
+                  />
                 </div>
               </div>
             </SlideInLeft>
@@ -143,12 +172,25 @@ export default function CorporateEventCoveragePage() {
                         <item.icon className="w-5 h-5 text-jhr-gold" />
                       </div>
                       <div>
-                        <h3 className="text-heading-md font-semibold text-jhr-white mb-1">
-                          {item.title}
-                        </h3>
-                        <p className="text-body-sm text-jhr-white-dim">
-                          {item.description}
-                        </p>
+                        <EditableText
+                          pageId={pageId}
+                          sectionId="deliverables"
+                          contentKey={`deliverable${index}-title`}
+                          defaultValue={item.title}
+                          as="h3"
+                          className="text-heading-md font-semibold text-jhr-white mb-1"
+                          contentType="heading"
+                        />
+                        <EditableText
+                          pageId={pageId}
+                          sectionId="deliverables"
+                          contentKey={`deliverable${index}-description`}
+                          defaultValue={item.description}
+                          as="p"
+                          className="text-body-sm text-jhr-white-dim"
+                          contentType="paragraph"
+                          multiline
+                        />
                       </div>
                     </div>
                   </div>
@@ -165,20 +207,38 @@ export default function CorporateEventCoveragePage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <SlideInLeft>
               <div>
-                <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                  What We Cover
-                </h2>
-                <p className="text-body-lg text-jhr-white-muted mb-8">
-                  We work from your priorities. Before the event, we'll review
-                  your shot list, identify must-capture moments, and align on
-                  what success looks like. Then we execute—methodically and
-                  without drama.
-                </p>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="coverage"
+                  contentKey="title"
+                  defaultValue="What We Cover"
+                  as="h2"
+                  className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="coverage"
+                  contentKey="description"
+                  defaultValue="We work from your priorities. Before the event, we'll review your shot list, identify must-capture moments, and align on what success looks like. Then we execute—methodically and without drama."
+                  as="p"
+                  className="text-body-lg text-jhr-white-muted mb-8"
+                  contentType="paragraph"
+                  multiline
+                />
                 <div className="grid sm:grid-cols-2 gap-3">
-                  {coverageAreas.map((area) => (
+                  {coverageAreas.map((area, index) => (
                     <div key={area} className="flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-jhr-gold flex-shrink-0" />
-                      <span className="text-body-sm text-jhr-white">{area}</span>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="coverage"
+                        contentKey={`area-${index}`}
+                        defaultValue={area}
+                        as="span"
+                        className="text-body-sm text-jhr-white"
+                        contentType="feature"
+                      />
                     </div>
                   ))}
                 </div>
@@ -196,8 +256,11 @@ export default function CorporateEventCoveragePage() {
                     key={i}
                     className="aspect-[4/3] relative rounded-lg overflow-hidden"
                   >
-                    <Image
-                      src={src}
+                    <EditableImage
+                      pageId={pageId}
+                      sectionId="coverage"
+                      contentKey={`image-${i}`}
+                      defaultSrc={src}
                       alt={`Event photo ${i + 1}`}
                       fill
                       className="object-cover"
@@ -215,12 +278,24 @@ export default function CorporateEventCoveragePage() {
         <div className="section-container">
           <FadeUp>
             <div className="text-center mb-12">
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-                Our Process
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-                Clear, professional, and designed around your needs.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="process"
+                contentKey="title"
+                defaultValue="Our Process"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-4"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="process"
+                contentKey="subtitle"
+                defaultValue="Clear, professional, and designed around your needs."
+                as="p"
+                className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+                contentType="paragraph"
+              />
             </div>
           </FadeUp>
 
@@ -251,19 +326,32 @@ export default function CorporateEventCoveragePage() {
                   description:
                     "Same-day highlights within hours. Full edited gallery within 5-7 days. All images formatted and ready for use.",
                 },
-              ].map((item) => (
+              ].map((item, index) => (
                 <StaggerItem key={item.step}>
                   <div className="flex gap-6 items-start bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-6">
                     <span className="text-jhr-gold font-display font-bold text-heading-lg">
                       {item.step}
                     </span>
                     <div>
-                      <h3 className="text-heading-md font-semibold text-jhr-white mb-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-body-md text-jhr-white-dim">
-                        {item.description}
-                      </p>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="process"
+                        contentKey={`step${item.step}-title`}
+                        defaultValue={item.title}
+                        as="h3"
+                        className="text-heading-md font-semibold text-jhr-white mb-2"
+                        contentType="heading"
+                      />
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="process"
+                        contentKey={`step${item.step}-description`}
+                        defaultValue={item.description}
+                        as="p"
+                        className="text-body-md text-jhr-white-dim"
+                        contentType="paragraph"
+                        multiline
+                      />
                     </div>
                   </div>
                 </StaggerItem>
@@ -278,18 +366,39 @@ export default function CorporateEventCoveragePage() {
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
             <FadeUp>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
-                Frequently Asked Questions
-              </h2>
+              <EditableText
+                pageId={pageId}
+                sectionId="faqs"
+                contentKey="title"
+                defaultValue="Frequently Asked Questions"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+                contentType="heading"
+              />
             </FadeUp>
             <StaggerContainer className="space-y-6">
               {faqs.map((faq, index) => (
                 <StaggerItem key={index}>
                   <div className="card">
-                    <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                      {faq.question}
-                    </h3>
-                    <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-question`}
+                      defaultValue={faq.question}
+                      as="h3"
+                      className="text-heading-md font-semibold text-jhr-white mb-3"
+                      contentType="heading"
+                    />
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-answer`}
+                      defaultValue={faq.answer}
+                      as="p"
+                      className="text-body-md text-jhr-white-dim"
+                      contentType="paragraph"
+                      multiline
+                    />
                   </div>
                 </StaggerItem>
               ))}
@@ -301,8 +410,11 @@ export default function CorporateEventCoveragePage() {
       {/* CTA */}
       <section className="section-padding bg-gradient-dark relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/generated/venue-hotel-ballroom.jpg"
+          <EditableImage
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/venue-hotel-ballroom.jpg"
             alt="Corporate event venue"
             fill
             className="object-cover opacity-20"
@@ -310,16 +422,27 @@ export default function CorporateEventCoveragePage() {
         </div>
         <div className="section-container text-center relative z-10">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-              Let's Discuss Your Event
-            </h2>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="title"
+              defaultValue="Let's Discuss Your Event"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-6"
+              contentType="heading"
+            />
           </FadeUp>
           <FadeUp delay={0.1}>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
-              Every event is different. Schedule a call and we'll talk through
-              your venue, timeline, and specific needs. No obligation—just a
-              conversation.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="description"
+              defaultValue="Every event is different. Schedule a call and we'll talk through your venue, timeline, and specific needs. No obligation—just a conversation."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+              contentType="paragraph"
+              multiline
+            />
           </FadeUp>
           <FadeUp delay={0.2}>
             <Link href="/schedule" className="btn-primary text-lg px-10 py-4">

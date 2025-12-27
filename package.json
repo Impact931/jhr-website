@@ -15,6 +15,11 @@
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.958.0",
+    "@aws-sdk/client-s3": "^3.958.0",
+    "@aws-sdk/lib-dynamodb": "^3.958.0",
+    "@aws-sdk/s3-request-presigner": "^3.958.0",
+    "@types/uuid": "^10.0.0",
     "clsx": "^2.0.0",
     "dotenv": "^17.2.3",
     "framer-motion": "^10.16.0",
@@ -23,7 +28,9 @@
     "openai": "^4.20.0",
     "react": "^18",
     "react-dom": "^18",
-    "tailwind-merge": "^2.0.0"
+    "sharp": "^0.34.5",
+    "tailwind-merge": "^2.0.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",

@@ -1,9 +1,8 @@
-"use client";
-
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight, CheckCircle, Camera, Video, Users } from "lucide-react";
-import { PageHero } from "@/components/ui/HeroBanner";
+import { EditablePageHero } from "@/components/editor/EditablePageHero";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 import {
   FadeUp,
   SlideInLeft,
@@ -81,10 +80,13 @@ const faqs = [
 ];
 
 export default function GaylordOprylandPage() {
+  const pageId = "venues-gaylord-opryland";
+
   return (
     <div>
       {/* Hero Banner */}
-      <PageHero
+      <EditablePageHero
+        pageId={pageId}
         title={venueDetails.name}
         subtitle="Nashville's Iconic Resort & Convention Center"
         description={venueDetails.description}
@@ -105,7 +107,9 @@ export default function GaylordOprylandPage() {
             ].map((src, index) => (
               <StaggerItem key={index}>
                 <div className="aspect-[4/3] relative rounded-lg overflow-hidden">
-                  <Image
+                  <EditableImage
+                    sectionId="gallery"
+                    contentKey={`image-${index + 1}`}
                     src={src}
                     alt={`Gaylord Opryland event ${index + 1}`}
                     fill
@@ -122,23 +126,45 @@ export default function GaylordOprylandPage() {
       <section className="section-padding bg-jhr-black-light">
         <div className="section-container">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
+            <EditableText
+              as="h2"
+              sectionId="challenges"
+              contentKey="heading"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+            >
               Gaylord's Unique Challenges
-            </h2>
-            <p className="text-body-lg text-jhr-white-muted max-w-3xl mb-8">
+            </EditableText>
+            <EditableText
+              as="p"
+              sectionId="challenges"
+              contentKey="intro"
+              className="text-body-lg text-jhr-white-muted max-w-3xl mb-8"
+            >
               Gaylord Opryland is beautiful—and challenging. The iconic atriums
               and strict vendor policies require a photographer who's been there
               before.
-            </p>
+            </EditableText>
           </FadeUp>
           <StaggerContainer className="grid md:grid-cols-3 gap-6">
-            {challenges.map((item) => (
+            {challenges.map((item, index) => (
               <StaggerItem key={item.challenge}>
                 <div className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-6 h-full">
-                  <h3 className="text-heading-md font-semibold text-jhr-gold mb-3">
+                  <EditableText
+                    as="h3"
+                    sectionId="challenges"
+                    contentKey={`challenge-${index + 1}-title`}
+                    className="text-heading-md font-semibold text-jhr-gold mb-3"
+                  >
                     {item.challenge}
-                  </h3>
-                  <p className="text-body-sm text-jhr-white-dim">{item.solution}</p>
+                  </EditableText>
+                  <EditableText
+                    as="p"
+                    sectionId="challenges"
+                    contentKey={`challenge-${index + 1}-description`}
+                    className="text-body-sm text-jhr-white-dim"
+                  >
+                    {item.solution}
+                  </EditableText>
                 </div>
               </StaggerItem>
             ))}
@@ -152,32 +178,59 @@ export default function GaylordOprylandPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <SlideInLeft>
               <div>
-                <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
+                <EditableText
+                  as="h2"
+                  sectionId="experience"
+                  contentKey="heading"
+                  className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                >
                   Our Gaylord Opryland Experience
-                </h2>
-                <p className="text-body-lg text-jhr-white-muted mb-6">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="experience"
+                  contentKey="intro"
+                  className="text-body-lg text-jhr-white-muted mb-6"
+                >
                   We've worked extensively at Gaylord Opryland—from corporate
                   galas in the Tennessee Ballroom to trade shows in the Ryman
                   Exhibit Halls to intimate breakouts overlooking the Delta
                   Atrium.
-                </p>
-                <p className="text-body-md text-jhr-white-dim">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="experience"
+                  contentKey="description"
+                  className="text-body-md text-jhr-white-dim"
+                >
                   We know the property, we know the staff, and we know how to
                   deliver exceptional photography despite the unique challenges.
                   Your event is in experienced hands.
-                </p>
+                </EditableText>
               </div>
             </SlideInLeft>
             <SlideInRight>
               <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-xl p-8">
-                <h3 className="text-heading-lg font-semibold text-jhr-gold mb-6">
+                <EditableText
+                  as="h3"
+                  sectionId="experience"
+                  contentKey="list-heading"
+                  className="text-heading-lg font-semibold text-jhr-gold mb-6"
+                >
                   What We Bring
-                </h3>
+                </EditableText>
                 <ul className="space-y-4">
-                  {ourExperience.map((item) => (
+                  {ourExperience.map((item, index) => (
                     <li key={item} className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-jhr-gold mt-0.5 flex-shrink-0" />
-                      <span className="text-body-md text-jhr-white">{item}</span>
+                      <EditableText
+                        as="span"
+                        sectionId="experience"
+                        contentKey={`list-item-${index + 1}`}
+                        className="text-body-md text-jhr-white"
+                      >
+                        {item}
+                      </EditableText>
                     </li>
                   ))}
                 </ul>
@@ -191,15 +244,27 @@ export default function GaylordOprylandPage() {
       <section className="section-padding bg-jhr-black-light">
         <div className="section-container">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8">
+            <EditableText
+              as="h2"
+              sectionId="spaces"
+              contentKey="heading"
+              className="text-display-sm font-display font-bold text-jhr-white mb-8"
+            >
               Spaces We've Covered
-            </h2>
+            </EditableText>
           </FadeUp>
           <StaggerContainer className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {spaces.map((space) => (
+            {spaces.map((space, index) => (
               <StaggerItem key={space}>
                 <div className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4">
-                  <p className="text-body-md text-jhr-white">{space}</p>
+                  <EditableText
+                    as="p"
+                    sectionId="spaces"
+                    contentKey={`space-${index + 1}`}
+                    className="text-body-md text-jhr-white"
+                  >
+                    {space}
+                  </EditableText>
                 </div>
               </StaggerItem>
             ))}
@@ -211,45 +276,80 @@ export default function GaylordOprylandPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
+            <EditableText
+              as="h2"
+              sectionId="services"
+              contentKey="heading"
+              className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+            >
               Services at Gaylord Opryland
-            </h2>
+            </EditableText>
           </FadeUp>
           <StaggerContainer className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             <StaggerItem>
               <Link href="/services/corporate-event-coverage" className="card group block h-full">
                 <Camera className="w-8 h-8 text-jhr-gold mb-4" />
-                <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
+                <EditableText
+                  as="h3"
+                  sectionId="services"
+                  contentKey="service-1-title"
+                  className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                >
                   Event Coverage
-                </h3>
-                <p className="text-body-sm text-jhr-white-dim">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="services"
+                  contentKey="service-1-description"
+                  className="text-body-sm text-jhr-white-dim"
+                >
                   Comprehensive documentation adapted to Gaylord's unique spaces
                   and lighting.
-                </p>
+                </EditableText>
               </Link>
             </StaggerItem>
             <StaggerItem>
               <Link href="/services/headshot-activation" className="card group block h-full">
                 <Users className="w-8 h-8 text-jhr-gold mb-4" />
-                <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
+                <EditableText
+                  as="h3"
+                  sectionId="services"
+                  contentKey="service-2-title"
+                  className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                >
                   Headshot Activation
-                </h3>
-                <p className="text-body-sm text-jhr-white-dim">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="services"
+                  contentKey="service-2-description"
+                  className="text-body-sm text-jhr-white-dim"
+                >
                   High-volume headshots with controlled lighting that bypasses
                   atrium challenges.
-                </p>
+                </EditableText>
               </Link>
             </StaggerItem>
             <StaggerItem>
               <Link href="/services/event-video-systems" className="card group block h-full">
                 <Video className="w-8 h-8 text-jhr-gold mb-4" />
-                <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
+                <EditableText
+                  as="h3"
+                  sectionId="services"
+                  contentKey="service-3-title"
+                  className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                >
                   Event Video
-                </h3>
-                <p className="text-body-sm text-jhr-white-dim">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="services"
+                  contentKey="service-3-description"
+                  className="text-body-sm text-jhr-white-dim"
+                >
                   Keynotes, highlights, and testimonials capturing Gaylord's
                   stunning environments.
-                </p>
+                </EditableText>
               </Link>
             </StaggerItem>
           </StaggerContainer>
@@ -261,18 +361,35 @@ export default function GaylordOprylandPage() {
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
             <FadeUp>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
+              <EditableText
+                as="h2"
+                sectionId="faqs"
+                contentKey="heading"
+                className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+              >
                 Gaylord Opryland FAQs
-              </h2>
+              </EditableText>
             </FadeUp>
             <StaggerContainer className="space-y-6">
               {faqs.map((faq, index) => (
                 <StaggerItem key={index}>
                   <div className="card">
-                    <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
+                    <EditableText
+                      as="h3"
+                      sectionId="faqs"
+                      contentKey={`faq-${index + 1}-question`}
+                      className="text-heading-md font-semibold text-jhr-white mb-3"
+                    >
                       {faq.question}
-                    </h3>
-                    <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
+                    </EditableText>
+                    <EditableText
+                      as="p"
+                      sectionId="faqs"
+                      contentKey={`faq-${index + 1}-answer`}
+                      className="text-body-md text-jhr-white-dim"
+                    >
+                      {faq.answer}
+                    </EditableText>
                   </div>
                 </StaggerItem>
               ))}
@@ -284,7 +401,9 @@ export default function GaylordOprylandPage() {
       {/* CTA */}
       <section className="section-padding bg-gradient-dark relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
+          <EditableImage
+            sectionId="cta"
+            contentKey="background-image"
             src="/images/generated/venue-gaylord-opryland.jpg"
             alt="Gaylord Opryland"
             fill
@@ -293,15 +412,25 @@ export default function GaylordOprylandPage() {
         </div>
         <div className="section-container text-center relative z-10">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
+            <EditableText
+              as="h2"
+              sectionId="cta"
+              contentKey="heading"
+              className="text-display-sm font-display font-bold text-jhr-white mb-6"
+            >
               Planning an Event at Gaylord Opryland?
-            </h2>
+            </EditableText>
           </FadeUp>
           <FadeUp delay={0.1}>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
+            <EditableText
+              as="p"
+              sectionId="cta"
+              contentKey="description"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+            >
               Let's discuss your event and how we can navigate Gaylord's unique
               requirements together. We've done it before—many times.
-            </p>
+            </EditableText>
           </FadeUp>
           <FadeUp delay={0.2}>
             <Link href="/schedule" className="btn-primary text-lg px-10 py-4">

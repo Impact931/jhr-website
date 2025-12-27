@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle,
@@ -10,7 +9,9 @@ import {
   Calendar,
   ImageIcon,
 } from "lucide-react";
-import { PageHero } from "@/components/ui/HeroBanner";
+import { EditablePageHero } from "@/components/editor/EditablePageHero";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 import {
   FadeUp,
   SlideInLeft,
@@ -83,10 +84,13 @@ const faqs = [
 ];
 
 export default function CorporateHeadshotProgramPage() {
+  const pageId = "services-corporate-headshot-program";
+
   return (
     <div>
       {/* Hero Banner */}
-      <PageHero
+      <EditablePageHero
+        pageId={pageId}
         title="Professional Headshots for Your Entire Team"
         subtitle="Corporate Headshot Program™"
         description="Outdated headshots undermine credibility. Inconsistent photos fragment your brand. We bring a professional studio to your office and deliver consistent, polished headshots that represent your organization at its best."
@@ -101,35 +105,61 @@ export default function CorporateHeadshotProgramPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <SlideInLeft>
               <div>
-                <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                  The Problem with DIY Headshots
-                </h2>
-                <p className="text-body-lg text-jhr-white-muted mb-6">
-                  Half your team has photos from 2018. Some used their phone
-                  camera. Others cropped vacation photos. Your "About" page looks
-                  like a random collection of LinkedIn selfies instead of a
-                  professional organization.
-                </p>
-                <p className="text-body-md text-jhr-white-dim">
-                  First impressions matter. Clients, partners, and prospects make
-                  judgments in seconds. Inconsistent headshots signal
-                  disorganization. Unified, professional photos signal a company
-                  that has its act together.
-                </p>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="problem"
+                  contentKey="title"
+                  defaultValue="The Problem with DIY Headshots"
+                  as="h2"
+                  className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="problem"
+                  contentKey="description1"
+                  defaultValue='Half your team has photos from 2018. Some used their phone camera. Others cropped vacation photos. Your "About" page looks like a random collection of LinkedIn selfies instead of a professional organization.'
+                  as="p"
+                  className="text-body-lg text-jhr-white-muted mb-6"
+                  contentType="paragraph"
+                  multiline
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="problem"
+                  contentKey="description2"
+                  defaultValue="First impressions matter. Clients, partners, and prospects make judgments in seconds. Inconsistent headshots signal disorganization. Unified, professional photos signal a company that has its act together."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim"
+                  contentType="paragraph"
+                  multiline
+                />
               </div>
             </SlideInLeft>
             <SlideInRight>
               <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-xl p-8">
-                <h3 className="text-heading-lg font-semibold text-jhr-gold mb-6">
-                  What You Get
-                </h3>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="problem"
+                  contentKey="outcomesTitle"
+                  defaultValue="What You Get"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-gold mb-6"
+                  contentType="heading"
+                />
                 <ul className="space-y-4">
-                  {outcomes.map((outcome) => (
+                  {outcomes.map((outcome, index) => (
                     <li key={outcome} className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-jhr-gold mt-0.5 flex-shrink-0" />
-                      <span className="text-body-md text-jhr-white">
-                        {outcome}
-                      </span>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="problem"
+                        contentKey={`outcome-${index}`}
+                        defaultValue={outcome}
+                        as="span"
+                        className="text-body-md text-jhr-white"
+                        contentType="feature"
+                      />
                     </li>
                   ))}
                 </ul>
@@ -144,17 +174,29 @@ export default function CorporateHeadshotProgramPage() {
         <div className="section-container">
           <FadeUp>
             <div className="text-center mb-12">
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-                How It Works
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-                A turnkey solution designed for busy organizations.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="benefits"
+                contentKey="title"
+                defaultValue="How It Works"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-4"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="benefits"
+                contentKey="subtitle"
+                defaultValue="A turnkey solution designed for busy organizations."
+                as="p"
+                className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+                contentType="paragraph"
+              />
             </div>
           </FadeUp>
 
           <StaggerContainer className="grid md:grid-cols-2 gap-6">
-            {benefits.map((benefit) => (
+            {benefits.map((benefit, index) => (
               <StaggerItem key={benefit.title}>
                 <div className="card h-full">
                   <div className="flex items-start gap-4">
@@ -162,12 +204,25 @@ export default function CorporateHeadshotProgramPage() {
                       <benefit.icon className="w-6 h-6 text-jhr-gold" />
                     </div>
                     <div>
-                      <h3 className="text-heading-md font-semibold text-jhr-white mb-2">
-                        {benefit.title}
-                      </h3>
-                      <p className="text-body-md text-jhr-white-dim">
-                        {benefit.description}
-                      </p>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="benefits"
+                        contentKey={`benefit${index}-title`}
+                        defaultValue={benefit.title}
+                        as="h3"
+                        className="text-heading-md font-semibold text-jhr-white mb-2"
+                        contentType="heading"
+                      />
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="benefits"
+                        contentKey={`benefit${index}-description`}
+                        defaultValue={benefit.description}
+                        as="p"
+                        className="text-body-md text-jhr-white-dim"
+                        contentType="paragraph"
+                        multiline
+                      />
                     </div>
                   </div>
                 </div>
@@ -182,9 +237,15 @@ export default function CorporateHeadshotProgramPage() {
         <div className="section-container">
           <div className="max-w-4xl mx-auto">
             <FadeUp>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
-                The Process
-              </h2>
+              <EditableText
+                pageId={pageId}
+                sectionId="process"
+                contentKey="title"
+                defaultValue="The Process"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+                contentType="heading"
+              />
             </FadeUp>
 
             <StaggerContainer className="space-y-6">
@@ -213,19 +274,32 @@ export default function CorporateHeadshotProgramPage() {
                   description:
                     "Professional editing ensures every photo meets your brand standards. Delivered in all formats you need within 5-7 days.",
                 },
-              ].map((item) => (
+              ].map((item, index) => (
                 <StaggerItem key={item.step}>
                   <div className="flex gap-6 items-start bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-6">
                     <span className="text-jhr-gold font-display font-bold text-heading-lg">
                       {item.step}
                     </span>
                     <div>
-                      <h3 className="text-heading-md font-semibold text-jhr-white mb-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-body-md text-jhr-white-dim">
-                        {item.description}
-                      </p>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="process"
+                        contentKey={`step${item.step}-title`}
+                        defaultValue={item.title}
+                        as="h3"
+                        className="text-heading-md font-semibold text-jhr-white mb-2"
+                        contentType="heading"
+                      />
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="process"
+                        contentKey={`step${item.step}-description`}
+                        defaultValue={item.description}
+                        as="p"
+                        className="text-body-md text-jhr-white-dim"
+                        contentType="paragraph"
+                        multiline
+                      />
                     </div>
                   </div>
                 </StaggerItem>
@@ -240,13 +314,24 @@ export default function CorporateHeadshotProgramPage() {
         <div className="section-container">
           <FadeUp>
             <div className="text-center mb-12">
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-                Consistent Quality at Scale
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-                Every headshot maintains the same professional standard—regardless
-                of team size.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="gallery"
+                contentKey="title"
+                defaultValue="Consistent Quality at Scale"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-4"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="gallery"
+                contentKey="subtitle"
+                defaultValue="Every headshot maintains the same professional standard—regardless of team size."
+                as="p"
+                className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+                contentType="paragraph"
+              />
             </div>
           </FadeUp>
 
@@ -263,8 +348,11 @@ export default function CorporateHeadshotProgramPage() {
             ].map((src, i) => (
               <StaggerItem key={i}>
                 <div className="aspect-[3/4] relative rounded-lg overflow-hidden">
-                  <Image
-                    src={src}
+                  <EditableImage
+                    pageId={pageId}
+                    sectionId="gallery"
+                    contentKey={`image-${i}`}
+                    defaultSrc={src}
                     alt={`Headshot ${i + 1}`}
                     fill
                     className="object-cover"
@@ -281,18 +369,39 @@ export default function CorporateHeadshotProgramPage() {
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
             <FadeUp>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
-                Frequently Asked Questions
-              </h2>
+              <EditableText
+                pageId={pageId}
+                sectionId="faqs"
+                contentKey="title"
+                defaultValue="Frequently Asked Questions"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+                contentType="heading"
+              />
             </FadeUp>
             <StaggerContainer className="space-y-6">
               {faqs.map((faq, index) => (
                 <StaggerItem key={index}>
                   <div className="card">
-                    <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                      {faq.question}
-                    </h3>
-                    <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-question`}
+                      defaultValue={faq.question}
+                      as="h3"
+                      className="text-heading-md font-semibold text-jhr-white mb-3"
+                      contentType="heading"
+                    />
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-answer`}
+                      defaultValue={faq.answer}
+                      as="p"
+                      className="text-body-md text-jhr-white-dim"
+                      contentType="paragraph"
+                      multiline
+                    />
                   </div>
                 </StaggerItem>
               ))}
@@ -304,8 +413,11 @@ export default function CorporateHeadshotProgramPage() {
       {/* CTA */}
       <section className="section-padding bg-gradient-dark relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/generated/venue-conference-room.jpg"
+          <EditableImage
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/venue-conference-room.jpg"
             alt="Corporate conference room"
             fill
             className="object-cover opacity-20"
@@ -313,16 +425,27 @@ export default function CorporateHeadshotProgramPage() {
         </div>
         <div className="section-container text-center relative z-10">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-              Ready to Update Your Team's Image?
-            </h2>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="title"
+              defaultValue="Ready to Update Your Team's Image?"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-6"
+              contentType="heading"
+            />
           </FadeUp>
           <FadeUp delay={0.1}>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
-              Let's discuss your organization's needs. We'll create a custom plan
-              that fits your schedule and delivers consistent, professional
-              results.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="description"
+              defaultValue="Let's discuss your organization's needs. We'll create a custom plan that fits your schedule and delivers consistent, professional results."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+              contentType="paragraph"
+              multiline
+            />
           </FadeUp>
           <FadeUp delay={0.2}>
             <Link href="/schedule" className="btn-primary text-lg px-10 py-4">

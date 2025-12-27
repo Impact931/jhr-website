@@ -1,5 +1,6 @@
+"use client";
+
 import Link from "next/link";
-import { Metadata } from "next";
 import {
   ArrowRight,
   CheckCircle,
@@ -8,17 +9,9 @@ import {
   Star,
   Clock,
 } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "For Venue Coordinators | Preferred Vendor Photography Partner",
-  description:
-    "JHR Photography partners with Nashville venues as a preferred photography vendor. Professional, reliable, venue-aware service that makes you look good.",
-  openGraph: {
-    title: "For Venue Coordinators | JHR Photography",
-    description:
-      "Preferred vendor photography partner for Nashville event venues.",
-  },
-};
+import { StaggerContainer, StaggerItem } from "@/components/ui/ScrollAnimation";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 
 const venueNeeds = [
   {
@@ -111,6 +104,8 @@ const faqSchema = {
 };
 
 export default function VenueCoordinatorsPage() {
+  const pageId = "solutions-venues";
+
   return (
     <div className="pt-16 lg:pt-20">
       {/* Schema */}
@@ -124,21 +119,48 @@ export default function VenueCoordinatorsPage() {
       />
 
       {/* Hero */}
-      <section className="section-padding bg-gradient-dark">
-        <div className="section-container">
+      <section className="section-padding bg-gradient-dark relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <EditableImage
+            pageId={pageId}
+            sectionId="hero"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/venue-interior.jpg"
+            alt="Event venue interior"
+            fill
+            className="object-cover opacity-20"
+          />
+        </div>
+        <div className="section-container relative z-10">
           <div className="max-w-3xl">
-            <p className="text-jhr-gold font-medium text-body-lg mb-4">
-              For Venue Coordinators
-            </p>
-            <h1 className="text-display-lg font-display font-bold text-jhr-white mb-6">
-              A Photography Partner Who Knows Your Space
-            </h1>
-            <p className="text-body-lg text-jhr-white-muted mb-8">
-              When clients ask for photography recommendations, you need vendors
-              you can trust. JHR Photography understands venue operations,
-              respects your protocols, and consistently delivers quality that
-              reflects well on everyone involved.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="hero"
+              contentKey="subtitle"
+              defaultValue="For Venue Coordinators"
+              as="p"
+              className="text-jhr-gold font-medium text-body-lg mb-4"
+              contentType="tagline"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="hero"
+              contentKey="title"
+              defaultValue="A Photography Partner Who Knows Your Space"
+              as="h1"
+              className="text-display-lg font-display font-bold text-jhr-white mb-6"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="hero"
+              contentKey="description"
+              defaultValue="When clients ask for photography recommendations, you need vendors you can trust. JHR Photography understands venue operations, respects your protocols, and consistently delivers quality that reflects well on everyone involved."
+              as="p"
+              className="text-body-lg text-jhr-white-muted mb-8"
+              contentType="paragraph"
+              multiline
+            />
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/schedule" className="btn-primary">
                 Schedule a Strategy Call
@@ -156,34 +178,59 @@ export default function VenueCoordinatorsPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <div className="text-center mb-12">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-              What Venues Need from Photography Partners
-            </h2>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-              Your preferred vendor list reflects your standards. Every
-              recommendation is a reflection of your judgment.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="needs"
+              contentKey="title"
+              defaultValue="What Venues Need from Photography Partners"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="needs"
+              contentKey="subtitle"
+              defaultValue="Your preferred vendor list reflects your standards. Every recommendation is a reflection of your judgment."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              contentType="paragraph"
+            />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {venueNeeds.map((need) => (
-              <div key={need.title} className="card">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center flex-shrink-0">
-                    <need.icon className="w-6 h-6 text-jhr-gold" />
-                  </div>
-                  <div>
-                    <h3 className="text-heading-md font-semibold text-jhr-white mb-2">
-                      {need.title}
-                    </h3>
-                    <p className="text-body-md text-jhr-white-dim">
-                      {need.description}
-                    </p>
+          <StaggerContainer className="grid md:grid-cols-2 gap-6">
+            {venueNeeds.map((need, index) => (
+              <StaggerItem key={need.title}>
+                <div className="card">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center flex-shrink-0">
+                      <need.icon className="w-6 h-6 text-jhr-gold" />
+                    </div>
+                    <div>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="needs"
+                        contentKey={`need${index}-title`}
+                        defaultValue={need.title}
+                        as="h3"
+                        className="text-heading-md font-semibold text-jhr-white mb-2"
+                        contentType="heading"
+                      />
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="needs"
+                        contentKey={`need${index}-description`}
+                        defaultValue={need.description}
+                        as="p"
+                        className="text-body-md text-jhr-white-dim"
+                        contentType="paragraph"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -192,20 +239,35 @@ export default function VenueCoordinatorsPage() {
         <div className="section-container">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                Why Partner with JHR
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted mb-6">
-                We've worked extensively at Nashville's premier venues—Music
-                City Center, Gaylord Opryland, the downtown hotels. We understand
-                the operational realities, the lighting challenges, and the
-                expectations.
-              </p>
-              <p className="text-body-md text-jhr-white-dim mb-6">
-                When you recommend JHR, you're recommending a team that will
-                represent your venue well. We show up professional, work
-                invisibly, and deliver images that make your space look its best.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="why-jhr"
+                contentKey="title"
+                defaultValue="Why Partner with JHR"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="why-jhr"
+                contentKey="description1"
+                defaultValue="We've worked extensively at Nashville's premier venues—Music City Center, Gaylord Opryland, the downtown hotels. We understand the operational realities, the lighting challenges, and the expectations."
+                as="p"
+                className="text-body-lg text-jhr-white-muted mb-6"
+                contentType="paragraph"
+                multiline
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="why-jhr"
+                contentKey="description2"
+                defaultValue="When you recommend JHR, you're recommending a team that will represent your venue well. We show up professional, work invisibly, and deliver images that make your space look its best."
+                as="p"
+                className="text-body-md text-jhr-white-dim mb-6"
+                contentType="paragraph"
+                multiline
+              />
               <Link
                 href="/venues"
                 className="text-jhr-gold hover:text-jhr-gold-light transition-colors font-medium flex items-center gap-2"
@@ -216,16 +278,28 @@ export default function VenueCoordinatorsPage() {
             </div>
             <div>
               <div className="bg-jhr-black border border-jhr-black-lighter rounded-xl p-8">
-                <h3 className="text-heading-lg font-semibold text-jhr-gold mb-6">
-                  What We Offer
-                </h3>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="why-jhr"
+                  contentKey="benefitsTitle"
+                  defaultValue="What We Offer"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-gold mb-6"
+                  contentType="heading"
+                />
                 <ul className="space-y-4">
-                  {benefits.map((benefit) => (
+                  {benefits.map((benefit, index) => (
                     <li key={benefit} className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-jhr-gold mt-0.5 flex-shrink-0" />
-                      <span className="text-body-md text-jhr-white">
-                        {benefit}
-                      </span>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="why-jhr"
+                        contentKey={`benefit-${index}`}
+                        defaultValue={benefit}
+                        as="span"
+                        className="text-body-md text-jhr-white"
+                        contentType="feature"
+                      />
                     </li>
                   ))}
                 </ul>
@@ -239,70 +313,134 @@ export default function VenueCoordinatorsPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <div className="text-center mb-12">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-              Services for Your Clients
-            </h2>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-              Professional photography solutions for events at your venue.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="services"
+              contentKey="title"
+              defaultValue="Services for Your Clients"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="services"
+              contentKey="subtitle"
+              defaultValue="Professional photography solutions for events at your venue."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              contentType="paragraph"
+            />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <Link
-              href="/services/corporate-event-coverage"
-              className="card group"
-            >
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Event Coverage
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                Comprehensive photography for conferences, galas, and corporate
-                events. Same-day highlights available.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                Learn more <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-            <Link href="/services/headshot-activation" className="card group">
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Headshot Activation
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                High-volume professional headshots for trade shows and
-                conferences. Great sponsor activation option.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                Learn more <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-            <Link href="/services/event-video-systems" className="card group">
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Event Video
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                Keynote capture, highlight reels, and testimonials. Professional
-                video that extends event value.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                Learn more <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-            <div className="card">
-              <h3 className="text-heading-lg font-semibold text-jhr-white mb-2">
-                Venue Photography
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                Professional documentation of your spaces for marketing
-                materials. Empty spaces and events-in-progress.
-              </p>
+          <StaggerContainer className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <StaggerItem>
               <Link
-                href="/contact"
-                className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium"
+                href="/services/corporate-event-coverage"
+                className="card group"
               >
-                Contact us <ArrowRight className="w-4 h-4" />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service1-title"
+                  defaultValue="Event Coverage"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service1-description"
+                  defaultValue="Comprehensive photography for conferences, galas, and corporate events. Same-day highlights available."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  Learn more <ArrowRight className="w-4 h-4" />
+                </span>
               </Link>
-            </div>
-          </div>
+            </StaggerItem>
+            <StaggerItem>
+              <Link href="/services/headshot-activation" className="card group">
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service2-title"
+                  defaultValue="Headshot Activation"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service2-description"
+                  defaultValue="High-volume professional headshots for trade shows and conferences. Great sponsor activation option."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  Learn more <ArrowRight className="w-4 h-4" />
+                </span>
+              </Link>
+            </StaggerItem>
+            <StaggerItem>
+              <Link href="/services/event-video-systems" className="card group">
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service3-title"
+                  defaultValue="Event Video"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service3-description"
+                  defaultValue="Keynote capture, highlight reels, and testimonials. Professional video that extends event value."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  Learn more <ArrowRight className="w-4 h-4" />
+                </span>
+              </Link>
+            </StaggerItem>
+            <StaggerItem>
+              <div className="card">
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service4-title"
+                  defaultValue="Venue Photography"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service4-description"
+                  defaultValue="Professional documentation of your spaces for marketing materials. Empty spaces and events-in-progress."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <Link
+                  href="/contact"
+                  className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium"
+                >
+                  Contact us <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </StaggerItem>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -310,15 +448,27 @@ export default function VenueCoordinatorsPage() {
       <section className="section-padding bg-jhr-black-light">
         <div className="section-container">
           <div className="text-center mb-12">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-              Our Nashville Venue Experience
-            </h2>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-              We know Nashville's event spaces inside and out.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="portfolio"
+              contentKey="title"
+              defaultValue="Our Nashville Venue Experience"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="portfolio"
+              contentKey="subtitle"
+              defaultValue="We know Nashville's event spaces inside and out."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              contentType="paragraph"
+            />
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+          <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
             {[
               { name: "Music City Center", slug: "music-city-center" },
               { name: "Gaylord Opryland", slug: "gaylord-opryland" },
@@ -329,17 +479,18 @@ export default function VenueCoordinatorsPage() {
               { name: "City Winery", slug: "city-winery-nashville" },
               { name: "Belmont University", slug: "belmont-university" },
             ].map((venue) => (
-              <Link
-                key={venue.slug}
-                href={`/venues/${venue.slug}`}
-                className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors text-center"
-              >
-                <p className="text-body-md font-medium text-jhr-white">
-                  {venue.name}
-                </p>
-              </Link>
+              <StaggerItem key={venue.slug}>
+                <Link
+                  href={`/venues/${venue.slug}`}
+                  className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors text-center"
+                >
+                  <p className="text-body-md font-medium text-jhr-white">
+                    {venue.name}
+                  </p>
+                </Link>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -347,34 +498,79 @@ export default function VenueCoordinatorsPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
-              Common Questions
-            </h2>
-            <div className="space-y-6">
+            <EditableText
+              pageId={pageId}
+              sectionId="faqs"
+              contentKey="title"
+              defaultValue="Common Questions"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+              contentType="heading"
+            />
+            <StaggerContainer className="space-y-6">
               {faqs.map((faq, index) => (
-                <div key={index} className="card">
-                  <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                    {faq.question}
-                  </h3>
-                  <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
-                </div>
+                <StaggerItem key={index}>
+                  <div className="card">
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-question`}
+                      defaultValue={faq.question}
+                      as="h3"
+                      className="text-heading-md font-semibold text-jhr-white mb-3"
+                      contentType="heading"
+                    />
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-answer`}
+                      defaultValue={faq.answer}
+                      as="p"
+                      className="text-body-md text-jhr-white-dim"
+                      contentType="paragraph"
+                      multiline
+                    />
+                  </div>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="section-padding bg-gradient-dark">
-        <div className="section-container text-center">
-          <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-            Let's Discuss a Partnership
-          </h2>
-          <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
-            Schedule a conversation about adding JHR to your preferred vendor
-            list. We're happy to provide credentials, references, and portfolio
-            samples.
-          </p>
+      <section className="section-padding bg-gradient-dark relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <EditableImage
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/nashville-venue.jpg"
+            alt="Nashville venue"
+            fill
+            className="object-cover opacity-20"
+          />
+        </div>
+        <div className="section-container text-center relative z-10">
+          <EditableText
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="title"
+            defaultValue="Let's Discuss a Partnership"
+            as="h2"
+            className="text-display-sm font-display font-bold text-jhr-white mb-6"
+            contentType="heading"
+          />
+          <EditableText
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="description"
+            defaultValue="Schedule a conversation about adding JHR to your preferred vendor list. We're happy to provide credentials, references, and portfolio samples."
+            as="p"
+            className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+            contentType="paragraph"
+            multiline
+          />
           <Link href="/schedule" className="btn-primary text-lg px-10 py-4">
             Schedule a Strategy Call
             <ArrowRight className="w-5 h-5 ml-2" />

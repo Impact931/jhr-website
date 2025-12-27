@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle,
@@ -11,10 +10,11 @@ import {
   Database,
   Sparkles,
 } from "lucide-react";
-import { PageHero } from "@/components/ui/HeroBanner";
+import { EditablePageHero } from "@/components/editor/EditablePageHero";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 import {
   FadeUp,
-  FadeIn,
   SlideInLeft,
   SlideInRight,
   StaggerContainer,
@@ -87,10 +87,13 @@ const faqs = [
 ];
 
 export default function HeadshotActivationPage() {
+  const pageId = "services-headshot-activation";
+
   return (
     <div>
       {/* Hero Banner */}
-      <PageHero
+      <EditablePageHero
+        pageId={pageId}
         title="Turn Your Booth Into the Must-Visit Destination"
         subtitle="Headshot Activation™"
         description="Professional headshots delivered in minutes. Drive traffic, capture leads, and give every attendee an instant professional asset they'll actually use. No gimmicks—just genuine value that keeps your booth packed."
@@ -105,35 +108,61 @@ export default function HeadshotActivationPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <SlideInLeft>
               <div>
-                <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                  The Problem with Trade Show Giveaways
-                </h2>
-                <p className="text-body-lg text-jhr-white-muted mb-6">
-                  Stress balls end up in trash cans. Branded pens disappear.
-                  Prize wheels attract the wrong crowd. You spend thousands on
-                  booth space and walk away with a stack of badge scans from
-                  people who just wanted free stuff.
-                </p>
-                <p className="text-body-md text-jhr-white-dim">
-                  A professional headshot is different. It's immediately valuable.
-                  People actually need one—for LinkedIn, company profiles, speaker
-                  submissions. They'll wait in line for it, share it on social
-                  media, and remember who gave it to them.
-                </p>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="problem"
+                  contentKey="title"
+                  defaultValue="The Problem with Trade Show Giveaways"
+                  as="h2"
+                  className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="problem"
+                  contentKey="description1"
+                  defaultValue="Stress balls end up in trash cans. Branded pens disappear. Prize wheels attract the wrong crowd. You spend thousands on booth space and walk away with a stack of badge scans from people who just wanted free stuff."
+                  as="p"
+                  className="text-body-lg text-jhr-white-muted mb-6"
+                  contentType="paragraph"
+                  multiline
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="problem"
+                  contentKey="description2"
+                  defaultValue="A professional headshot is different. It's immediately valuable. People actually need one—for LinkedIn, company profiles, speaker submissions. They'll wait in line for it, share it on social media, and remember who gave it to them."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim"
+                  contentType="paragraph"
+                  multiline
+                />
               </div>
             </SlideInLeft>
             <SlideInRight>
               <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-xl p-8">
-                <h3 className="text-heading-lg font-semibold text-jhr-gold mb-6">
-                  What You Get
-                </h3>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="problem"
+                  contentKey="outcomesTitle"
+                  defaultValue="What You Get"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-gold mb-6"
+                  contentType="heading"
+                />
                 <ul className="space-y-4">
                   {outcomes.map((outcome, index) => (
                     <li key={outcome} className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-jhr-gold mt-0.5 flex-shrink-0" />
-                      <span className="text-body-md text-jhr-white">
-                        {outcome}
-                      </span>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="problem"
+                        contentKey={`outcome-${index}`}
+                        defaultValue={outcome}
+                        as="span"
+                        className="text-body-md text-jhr-white"
+                        contentType="feature"
+                      />
                     </li>
                   ))}
                 </ul>
@@ -146,8 +175,11 @@ export default function HeadshotActivationPage() {
       {/* How It Works */}
       <section className="section-padding bg-jhr-black-light relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/generated/event-trade-show.jpg"
+          <EditableImage
+            pageId={pageId}
+            sectionId="howItWorks"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/event-trade-show.jpg"
             alt="Trade show floor"
             fill
             className="object-cover opacity-10"
@@ -156,12 +188,24 @@ export default function HeadshotActivationPage() {
         <div className="section-container relative z-10">
           <FadeUp>
             <div className="text-center mb-12">
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-                How It Works
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-                A streamlined process that keeps lines moving and attendees happy.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="howItWorks"
+                contentKey="title"
+                defaultValue="How It Works"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-4"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="howItWorks"
+                contentKey="subtitle"
+                defaultValue="A streamlined process that keeps lines moving and attendees happy."
+                as="p"
+                className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+                contentType="paragraph"
+              />
             </div>
           </FadeUp>
 
@@ -191,18 +235,30 @@ export default function HeadshotActivationPage() {
                 description:
                   "AI-retouched, branded image delivered to their phone within minutes.",
               },
-            ].map((item) => (
+            ].map((item, index) => (
               <StaggerItem key={item.step}>
                 <div className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-6 h-full">
                   <span className="text-jhr-gold font-display font-bold text-heading-lg">
                     {item.step}
                   </span>
-                  <h3 className="text-heading-md font-semibold text-jhr-white mt-4 mb-2">
-                    {item.title}
-                  </h3>
-                  <p className="text-body-sm text-jhr-white-dim">
-                    {item.description}
-                  </p>
+                  <EditableText
+                    pageId={pageId}
+                    sectionId="howItWorks"
+                    contentKey={`step${item.step}-title`}
+                    defaultValue={item.title}
+                    as="h3"
+                    className="text-heading-md font-semibold text-jhr-white mt-4 mb-2"
+                    contentType="heading"
+                  />
+                  <EditableText
+                    pageId={pageId}
+                    sectionId="howItWorks"
+                    contentKey={`step${item.step}-description`}
+                    defaultValue={item.description}
+                    as="p"
+                    className="text-body-sm text-jhr-white-dim"
+                    contentType="paragraph"
+                  />
                 </div>
               </StaggerItem>
             ))}
@@ -215,17 +271,29 @@ export default function HeadshotActivationPage() {
         <div className="section-container">
           <FadeUp>
             <div className="text-center mb-12">
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-                Built for High-Volume Events
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-                Every detail engineered for speed, quality, and reliability.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="features"
+                contentKey="title"
+                defaultValue="Built for High-Volume Events"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-4"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="features"
+                contentKey="subtitle"
+                defaultValue="Every detail engineered for speed, quality, and reliability."
+                as="p"
+                className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+                contentType="paragraph"
+              />
             </div>
           </FadeUp>
 
           <StaggerContainer className="grid md:grid-cols-2 gap-6">
-            {features.map((feature) => (
+            {features.map((feature, index) => (
               <StaggerItem key={feature.title}>
                 <div className="card h-full">
                   <div className="flex items-start gap-4">
@@ -233,12 +301,25 @@ export default function HeadshotActivationPage() {
                       <feature.icon className="w-6 h-6 text-jhr-gold" />
                     </div>
                     <div>
-                      <h3 className="text-heading-md font-semibold text-jhr-white mb-2">
-                        {feature.title}
-                      </h3>
-                      <p className="text-body-md text-jhr-white-dim">
-                        {feature.description}
-                      </p>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="features"
+                        contentKey={`feature${index}-title`}
+                        defaultValue={feature.title}
+                        as="h3"
+                        className="text-heading-md font-semibold text-jhr-white mb-2"
+                        contentType="heading"
+                      />
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="features"
+                        contentKey={`feature${index}-description`}
+                        defaultValue={feature.description}
+                        as="p"
+                        className="text-body-md text-jhr-white-dim"
+                        contentType="paragraph"
+                        multiline
+                      />
                     </div>
                   </div>
                 </div>
@@ -253,12 +334,24 @@ export default function HeadshotActivationPage() {
         <div className="section-container">
           <FadeUp>
             <div className="text-center mb-12">
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-                Professional Results
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-                Every attendee leaves with a polished, LinkedIn-ready headshot.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="gallery"
+                contentKey="title"
+                defaultValue="Professional Results"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-4"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="gallery"
+                contentKey="subtitle"
+                defaultValue="Every attendee leaves with a polished, LinkedIn-ready headshot."
+                as="p"
+                className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+                contentType="paragraph"
+              />
             </div>
           </FadeUp>
 
@@ -270,8 +363,11 @@ export default function HeadshotActivationPage() {
             ].map((src, index) => (
               <StaggerItem key={index}>
                 <div className="aspect-[3/4] relative rounded-lg overflow-hidden">
-                  <Image
-                    src={src}
+                  <EditableImage
+                    pageId={pageId}
+                    sectionId="gallery"
+                    contentKey={`image-${index}`}
+                    defaultSrc={src}
                     alt={`Professional headshot example ${index + 1}`}
                     fill
                     className="object-cover"
@@ -288,10 +384,24 @@ export default function HeadshotActivationPage() {
         <div className="section-container">
           <FadeUp>
             <div className="text-center mb-12">
-              <p className="text-jhr-gold-dark font-medium text-body-lg mb-2">Calculate Your Value</p>
-              <h2 className="text-display-sm font-display font-bold text-jhr-black mb-4">
-                See What Your Activation Could Deliver
-              </h2>
+              <EditableText
+                pageId={pageId}
+                sectionId="roi"
+                contentKey="subtitle"
+                defaultValue="Calculate Your Value"
+                as="p"
+                className="text-jhr-gold-dark font-medium text-body-lg mb-2"
+                contentType="tagline"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="roi"
+                contentKey="title"
+                defaultValue="See What Your Activation Could Deliver"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-black mb-4"
+                contentType="heading"
+              />
             </div>
           </FadeUp>
           <ROICalculator variant="light" />
@@ -303,18 +413,39 @@ export default function HeadshotActivationPage() {
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
             <FadeUp>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
-                Frequently Asked Questions
-              </h2>
+              <EditableText
+                pageId={pageId}
+                sectionId="faqs"
+                contentKey="title"
+                defaultValue="Frequently Asked Questions"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+                contentType="heading"
+              />
             </FadeUp>
             <StaggerContainer className="space-y-6">
               {faqs.map((faq, index) => (
                 <StaggerItem key={index}>
                   <div className="card">
-                    <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                      {faq.question}
-                    </h3>
-                    <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-question`}
+                      defaultValue={faq.question}
+                      as="h3"
+                      className="text-heading-md font-semibold text-jhr-white mb-3"
+                      contentType="heading"
+                    />
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-answer`}
+                      defaultValue={faq.answer}
+                      as="p"
+                      className="text-body-md text-jhr-white-dim"
+                      contentType="paragraph"
+                      multiline
+                    />
                   </div>
                 </StaggerItem>
               ))}
@@ -326,8 +457,11 @@ export default function HeadshotActivationPage() {
       {/* CTA */}
       <section className="section-padding bg-gradient-dark relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/generated/event-keynote.jpg"
+          <EditableImage
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/event-keynote.jpg"
             alt="Corporate keynote event"
             fill
             className="object-cover opacity-20"
@@ -335,16 +469,27 @@ export default function HeadshotActivationPage() {
         </div>
         <div className="section-container text-center relative z-10">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-              Ready to Transform Your Next Event?
-            </h2>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="title"
+              defaultValue="Ready to Transform Your Next Event?"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-6"
+              contentType="heading"
+            />
           </FadeUp>
           <FadeUp delay={0.1}>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-6">
-              Let's discuss your event, venue, and goals. We'll show you exactly
-              how Headshot Activation can drive traffic and generate leads for
-              your brand.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="description"
+              defaultValue="Let's discuss your event, venue, and goals. We'll show you exactly how Headshot Activation can drive traffic and generate leads for your brand."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-6"
+              contentType="paragraph"
+              multiline
+            />
           </FadeUp>
           <FadeUp delay={0.15}>
             <TrustBadgesInline />

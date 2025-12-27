@@ -1,9 +1,8 @@
-"use client";
-
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight, CheckCircle, MapPin, Camera, Video, Users } from "lucide-react";
-import { PageHero } from "@/components/ui/HeroBanner";
+import { ArrowRight, CheckCircle, Camera, Video, Users } from "lucide-react";
+import { EditablePageHero } from "@/components/editor/EditablePageHero";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 import {
   FadeUp,
   SlideInLeft,
@@ -62,10 +61,13 @@ const faqs = [
 ];
 
 export default function MusicCityCenterPage() {
+  const pageId = "venues-music-city-center";
+
   return (
     <div>
       {/* Hero Banner */}
-      <PageHero
+      <EditablePageHero
+        pageId={pageId}
         title={venueDetails.name}
         subtitle="Nashville's Premier Convention Center"
         description={venueDetails.description}
@@ -86,7 +88,9 @@ export default function MusicCityCenterPage() {
             ].map((src, index) => (
               <StaggerItem key={index}>
                 <div className="aspect-[4/3] relative rounded-lg overflow-hidden">
-                  <Image
+                  <EditableImage
+                    sectionId="gallery"
+                    contentKey={`image-${index + 1}`}
                     src={src}
                     alt={`Music City Center event ${index + 1}`}
                     fill
@@ -105,32 +109,59 @@ export default function MusicCityCenterPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <SlideInLeft>
               <div>
-                <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
+                <EditableText
+                  as="h2"
+                  sectionId="experience"
+                  contentKey="heading"
+                  className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                >
                   Our Experience at Music City Center
-                </h2>
-                <p className="text-body-lg text-jhr-white-muted mb-6">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="experience"
+                  contentKey="intro"
+                  className="text-body-lg text-jhr-white-muted mb-6"
+                >
                   We've documented countless events at Music City Center—from
                   massive trade shows filling multiple exhibit halls to intimate
                   executive meetings in the upper-level conference rooms.
-                </p>
-                <p className="text-body-md text-jhr-white-dim">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="experience"
+                  contentKey="description"
+                  className="text-body-md text-jhr-white-dim"
+                >
                   This isn't our first time walking through the marshaling yard or
                   coordinating with the operations team. We know the venue, we
                   know the protocols, and we know how to deliver without creating
                   friction for your event.
-                </p>
+                </EditableText>
               </div>
             </SlideInLeft>
             <SlideInRight>
               <div className="bg-jhr-black border border-jhr-black-lighter rounded-xl p-8">
-                <h3 className="text-heading-lg font-semibold text-jhr-gold mb-6">
+                <EditableText
+                  as="h3"
+                  sectionId="experience"
+                  contentKey="list-heading"
+                  className="text-heading-lg font-semibold text-jhr-gold mb-6"
+                >
                   What We Know
-                </h3>
+                </EditableText>
                 <ul className="space-y-4">
-                  {ourExperience.map((item) => (
+                  {ourExperience.map((item, index) => (
                     <li key={item} className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-jhr-gold mt-0.5 flex-shrink-0" />
-                      <span className="text-body-md text-jhr-white">{item}</span>
+                      <EditableText
+                        as="span"
+                        sectionId="experience"
+                        contentKey={`list-item-${index + 1}`}
+                        className="text-body-md text-jhr-white"
+                      >
+                        {item}
+                      </EditableText>
                     </li>
                   ))}
                 </ul>
@@ -144,15 +175,27 @@ export default function MusicCityCenterPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8">
+            <EditableText
+              as="h2"
+              sectionId="spaces"
+              contentKey="heading"
+              className="text-display-sm font-display font-bold text-jhr-white mb-8"
+            >
               Venue Spaces We've Covered
-            </h2>
+            </EditableText>
           </FadeUp>
           <StaggerContainer className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {spaces.map((space) => (
+            {spaces.map((space, index) => (
               <StaggerItem key={space}>
                 <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-4">
-                  <p className="text-body-md text-jhr-white">{space}</p>
+                  <EditableText
+                    as="p"
+                    sectionId="spaces"
+                    contentKey={`space-${index + 1}`}
+                    className="text-body-md text-jhr-white"
+                  >
+                    {space}
+                  </EditableText>
                 </div>
               </StaggerItem>
             ))}
@@ -164,44 +207,79 @@ export default function MusicCityCenterPage() {
       <section className="section-padding bg-jhr-black-light">
         <div className="section-container">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
+            <EditableText
+              as="h2"
+              sectionId="services"
+              contentKey="heading"
+              className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+            >
               Services at Music City Center
-            </h2>
+            </EditableText>
           </FadeUp>
           <StaggerContainer className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             <StaggerItem>
               <Link href="/services/corporate-event-coverage" className="card group block h-full">
                 <Camera className="w-8 h-8 text-jhr-gold mb-4" />
-                <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
+                <EditableText
+                  as="h3"
+                  sectionId="services"
+                  contentKey="service-1-title"
+                  className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                >
                   Event Coverage
-                </h3>
-                <p className="text-body-sm text-jhr-white-dim">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="services"
+                  contentKey="service-1-description"
+                  className="text-body-sm text-jhr-white-dim"
+                >
                   Comprehensive documentation of conferences, trade shows, and
                   corporate events.
-                </p>
+                </EditableText>
               </Link>
             </StaggerItem>
             <StaggerItem>
               <Link href="/services/headshot-activation" className="card group block h-full">
                 <Users className="w-8 h-8 text-jhr-gold mb-4" />
-                <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
+                <EditableText
+                  as="h3"
+                  sectionId="services"
+                  contentKey="service-2-title"
+                  className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                >
                   Headshot Activation
-                </h3>
-                <p className="text-body-sm text-jhr-white-dim">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="services"
+                  contentKey="service-2-description"
+                  className="text-body-sm text-jhr-white-dim"
+                >
                   High-volume professional headshots for trade show booths and
                   sponsorships.
-                </p>
+                </EditableText>
               </Link>
             </StaggerItem>
             <StaggerItem>
               <Link href="/services/event-video-systems" className="card group block h-full">
                 <Video className="w-8 h-8 text-jhr-gold mb-4" />
-                <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
+                <EditableText
+                  as="h3"
+                  sectionId="services"
+                  contentKey="service-3-title"
+                  className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                >
                   Event Video
-                </h3>
-                <p className="text-body-sm text-jhr-white-dim">
+                </EditableText>
+                <EditableText
+                  as="p"
+                  sectionId="services"
+                  contentKey="service-3-description"
+                  className="text-body-sm text-jhr-white-dim"
+                >
                   Keynote capture, highlight reels, and testimonials.
-                </p>
+                </EditableText>
               </Link>
             </StaggerItem>
           </StaggerContainer>
@@ -213,18 +291,35 @@ export default function MusicCityCenterPage() {
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
             <FadeUp>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
+              <EditableText
+                as="h2"
+                sectionId="faqs"
+                contentKey="heading"
+                className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+              >
                 Music City Center FAQs
-              </h2>
+              </EditableText>
             </FadeUp>
             <StaggerContainer className="space-y-6">
               {faqs.map((faq, index) => (
                 <StaggerItem key={index}>
                   <div className="card">
-                    <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
+                    <EditableText
+                      as="h3"
+                      sectionId="faqs"
+                      contentKey={`faq-${index + 1}-question`}
+                      className="text-heading-md font-semibold text-jhr-white mb-3"
+                    >
                       {faq.question}
-                    </h3>
-                    <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
+                    </EditableText>
+                    <EditableText
+                      as="p"
+                      sectionId="faqs"
+                      contentKey={`faq-${index + 1}-answer`}
+                      className="text-body-md text-jhr-white-dim"
+                    >
+                      {faq.answer}
+                    </EditableText>
                   </div>
                 </StaggerItem>
               ))}
@@ -236,7 +331,9 @@ export default function MusicCityCenterPage() {
       {/* CTA */}
       <section className="section-padding bg-gradient-dark relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
+          <EditableImage
+            sectionId="cta"
+            contentKey="background-image"
             src="/images/generated/venue-music-city-center.jpg"
             alt="Music City Center"
             fill
@@ -245,15 +342,25 @@ export default function MusicCityCenterPage() {
         </div>
         <div className="section-container text-center relative z-10">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
+            <EditableText
+              as="h2"
+              sectionId="cta"
+              contentKey="heading"
+              className="text-display-sm font-display font-bold text-jhr-white mb-6"
+            >
               Planning an Event at Music City Center?
-            </h2>
+            </EditableText>
           </FadeUp>
           <FadeUp delay={0.1}>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
+            <EditableText
+              as="p"
+              sectionId="cta"
+              contentKey="description"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+            >
               Let's discuss your event and how we can help ensure a smooth,
               successful execution. We know the venue—you focus on the program.
-            </p>
+            </EditableText>
           </FadeUp>
           <FadeUp delay={0.2}>
             <Link href="/schedule" className="btn-primary text-lg px-10 py-4">

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
-import { PageHero } from "@/components/ui/HeroBanner";
-import { FadeUp, SlideInLeft, SlideInRight } from "@/components/ui/ScrollAnimation";
+import { EditablePageHero } from "@/components/editor/EditablePageHero";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
+import { SlideInLeft, SlideInRight } from "@/components/ui/ScrollAnimation";
 
 export default function ContactPage() {
+  const pageId = "contact";
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -69,7 +71,8 @@ export default function ContactPage() {
   return (
     <div>
       {/* Hero Banner */}
-      <PageHero
+      <EditablePageHero
+        pageId={pageId}
         title="Let's Talk About Your Event"
         subtitle="Get in Touch"
         description="Have a question or ready to discuss your event? Fill out the form and we'll get back to you within one business day."
@@ -84,14 +87,25 @@ export default function ContactPage() {
             {/* Contact Info */}
             <SlideInLeft>
               <div>
-                <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                  Contact Information
-                </h2>
-                <p className="text-body-lg text-jhr-white-muted mb-8">
-                  Prefer a direct conversation? Use the information below to reach
-                  us directly, or schedule a strategy call for a more in-depth
-                  discussion.
-                </p>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="info"
+                  contentKey="title"
+                  defaultValue="Contact Information"
+                  as="h2"
+                  className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="info"
+                  contentKey="description"
+                  defaultValue="Prefer a direct conversation? Use the information below to reach us directly, or schedule a strategy call for a more in-depth discussion."
+                  as="p"
+                  className="text-body-lg text-jhr-white-muted mb-8"
+                  contentType="paragraph"
+                  multiline
+                />
 
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
@@ -100,12 +114,15 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="text-body-sm text-jhr-white-dim">Email</p>
-                      <a
-                        href="mailto:info@jhr-photography.com"
-                        className="text-body-md text-jhr-white hover:text-jhr-gold transition-colors"
-                      >
-                        info@jhr-photography.com
-                      </a>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="info"
+                        contentKey="email"
+                        defaultValue="info@jhr-photography.com"
+                        as="span"
+                        className="text-body-md text-jhr-white"
+                        contentType="paragraph"
+                      />
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -114,12 +131,15 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="text-body-sm text-jhr-white-dim">Phone</p>
-                      <a
-                        href="tel:+16155550123"
-                        className="text-body-md text-jhr-white hover:text-jhr-gold transition-colors"
-                      >
-                        (615) 555-0123
-                      </a>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="info"
+                        contentKey="phone"
+                        defaultValue="(615) 555-0123"
+                        as="span"
+                        className="text-body-md text-jhr-white"
+                        contentType="paragraph"
+                      />
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -128,17 +148,26 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="text-body-sm text-jhr-white-dim">Location</p>
-                      <p className="text-body-md text-jhr-white">
-                        Nashville, Tennessee
-                      </p>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="info"
+                        contentKey="location"
+                        defaultValue="Nashville, Tennessee"
+                        as="span"
+                        className="text-body-md text-jhr-white"
+                        contentType="paragraph"
+                      />
                     </div>
                   </div>
                 </div>
 
                 {/* Image */}
                 <div className="mt-8 aspect-video relative rounded-xl overflow-hidden">
-                  <Image
-                    src="/images/generated/venue-hotel-ballroom.jpg"
+                  <EditableImage
+                    pageId={pageId}
+                    sectionId="info"
+                    contentKey="image"
+                    defaultSrc="/images/generated/venue-hotel-ballroom.jpg"
                     alt="Corporate event venue"
                     fill
                     className="object-cover"
@@ -155,13 +184,24 @@ export default function ContactPage() {
                     <div className="w-16 h-16 rounded-full bg-jhr-gold/10 flex items-center justify-center mx-auto mb-6">
                       <Send className="w-8 h-8 text-jhr-gold" />
                     </div>
-                    <h2 className="text-heading-lg font-semibold text-jhr-white mb-3">
-                      Message Sent!
-                    </h2>
-                    <p className="text-body-md text-jhr-white-dim mb-6">
-                      Thank you for reaching out. We'll get back to you within one
-                      business day.
-                    </p>
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="form"
+                      contentKey="successTitle"
+                      defaultValue="Message Sent!"
+                      as="h2"
+                      className="text-heading-lg font-semibold text-jhr-white mb-3"
+                      contentType="heading"
+                    />
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="form"
+                      contentKey="successMessage"
+                      defaultValue="Thank you for reaching out. We'll get back to you within one business day."
+                      as="p"
+                      className="text-body-md text-jhr-white-dim mb-6"
+                      contentType="paragraph"
+                    />
                     <button
                       onClick={() => setSubmitStatus("idle")}
                       className="text-jhr-gold hover:text-jhr-gold-light transition-colors text-body-md font-medium"

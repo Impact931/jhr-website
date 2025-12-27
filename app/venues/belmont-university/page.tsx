@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Metadata } from "next";
 import { ArrowRight, CheckCircle, MapPin, Building, Camera } from "lucide-react";
+import { EditableText } from "@/components/editor/EditableText";
 
 export const metadata: Metadata = {
   title: "Belmont University | Academic & Corporate Event Photography",
@@ -86,6 +87,8 @@ const faqSchema = {
 };
 
 export default function BelmontUniversityPage() {
+  const pageId = "venues-belmont-university";
+
   return (
     <div className="pt-16 lg:pt-20">
       {/* Schema */}
@@ -108,16 +111,32 @@ export default function BelmontUniversityPage() {
             >
               ← Back to Venues
             </Link>
-            <h1 className="text-display-lg font-display font-bold text-jhr-white mb-4">
+            <EditableText
+              as="h1"
+              sectionId="hero"
+              contentKey="title"
+              className="text-display-lg font-display font-bold text-jhr-white mb-4"
+            >
               {venueDetails.name}
-            </h1>
+            </EditableText>
             <div className="flex items-center gap-2 text-jhr-white-muted mb-6">
               <MapPin className="w-5 h-5 text-jhr-gold" />
-              <span>{venueDetails.location}</span>
+              <EditableText
+                as="span"
+                sectionId="hero"
+                contentKey="location"
+              >
+                {venueDetails.location}
+              </EditableText>
             </div>
-            <p className="text-body-lg text-jhr-white-muted mb-8">
+            <EditableText
+              as="p"
+              sectionId="hero"
+              contentKey="description"
+              className="text-body-lg text-jhr-white-muted mb-8"
+            >
               {venueDetails.description}
-            </p>
+            </EditableText>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/schedule" className="btn-primary">
                 Schedule a Strategy Call
@@ -150,32 +169,59 @@ export default function BelmontUniversityPage() {
         <div className="section-container">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
+              <EditableText
+                as="h2"
+                sectionId="experience"
+                contentKey="heading"
+                className="text-display-sm font-display font-bold text-jhr-white mb-6"
+              >
                 Campus Photography Expertise
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted mb-6">
+              </EditableText>
+              <EditableText
+                as="p"
+                sectionId="experience"
+                contentKey="intro"
+                className="text-body-lg text-jhr-white-muted mb-6"
+              >
                 Belmont University offers a unique setting—historic
                 architecture, modern facilities, and a beautiful campus that
                 provides distinctive backdrops for corporate and academic
                 events.
-              </p>
-              <p className="text-body-md text-jhr-white-dim">
+              </EditableText>
+              <EditableText
+                as="p"
+                sectionId="experience"
+                contentKey="description"
+                className="text-body-md text-jhr-white-dim"
+              >
                 We've worked throughout the campus, from the grand Curb Event
                 Center to intimate seminar rooms. We understand the university
                 environment and deliver photography that captures both the event
                 and the setting.
-              </p>
+              </EditableText>
             </div>
             <div>
               <div className="bg-jhr-black border border-jhr-black-lighter rounded-xl p-8">
-                <h3 className="text-heading-lg font-semibold text-jhr-gold mb-6">
+                <EditableText
+                  as="h3"
+                  sectionId="experience"
+                  contentKey="list-heading"
+                  className="text-heading-lg font-semibold text-jhr-gold mb-6"
+                >
                   Our Experience
-                </h3>
+                </EditableText>
                 <ul className="space-y-4">
-                  {ourExperience.map((item) => (
+                  {ourExperience.map((item, index) => (
                     <li key={item} className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-jhr-gold mt-0.5 flex-shrink-0" />
-                      <span className="text-body-md text-jhr-white">{item}</span>
+                      <EditableText
+                        as="span"
+                        sectionId="experience"
+                        contentKey={`list-item-${index + 1}`}
+                        className="text-body-md text-jhr-white"
+                      >
+                        {item}
+                      </EditableText>
                     </li>
                   ))}
                 </ul>
@@ -188,16 +234,28 @@ export default function BelmontUniversityPage() {
       {/* Venue Spaces */}
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
-          <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8">
+          <EditableText
+            as="h2"
+            sectionId="spaces"
+            contentKey="heading"
+            className="text-display-sm font-display font-bold text-jhr-white mb-8"
+          >
             Spaces We've Covered
-          </h2>
+          </EditableText>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {spaces.map((space) => (
+            {spaces.map((space, index) => (
               <div
                 key={space}
                 className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-4"
               >
-                <p className="text-body-md text-jhr-white">{space}</p>
+                <EditableText
+                  as="p"
+                  sectionId="spaces"
+                  contentKey={`space-${index + 1}`}
+                  className="text-body-md text-jhr-white"
+                >
+                  {space}
+                </EditableText>
               </div>
             ))}
           </div>
@@ -207,38 +265,73 @@ export default function BelmontUniversityPage() {
       {/* Services */}
       <section className="section-padding bg-jhr-black-light">
         <div className="section-container">
-          <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
+          <EditableText
+            as="h2"
+            sectionId="services"
+            contentKey="heading"
+            className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+          >
             Services at Belmont University
-          </h2>
+          </EditableText>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             <Link href="/services/corporate-event-coverage" className="card group">
               <Camera className="w-8 h-8 text-jhr-gold mb-4" />
-              <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
+              <EditableText
+                as="h3"
+                sectionId="services"
+                contentKey="service-1-title"
+                className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+              >
                 Event Coverage
-              </h3>
-              <p className="text-body-sm text-jhr-white-dim">
+              </EditableText>
+              <EditableText
+                as="p"
+                sectionId="services"
+                contentKey="service-1-description"
+                className="text-body-sm text-jhr-white-dim"
+              >
                 Conferences, retreats, and academic events in a collegiate
                 setting.
-              </p>
+              </EditableText>
             </Link>
             <Link href="/services/headshot-activation" className="card group">
               <Camera className="w-8 h-8 text-jhr-gold mb-4" />
-              <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
+              <EditableText
+                as="h3"
+                sectionId="services"
+                contentKey="service-2-title"
+                className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+              >
                 Headshot Activation
-              </h3>
-              <p className="text-body-sm text-jhr-white-dim">
+              </EditableText>
+              <EditableText
+                as="p"
+                sectionId="services"
+                contentKey="service-2-description"
+                className="text-body-sm text-jhr-white-dim"
+              >
                 Professional headshots for conference attendees and
                 participants.
-              </p>
+              </EditableText>
             </Link>
             <Link href="/services/event-video-systems" className="card group">
               <Camera className="w-8 h-8 text-jhr-gold mb-4" />
-              <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
+              <EditableText
+                as="h3"
+                sectionId="services"
+                contentKey="service-3-title"
+                className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+              >
                 Event Video
-              </h3>
-              <p className="text-body-sm text-jhr-white-dim">
+              </EditableText>
+              <EditableText
+                as="p"
+                sectionId="services"
+                contentKey="service-3-description"
+                className="text-body-sm text-jhr-white-dim"
+              >
                 Keynotes, performances, and campus event highlights.
-              </p>
+              </EditableText>
             </Link>
           </div>
         </div>
@@ -248,16 +341,33 @@ export default function BelmontUniversityPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
+            <EditableText
+              as="h2"
+              sectionId="faqs"
+              contentKey="heading"
+              className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+            >
               Belmont University FAQs
-            </h2>
+            </EditableText>
             <div className="space-y-6">
               {faqs.map((faq, index) => (
                 <div key={index} className="card">
-                  <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
+                  <EditableText
+                    as="h3"
+                    sectionId="faqs"
+                    contentKey={`faq-${index + 1}-question`}
+                    className="text-heading-md font-semibold text-jhr-white mb-3"
+                  >
                     {faq.question}
-                  </h3>
-                  <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
+                  </EditableText>
+                  <EditableText
+                    as="p"
+                    sectionId="faqs"
+                    contentKey={`faq-${index + 1}-answer`}
+                    className="text-body-md text-jhr-white-dim"
+                  >
+                    {faq.answer}
+                  </EditableText>
                 </div>
               ))}
             </div>
@@ -268,13 +378,23 @@ export default function BelmontUniversityPage() {
       {/* CTA */}
       <section className="section-padding bg-gradient-dark">
         <div className="section-container text-center">
-          <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
+          <EditableText
+            as="h2"
+            sectionId="cta"
+            contentKey="heading"
+            className="text-display-sm font-display font-bold text-jhr-white mb-6"
+          >
             Planning an Event at Belmont University?
-          </h2>
-          <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
+          </EditableText>
+          <EditableText
+            as="p"
+            sectionId="cta"
+            contentKey="description"
+            className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+          >
             Let's discuss your event and how we can capture it within this
             beautiful campus setting.
-          </p>
+          </EditableText>
           <Link href="/schedule" className="btn-primary text-lg px-10 py-4">
             Schedule a Strategy Call
             <ArrowRight className="w-5 h-5 ml-2" />

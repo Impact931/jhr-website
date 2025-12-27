@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle,
@@ -11,7 +10,9 @@ import {
   Share2,
   Play,
 } from "lucide-react";
-import { PageHero } from "@/components/ui/HeroBanner";
+import { EditablePageHero } from "@/components/editor/EditablePageHero";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 import {
   FadeUp,
   SlideInLeft,
@@ -84,10 +85,13 @@ const faqs = [
 ];
 
 export default function EventVideoSystemsPage() {
+  const pageId = "services-event-video-systems";
+
   return (
     <div>
       {/* Hero Banner */}
-      <PageHero
+      <EditablePageHero
+        pageId={pageId}
         title="Your Event Deserves More Than Photos"
         subtitle="Event Video Systems™"
         description="Great events end. Great video extends their impact. Capture keynotes for training libraries, testimonials for marketing, and highlights that promote next year's event before this one's even over."
@@ -102,30 +106,58 @@ export default function EventVideoSystemsPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <SlideInLeft>
               <div>
-                <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                  Why Event Video Matters
-                </h2>
-                <p className="text-body-lg text-jhr-white-muted mb-6">
-                  You spend months planning an event. Attendees experience it for
-                  a few days. Then it's over. Video changes that equation.
-                </p>
-                <p className="text-body-md text-jhr-white-dim mb-6">
-                  A well-produced highlight reel becomes next year's promotional
-                  tool. Keynote recordings become training content. Testimonials
-                  become marketing assets. The event ends, but its value
-                  continues.
-                </p>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="value"
+                  contentKey="title"
+                  defaultValue="Why Event Video Matters"
+                  as="h2"
+                  className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="value"
+                  contentKey="description1"
+                  defaultValue="You spend months planning an event. Attendees experience it for a few days. Then it's over. Video changes that equation."
+                  as="p"
+                  className="text-body-lg text-jhr-white-muted mb-6"
+                  contentType="paragraph"
+                  multiline
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="value"
+                  contentKey="description2"
+                  defaultValue="A well-produced highlight reel becomes next year's promotional tool. Keynote recordings become training content. Testimonials become marketing assets. The event ends, but its value continues."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-6"
+                  contentType="paragraph"
+                  multiline
+                />
                 <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-6">
-                  <h3 className="text-heading-md font-semibold text-jhr-gold mb-4">
-                    What You Get
-                  </h3>
+                  <EditableText
+                    pageId={pageId}
+                    sectionId="value"
+                    contentKey="outcomesTitle"
+                    defaultValue="What You Get"
+                    as="h3"
+                    className="text-heading-md font-semibold text-jhr-gold mb-4"
+                    contentType="heading"
+                  />
                   <ul className="space-y-3">
-                    {outcomes.map((outcome) => (
+                    {outcomes.map((outcome, index) => (
                       <li key={outcome} className="flex items-start gap-3">
                         <CheckCircle className="w-5 h-5 text-jhr-gold mt-0.5 flex-shrink-0" />
-                        <span className="text-body-md text-jhr-white">
-                          {outcome}
-                        </span>
+                        <EditableText
+                          pageId={pageId}
+                          sectionId="value"
+                          contentKey={`outcome-${index}`}
+                          defaultValue={outcome}
+                          as="span"
+                          className="text-body-md text-jhr-white"
+                          contentType="feature"
+                        />
                       </li>
                     ))}
                   </ul>
@@ -134,13 +166,16 @@ export default function EventVideoSystemsPage() {
             </SlideInLeft>
             <SlideInRight>
               <div className="aspect-video relative rounded-xl overflow-hidden">
-                <Image
-                  src="/images/generated/event-keynote.jpg"
+                <EditableImage
+                  pageId={pageId}
+                  sectionId="value"
+                  contentKey="image"
+                  defaultSrc="/images/generated/event-keynote.jpg"
                   alt="Keynote presentation being recorded"
                   fill
                   className="object-cover"
                 />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
                   <div className="w-20 h-20 rounded-full bg-jhr-gold/90 flex items-center justify-center cursor-pointer hover:bg-jhr-gold transition-colors">
                     <Play className="w-8 h-8 text-jhr-black ml-1" />
                   </div>
@@ -156,18 +191,29 @@ export default function EventVideoSystemsPage() {
         <div className="section-container">
           <FadeUp>
             <div className="text-center mb-12">
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-                Video Services
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-                Each service can be added individually or combined for
-                comprehensive coverage.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="services"
+                contentKey="title"
+                defaultValue="Video Services"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-4"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="services"
+                contentKey="subtitle"
+                defaultValue="Each service can be added individually or combined for comprehensive coverage."
+                as="p"
+                className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+                contentType="paragraph"
+              />
             </div>
           </FadeUp>
 
           <StaggerContainer className="grid md:grid-cols-2 gap-6">
-            {services.map((service) => (
+            {services.map((service, index) => (
               <StaggerItem key={service.title}>
                 <div className="card h-full">
                   <div className="flex items-start gap-4">
@@ -175,12 +221,25 @@ export default function EventVideoSystemsPage() {
                       <service.icon className="w-6 h-6 text-jhr-gold" />
                     </div>
                     <div>
-                      <h3 className="text-heading-md font-semibold text-jhr-white mb-2">
-                        {service.title}
-                      </h3>
-                      <p className="text-body-md text-jhr-white-dim">
-                        {service.description}
-                      </p>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="services"
+                        contentKey={`service${index}-title`}
+                        defaultValue={service.title}
+                        as="h3"
+                        className="text-heading-md font-semibold text-jhr-white mb-2"
+                        contentType="heading"
+                      />
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="services"
+                        contentKey={`service${index}-description`}
+                        defaultValue={service.description}
+                        as="p"
+                        className="text-body-md text-jhr-white-dim"
+                        contentType="paragraph"
+                        multiline
+                      />
                     </div>
                   </div>
                 </div>
@@ -195,49 +254,69 @@ export default function EventVideoSystemsPage() {
         <div className="section-container">
           <FadeUp>
             <div className="text-center mb-12">
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-                Common Applications
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-                How organizations use event video to extend ROI.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="useCases"
+                contentKey="title"
+                defaultValue="Common Applications"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-4"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="useCases"
+                contentKey="subtitle"
+                defaultValue="How organizations use event video to extend ROI."
+                as="p"
+                className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+                contentType="paragraph"
+              />
             </div>
           </FadeUp>
 
           <StaggerContainer className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <StaggerItem>
-              <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-6 h-full">
-                <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                  Internal Training
-                </h3>
-                <p className="text-body-sm text-jhr-white-dim">
-                  Keynote recordings become on-demand training for team members
-                  who couldn't attend. Build a library of leadership content.
-                </p>
-              </div>
-            </StaggerItem>
-            <StaggerItem>
-              <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-6 h-full">
-                <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                  Event Promotion
-                </h3>
-                <p className="text-body-sm text-jhr-white-dim">
-                  This year's highlight reel sells next year's tickets. Show
-                  prospects exactly what they'll experience.
-                </p>
-              </div>
-            </StaggerItem>
-            <StaggerItem>
-              <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-6 h-full">
-                <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                  Stakeholder Reporting
-                </h3>
-                <p className="text-body-sm text-jhr-white-dim">
-                  A 3-minute highlight reel communicates event success better than
-                  any slide deck. Show the board what happened.
-                </p>
-              </div>
-            </StaggerItem>
+            {[
+              {
+                title: "Internal Training",
+                description:
+                  "Keynote recordings become on-demand training for team members who couldn't attend. Build a library of leadership content.",
+              },
+              {
+                title: "Event Promotion",
+                description:
+                  "This year's highlight reel sells next year's tickets. Show prospects exactly what they'll experience.",
+              },
+              {
+                title: "Stakeholder Reporting",
+                description:
+                  "A 3-minute highlight reel communicates event success better than any slide deck. Show the board what happened.",
+              },
+            ].map((useCase, index) => (
+              <StaggerItem key={index}>
+                <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-6 h-full">
+                  <EditableText
+                    pageId={pageId}
+                    sectionId="useCases"
+                    contentKey={`useCase${index}-title`}
+                    defaultValue={useCase.title}
+                    as="h3"
+                    className="text-heading-md font-semibold text-jhr-white mb-3"
+                    contentType="heading"
+                  />
+                  <EditableText
+                    pageId={pageId}
+                    sectionId="useCases"
+                    contentKey={`useCase${index}-description`}
+                    defaultValue={useCase.description}
+                    as="p"
+                    className="text-body-sm text-jhr-white-dim"
+                    contentType="paragraph"
+                    multiline
+                  />
+                </div>
+              </StaggerItem>
+            ))}
           </StaggerContainer>
         </div>
       </section>
@@ -247,9 +326,15 @@ export default function EventVideoSystemsPage() {
         <div className="section-container">
           <div className="max-w-4xl mx-auto">
             <FadeUp>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
-                How We Work
-              </h2>
+              <EditableText
+                pageId={pageId}
+                sectionId="process"
+                contentKey="title"
+                defaultValue="How We Work"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+                contentType="heading"
+              />
             </FadeUp>
 
             <StaggerContainer className="space-y-6">
@@ -278,19 +363,32 @@ export default function EventVideoSystemsPage() {
                   description:
                     "Files delivered in all formats you need—archival masters, web versions, and platform-specific exports for social media.",
                 },
-              ].map((item) => (
+              ].map((item, index) => (
                 <StaggerItem key={item.step}>
                   <div className="flex gap-6 items-start bg-jhr-black border border-jhr-black-lighter rounded-lg p-6">
                     <span className="text-jhr-gold font-display font-bold text-heading-lg">
                       {item.step}
                     </span>
                     <div>
-                      <h3 className="text-heading-md font-semibold text-jhr-white mb-2">
-                        {item.title}
-                      </h3>
-                      <p className="text-body-md text-jhr-white-dim">
-                        {item.description}
-                      </p>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="process"
+                        contentKey={`step${item.step}-title`}
+                        defaultValue={item.title}
+                        as="h3"
+                        className="text-heading-md font-semibold text-jhr-white mb-2"
+                        contentType="heading"
+                      />
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="process"
+                        contentKey={`step${item.step}-description`}
+                        defaultValue={item.description}
+                        as="p"
+                        className="text-body-md text-jhr-white-dim"
+                        contentType="paragraph"
+                        multiline
+                      />
                     </div>
                   </div>
                 </StaggerItem>
@@ -305,18 +403,39 @@ export default function EventVideoSystemsPage() {
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
             <FadeUp>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
-                Frequently Asked Questions
-              </h2>
+              <EditableText
+                pageId={pageId}
+                sectionId="faqs"
+                contentKey="title"
+                defaultValue="Frequently Asked Questions"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+                contentType="heading"
+              />
             </FadeUp>
             <StaggerContainer className="space-y-6">
               {faqs.map((faq, index) => (
                 <StaggerItem key={index}>
                   <div className="card">
-                    <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                      {faq.question}
-                    </h3>
-                    <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-question`}
+                      defaultValue={faq.question}
+                      as="h3"
+                      className="text-heading-md font-semibold text-jhr-white mb-3"
+                      contentType="heading"
+                    />
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-answer`}
+                      defaultValue={faq.answer}
+                      as="p"
+                      className="text-body-md text-jhr-white-dim"
+                      contentType="paragraph"
+                      multiline
+                    />
                   </div>
                 </StaggerItem>
               ))}
@@ -328,8 +447,11 @@ export default function EventVideoSystemsPage() {
       {/* CTA */}
       <section className="section-padding bg-gradient-dark relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/generated/event-awards-ceremony.jpg"
+          <EditableImage
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/event-awards-ceremony.jpg"
             alt="Corporate awards ceremony"
             fill
             className="object-cover opacity-20"
@@ -337,15 +459,27 @@ export default function EventVideoSystemsPage() {
         </div>
         <div className="section-container text-center relative z-10">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-              Let's Discuss Your Video Needs
-            </h2>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="title"
+              defaultValue="Let's Discuss Your Video Needs"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-6"
+              contentType="heading"
+            />
           </FadeUp>
           <FadeUp delay={0.1}>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
-              Every event has different video requirements. Schedule a call and
-              we'll discuss what makes sense for your goals and budget.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="description"
+              defaultValue="Every event has different video requirements. Schedule a call and we'll discuss what makes sense for your goals and budget."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+              contentType="paragraph"
+              multiline
+            />
           </FadeUp>
           <FadeUp delay={0.2}>
             <Link href="/schedule" className="btn-primary text-lg px-10 py-4">

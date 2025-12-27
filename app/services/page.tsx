@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight, Camera, Users, Video, Building } from "lucide-react";
-import { PageHero } from "@/components/ui/HeroBanner";
+import { EditablePageHero } from "@/components/editor/EditablePageHero";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 import {
   FadeUp,
-  FadeIn,
   StaggerContainer,
   StaggerItem,
 } from "@/components/ui/ScrollAnimation";
@@ -82,7 +82,8 @@ export default function ServicesPage() {
   return (
     <div>
       {/* Hero Banner */}
-      <PageHero
+      <EditablePageHero
+        pageId="services"
         title="Outcome-Based Media Systems"
         subtitle="Our Services"
         description="We don't sell hours or photographers. We deliver complete media systems designed for specific business outcomes. Each service removes friction, drives engagement, and delivers measurable results."
@@ -99,13 +100,16 @@ export default function ServicesPage() {
                 <div className="card grid lg:grid-cols-3 gap-8 items-start overflow-hidden">
                   {/* Service Image */}
                   <div className="lg:col-span-1 relative aspect-[4/3] lg:aspect-auto lg:h-full min-h-[200px] -m-6 lg:m-0 lg:-ml-6 lg:-my-6">
-                    <Image
-                      src={service.image}
+                    <EditableImage
+                      pageId="services"
+                      sectionId={`service-${service.slug}`}
+                      contentKey="image"
+                      defaultSrc={service.image}
                       alt={service.name}
                       fill
                       className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-jhr-black-light lg:bg-gradient-to-l" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-jhr-black-light lg:bg-gradient-to-l z-10" />
                   </div>
 
                   <div className="lg:col-span-2 pt-6 lg:pt-0">
@@ -114,20 +118,46 @@ export default function ServicesPage() {
                         <service.icon className="w-6 h-6 text-jhr-gold" />
                       </div>
                       <div>
-                        <h2 className="text-heading-lg font-semibold text-jhr-white">
-                          {service.name}
-                        </h2>
-                        <p className="text-body-sm text-jhr-gold">
-                          {service.tagline}
-                        </p>
+                        <EditableText
+                          pageId="services"
+                          sectionId={`service-${service.slug}`}
+                          contentKey="name"
+                          defaultValue={service.name}
+                          as="h2"
+                          className="text-heading-lg font-semibold text-jhr-white"
+                          contentType="heading"
+                        />
+                        <EditableText
+                          pageId="services"
+                          sectionId={`service-${service.slug}`}
+                          contentKey="tagline"
+                          defaultValue={service.tagline}
+                          as="p"
+                          className="text-body-sm text-jhr-gold"
+                          contentType="tagline"
+                        />
                       </div>
                     </div>
-                    <p className="text-body-md text-jhr-white-muted mb-4">
-                      {service.description}
-                    </p>
+                    <EditableText
+                      pageId="services"
+                      sectionId={`service-${service.slug}`}
+                      contentKey="description"
+                      defaultValue={service.description}
+                      as="p"
+                      className="text-body-md text-jhr-white-muted mb-4"
+                      contentType="paragraph"
+                      multiline
+                    />
                     <p className="text-body-sm text-jhr-white-dim mb-6">
                       <strong className="text-jhr-white-muted">Ideal for:</strong>{" "}
-                      {service.ideal}
+                      <EditableText
+                        pageId="services"
+                        sectionId={`service-${service.slug}`}
+                        contentKey="ideal"
+                        defaultValue={service.ideal}
+                        as="span"
+                        contentType="paragraph"
+                      />
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 items-start">
@@ -161,25 +191,40 @@ export default function ServicesPage() {
       {/* CTA */}
       <section className="section-padding bg-jhr-black-light relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/generated/event-networking.jpg"
+          <EditableImage
+            pageId="services"
+            sectionId="cta"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/event-networking.jpg"
             alt="Corporate networking event"
             fill
             className="object-cover opacity-20"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-jhr-black-light via-jhr-black-light/95 to-jhr-black-light" />
+          <div className="absolute inset-0 bg-gradient-to-r from-jhr-black-light via-jhr-black-light/95 to-jhr-black-light z-10" />
         </div>
-        <div className="section-container text-center relative z-10">
+        <div className="section-container text-center relative z-20">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-              Not Sure Which Service Fits?
-            </h2>
+            <EditableText
+              pageId="services"
+              sectionId="cta"
+              contentKey="title"
+              defaultValue="Not Sure Which Service Fits?"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              contentType="heading"
+            />
           </FadeUp>
           <FadeUp delay={0.1}>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
-              Let's talk through your event and goals. We'll help you identify the
-              right approach—no pressure, no hard sell.
-            </p>
+            <EditableText
+              pageId="services"
+              sectionId="cta"
+              contentKey="description"
+              defaultValue="Let's talk through your event and goals. We'll help you identify the right approach—no pressure, no hard sell."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+              contentType="paragraph"
+              multiline
+            />
           </FadeUp>
           <FadeUp delay={0.2}>
             <Link href="/schedule" className="btn-primary text-lg px-8 py-4">

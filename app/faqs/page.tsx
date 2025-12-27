@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { PageHero } from "@/components/ui/HeroBanner";
+import { EditablePageHero } from "@/components/editor/EditablePageHero";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 import {
   FadeUp,
   StaggerContainer,
@@ -114,10 +115,13 @@ const faqCategories = [
 ];
 
 export default function FAQsPage() {
+  const pageId = "faqs";
+
   return (
     <div>
       {/* Hero Banner */}
-      <PageHero
+      <EditablePageHero
+        pageId={pageId}
         title="Frequently Asked Questions"
         subtitle="FAQs"
         description="Answers to common questions about working with JHR Photography. Can't find what you're looking for? Schedule a call and we'll address your specific situation."
@@ -132,19 +136,38 @@ export default function FAQsPage() {
             {faqCategories.map((category, categoryIndex) => (
               <FadeUp key={category.name} delay={categoryIndex * 0.1}>
                 <div className="mb-12 last:mb-0">
-                  <h2 className="text-heading-lg font-semibold text-jhr-gold mb-6 pb-2 border-b border-jhr-black-lighter">
-                    {category.name}
-                  </h2>
+                  <EditableText
+                    pageId={pageId}
+                    sectionId="faqCategories"
+                    contentKey={`category${categoryIndex}-name`}
+                    defaultValue={category.name}
+                    as="h2"
+                    className="text-heading-lg font-semibold text-jhr-gold mb-6 pb-2 border-b border-jhr-black-lighter"
+                    contentType="heading"
+                  />
                   <StaggerContainer className="space-y-6">
                     {category.faqs.map((faq, index) => (
                       <StaggerItem key={index}>
                         <div className="card">
-                          <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                            {faq.question}
-                          </h3>
-                          <p className="text-body-md text-jhr-white-dim leading-relaxed">
-                            {faq.answer}
-                          </p>
+                          <EditableText
+                            pageId={pageId}
+                            sectionId={`category${categoryIndex}`}
+                            contentKey={`faq${index}-question`}
+                            defaultValue={faq.question}
+                            as="h3"
+                            className="text-heading-md font-semibold text-jhr-white mb-3"
+                            contentType="heading"
+                          />
+                          <EditableText
+                            pageId={pageId}
+                            sectionId={`category${categoryIndex}`}
+                            contentKey={`faq${index}-answer`}
+                            defaultValue={faq.answer}
+                            as="p"
+                            className="text-body-md text-jhr-white-dim leading-relaxed"
+                            contentType="paragraph"
+                            multiline
+                          />
                         </div>
                       </StaggerItem>
                     ))}
@@ -159,8 +182,11 @@ export default function FAQsPage() {
       {/* CTA */}
       <section className="section-padding bg-jhr-black-light relative overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/generated/hero-services.jpg"
+          <EditableImage
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/hero-services.jpg"
             alt="Corporate event photography"
             fill
             className="object-cover opacity-10"
@@ -168,15 +194,27 @@ export default function FAQsPage() {
         </div>
         <div className="section-container text-center relative z-10">
           <FadeUp>
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-              Still Have Questions?
-            </h2>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="title"
+              defaultValue="Still Have Questions?"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              contentType="heading"
+            />
           </FadeUp>
           <FadeUp delay={0.1}>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
-              Every event is unique. Schedule a strategy call and we'll address
-              your specific situation, venue, and requirements.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="cta"
+              contentKey="description"
+              defaultValue="Every event is unique. Schedule a strategy call and we'll address your specific situation, venue, and requirements."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+              contentType="paragraph"
+              multiline
+            />
           </FadeUp>
           <FadeUp delay={0.2}>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

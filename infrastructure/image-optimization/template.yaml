@@ -1,0 +1,202 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'JHR Website Image Optimization - CloudFront + Lambda + S3'
+
+Parameters:
+  SourceBucketName:
+    Type: String
+    Default: jhr-website-images
+    Description: The S3 bucket containing source images
+
+  MaxImageSize:
+    Type: Number
+    Default: 1048576
+    Description: Maximum image size in bytes (1MB = 1048576)
+
+  MaxImageWidth:
+    Type: Number
+    Default: 2400
+    Description: Maximum image width in pixels
+
+  MaxImageHeight:
+    Type: Number
+    Default: 2400
+    Description: Maximum image height in pixels
+
+  ImageQuality:
+    Type: Number
+    Default: 85
+    Description: JPEG/WebP quality (1-100)
+
+Resources:
+  # Lambda Execution Role
+  ImageOptimizerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: jhr-image-optimizer-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - edgelambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+
+  # Lambda Function for Image Optimization
+  ImageOptimizerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: jhr-image-optimizer
+      Description: Optimizes images on-the-fly using Sharp
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Role: !GetAtt ImageOptimizerRole.Arn
+      Timeout: 30
+      MemorySize: 1536
+      Environment:
+        Variables:
+          SOURCE_BUCKET: !Ref SourceBucketName
+          MAX_IMAGE_SIZE: !Ref MaxImageSize
+          MAX_WIDTH: !Ref MaxImageWidth
+          MAX_HEIGHT: !Ref MaxImageHeight
+          QUALITY: !Ref ImageQuality
+      Code:
+        ZipFile: |
+          // Placeholder - will be replaced with actual Sharp-based code
+          exports.handler = async (event) => {
+            return {
+              statusCode: 200,
+              body: JSON.stringify({ message: 'Image optimizer placeholder' })
+            };
+          };
+
+  # Lambda Function URL for direct access
+  ImageOptimizerUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn: !GetAtt ImageOptimizerFunction.Arn
+      Cors:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+
+  # Permission for Lambda URL
+  ImageOptimizerUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ImageOptimizerFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: '*'
+      FunctionUrlAuthType: NONE
+
+  # CloudFront Origin Access Control
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: jhr-images-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # CloudFront Distribution
+  ImageCDN:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: JHR Website Image CDN with Optimization
+        Enabled: true
+        HttpVersion: http2and3
+        PriceClass: PriceClass_100
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf  # CORS-S3Origin
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+        CacheBehaviors:
+          # Optimized images path - routes to Lambda
+          - PathPattern: '/optimized/*'
+            TargetOriginId: LambdaOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+        Origins:
+          - Id: S3Origin
+            DomainName: !Sub '${SourceBucketName}.s3.${AWS::Region}.amazonaws.com'
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+            OriginAccessControlId: !GetAtt CloudFrontOAC.Id
+          - Id: LambdaOrigin
+            DomainName: !Select [2, !Split ['/', !GetAtt ImageOptimizerUrl.FunctionUrl]]
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              HTTPSPort: 443
+
+  # S3 Bucket Policy to allow CloudFront access
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SourceBucketName
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontAccess
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+            Condition:
+              StringEquals:
+                'AWS:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${ImageCDN}'
+
+Outputs:
+  CloudFrontDomain:
+    Description: CloudFront distribution domain name
+    Value: !GetAtt ImageCDN.DomainName
+    Export:
+      Name: JHRImageCDNDomain
+
+  CloudFrontDistributionId:
+    Description: CloudFront distribution ID
+    Value: !Ref ImageCDN
+    Export:
+      Name: JHRImageCDNId
+
+  LambdaFunctionUrl:
+    Description: Lambda function URL for image optimization
+    Value: !GetAtt ImageOptimizerUrl.FunctionUrl
+
+  OptimizedImageUrlExample:
+    Description: Example URL for optimized images
+    Value: !Sub 'https://${ImageCDN.DomainName}/optimized/your-image.jpg?width=800&quality=85'

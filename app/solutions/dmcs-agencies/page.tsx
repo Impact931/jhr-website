@@ -1,5 +1,6 @@
+"use client";
+
 import Link from "next/link";
-import { Metadata } from "next";
 import {
   ArrowRight,
   CheckCircle,
@@ -8,17 +9,9 @@ import {
   FileCheck,
   Users,
 } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "For DMCs & Agencies | Reliable Event Photography Partner",
-  description:
-    "JHR Photography partners with DMCs and agencies managing corporate events in Nashville. Consistent execution, professional protocols, and reliable delivery.",
-  openGraph: {
-    title: "For DMCs & Agencies | JHR Photography",
-    description:
-      "Reliable event photography partner for DMCs and agencies in Nashville.",
-  },
-};
+import { StaggerContainer, StaggerItem } from "@/components/ui/ScrollAnimation";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 
 const painPoints = [
   {
@@ -106,6 +99,8 @@ const faqSchema = {
 };
 
 export default function DMCsAgenciesPage() {
+  const pageId = "solutions-dmcs-agencies";
+
   return (
     <div className="pt-16 lg:pt-20">
       {/* Schema */}
@@ -119,20 +114,48 @@ export default function DMCsAgenciesPage() {
       />
 
       {/* Hero */}
-      <section className="section-padding bg-gradient-dark">
-        <div className="section-container">
+      <section className="section-padding bg-gradient-dark relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <EditableImage
+            pageId={pageId}
+            sectionId="hero"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/corporate-event.jpg"
+            alt="Corporate event"
+            fill
+            className="object-cover opacity-20"
+          />
+        </div>
+        <div className="section-container relative z-10">
           <div className="max-w-3xl">
-            <p className="text-jhr-gold font-medium text-body-lg mb-4">
-              For DMCs & Agencies
-            </p>
-            <h1 className="text-display-lg font-display font-bold text-jhr-white mb-6">
-              Your Reputation Depends on Your Vendors
-            </h1>
-            <p className="text-body-lg text-jhr-white-muted mb-8">
-              You've built trust over years. One unreliable vendor can damage
-              that in a day. JHR Photography operates as an extension of your
-              team—professional, prepared, and consistent every time.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="hero"
+              contentKey="subtitle"
+              defaultValue="For DMCs & Agencies"
+              as="p"
+              className="text-jhr-gold font-medium text-body-lg mb-4"
+              contentType="tagline"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="hero"
+              contentKey="title"
+              defaultValue="Your Reputation Depends on Your Vendors"
+              as="h1"
+              className="text-display-lg font-display font-bold text-jhr-white mb-6"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="hero"
+              contentKey="description"
+              defaultValue="You've built trust over years. One unreliable vendor can damage that in a day. JHR Photography operates as an extension of your team—professional, prepared, and consistent every time."
+              as="p"
+              className="text-body-lg text-jhr-white-muted mb-8"
+              contentType="paragraph"
+              multiline
+            />
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/schedule" className="btn-primary">
                 Schedule a Strategy Call
@@ -150,34 +173,59 @@ export default function DMCsAgenciesPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <div className="text-center mb-12">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-              We Understand Your Reality
-            </h2>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-              Managing corporate events means managing countless details and
-              stakeholders. Every vendor choice is a risk calculation.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="understand"
+              contentKey="title"
+              defaultValue="We Understand Your Reality"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="understand"
+              contentKey="subtitle"
+              defaultValue="Managing corporate events means managing countless details and stakeholders. Every vendor choice is a risk calculation."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              contentType="paragraph"
+            />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {painPoints.map((point) => (
-              <div key={point.title} className="card">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center flex-shrink-0">
-                    <point.icon className="w-6 h-6 text-jhr-gold" />
-                  </div>
-                  <div>
-                    <h3 className="text-heading-md font-semibold text-jhr-white mb-2">
-                      {point.title}
-                    </h3>
-                    <p className="text-body-md text-jhr-white-dim">
-                      {point.description}
-                    </p>
+          <StaggerContainer className="grid md:grid-cols-2 gap-6">
+            {painPoints.map((point, index) => (
+              <StaggerItem key={point.title}>
+                <div className="card">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center flex-shrink-0">
+                      <point.icon className="w-6 h-6 text-jhr-gold" />
+                    </div>
+                    <div>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="understand"
+                        contentKey={`point${index}-title`}
+                        defaultValue={point.title}
+                        as="h3"
+                        className="text-heading-md font-semibold text-jhr-white mb-2"
+                        contentType="heading"
+                      />
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="understand"
+                        contentKey={`point${index}-description`}
+                        defaultValue={point.description}
+                        as="p"
+                        className="text-body-md text-jhr-white-dim"
+                        contentType="paragraph"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -186,21 +234,35 @@ export default function DMCsAgenciesPage() {
         <div className="section-container">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                A Partner, Not Just a Vendor
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted mb-6">
-                JHR Photography was built by someone who understands operational
-                pressure. Jayson's background in military logistics translates
-                directly to event execution—meticulous planning, redundant
-                systems, and calm under pressure.
-              </p>
-              <p className="text-body-md text-jhr-white-dim mb-8">
-                When you recommend JHR to your clients, you're recommending a
-                team that will represent you well. We show up in uniform, on
-                time, prepared for anything. We communicate clearly and deliver
-                on our promises.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="partner"
+                contentKey="title"
+                defaultValue="A Partner, Not Just a Vendor"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="partner"
+                contentKey="description1"
+                defaultValue="JHR Photography was built by someone who understands operational pressure. Jayson's background in military logistics translates directly to event execution—meticulous planning, redundant systems, and calm under pressure."
+                as="p"
+                className="text-body-lg text-jhr-white-muted mb-6"
+                contentType="paragraph"
+                multiline
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="partner"
+                contentKey="description2"
+                defaultValue="When you recommend JHR to your clients, you're recommending a team that will represent you well. We show up in uniform, on time, prepared for anything. We communicate clearly and deliver on our promises."
+                as="p"
+                className="text-body-md text-jhr-white-dim mb-8"
+                contentType="paragraph"
+                multiline
+              />
               <Link href="/about" className="text-jhr-gold hover:text-jhr-gold-light transition-colors font-medium flex items-center gap-2">
                 Learn more about our approach
                 <ArrowRight className="w-4 h-4" />
@@ -208,16 +270,28 @@ export default function DMCsAgenciesPage() {
             </div>
             <div>
               <div className="bg-jhr-black border border-jhr-black-lighter rounded-xl p-8">
-                <h3 className="text-heading-lg font-semibold text-jhr-gold mb-6">
-                  What You Get
-                </h3>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="partner"
+                  contentKey="benefitsTitle"
+                  defaultValue="What You Get"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-gold mb-6"
+                  contentType="heading"
+                />
                 <ul className="space-y-4">
-                  {benefits.map((benefit) => (
+                  {benefits.map((benefit, index) => (
                     <li key={benefit} className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-jhr-gold mt-0.5 flex-shrink-0" />
-                      <span className="text-body-md text-jhr-white">
-                        {benefit}
-                      </span>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="partner"
+                        contentKey={`benefit-${index}`}
+                        defaultValue={benefit}
+                        as="span"
+                        className="text-body-md text-jhr-white"
+                        contentType="feature"
+                      />
                     </li>
                   ))}
                 </ul>
@@ -231,67 +305,131 @@ export default function DMCsAgenciesPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <div className="text-center mb-12">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-              Services for Your Clients
-            </h2>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-              Outcome-based media systems that deliver measurable results.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="services"
+              contentKey="title"
+              defaultValue="Services for Your Clients"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="services"
+              contentKey="subtitle"
+              defaultValue="Outcome-based media systems that deliver measurable results."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              contentType="paragraph"
+            />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <Link
-              href="/services/corporate-event-coverage"
-              className="card group"
-            >
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Corporate Event Coverage
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                Comprehensive documentation of conferences, trade shows, and
-                corporate events. Same-day highlights available.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                Learn more <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-            <Link href="/services/headshot-activation" className="card group">
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Headshot Activation
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                High-volume professional headshots with instant delivery. Drive
-                booth traffic and capture leads for your clients.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                Learn more <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-            <Link href="/services/event-video-systems" className="card group">
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Event Video Systems
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                Keynote capture, highlight reels, and testimonials that extend
-                event ROI long after the venue clears.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                Learn more <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-            <Link href="/venues" className="card group">
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Nashville Venue Expertise
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                We know Music City Center, Gaylord Opryland, and every major
-                venue. Our local knowledge reduces your logistics burden.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                View venues <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-          </div>
+          <StaggerContainer className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <StaggerItem>
+              <Link
+                href="/services/corporate-event-coverage"
+                className="card group"
+              >
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service1-title"
+                  defaultValue="Corporate Event Coverage"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service1-description"
+                  defaultValue="Comprehensive documentation of conferences, trade shows, and corporate events. Same-day highlights available."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  Learn more <ArrowRight className="w-4 h-4" />
+                </span>
+              </Link>
+            </StaggerItem>
+            <StaggerItem>
+              <Link href="/services/headshot-activation" className="card group">
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service2-title"
+                  defaultValue="Headshot Activation"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service2-description"
+                  defaultValue="High-volume professional headshots with instant delivery. Drive booth traffic and capture leads for your clients."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  Learn more <ArrowRight className="w-4 h-4" />
+                </span>
+              </Link>
+            </StaggerItem>
+            <StaggerItem>
+              <Link href="/services/event-video-systems" className="card group">
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service3-title"
+                  defaultValue="Event Video Systems"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service3-description"
+                  defaultValue="Keynote capture, highlight reels, and testimonials that extend event ROI long after the venue clears."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  Learn more <ArrowRight className="w-4 h-4" />
+                </span>
+              </Link>
+            </StaggerItem>
+            <StaggerItem>
+              <Link href="/venues" className="card group">
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service4-title"
+                  defaultValue="Nashville Venue Expertise"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service4-description"
+                  defaultValue="We know Music City Center, Gaylord Opryland, and every major venue. Our local knowledge reduces your logistics burden."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  View venues <ArrowRight className="w-4 h-4" />
+                </span>
+              </Link>
+            </StaggerItem>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -299,34 +437,79 @@ export default function DMCsAgenciesPage() {
       <section className="section-padding bg-jhr-black-light">
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
-              Common Questions
-            </h2>
-            <div className="space-y-6">
+            <EditableText
+              pageId={pageId}
+              sectionId="faqs"
+              contentKey="title"
+              defaultValue="Common Questions"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+              contentType="heading"
+            />
+            <StaggerContainer className="space-y-6">
               {faqs.map((faq, index) => (
-                <div key={index} className="card">
-                  <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                    {faq.question}
-                  </h3>
-                  <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
-                </div>
+                <StaggerItem key={index}>
+                  <div className="card">
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-question`}
+                      defaultValue={faq.question}
+                      as="h3"
+                      className="text-heading-md font-semibold text-jhr-white mb-3"
+                      contentType="heading"
+                    />
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-answer`}
+                      defaultValue={faq.answer}
+                      as="p"
+                      className="text-body-md text-jhr-white-dim"
+                      contentType="paragraph"
+                      multiline
+                    />
+                  </div>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="section-padding bg-gradient-dark">
-        <div className="section-container text-center">
-          <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-            Let's Discuss Your Upcoming Events
-          </h2>
-          <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
-            Schedule a call and we'll talk through your client's needs. No
-            pressure—just a conversation to see if we're a good fit for your
-            preferred vendor list.
-          </p>
+      <section className="section-padding bg-gradient-dark relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <EditableImage
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/event-production.jpg"
+            alt="Event production"
+            fill
+            className="object-cover opacity-20"
+          />
+        </div>
+        <div className="section-container text-center relative z-10">
+          <EditableText
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="title"
+            defaultValue="Let's Discuss Your Upcoming Events"
+            as="h2"
+            className="text-display-sm font-display font-bold text-jhr-white mb-6"
+            contentType="heading"
+          />
+          <EditableText
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="description"
+            defaultValue="Schedule a call and we'll talk through your client's needs. No pressure—just a conversation to see if we're a good fit for your preferred vendor list."
+            as="p"
+            className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+            contentType="paragraph"
+            multiline
+          />
           <Link href="/schedule" className="btn-primary text-lg px-10 py-4">
             Schedule a Strategy Call
             <ArrowRight className="w-5 h-5 ml-2" />

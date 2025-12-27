@@ -1,5 +1,6 @@
+"use client";
+
 import Link from "next/link";
-import { Metadata } from "next";
 import {
   ArrowRight,
   CheckCircle,
@@ -8,17 +9,9 @@ import {
   Award,
   Camera,
 } from "lucide-react";
-
-export const metadata: Metadata = {
-  title: "For Associations & Conferences | Member-Centric Event Photography",
-  description:
-    "JHR Photography partners with associations to document conferences, provide member headshots, and create content that demonstrates value to stakeholders.",
-  openGraph: {
-    title: "For Associations & Conferences | JHR Photography",
-    description:
-      "Event photography and headshot services for association conferences.",
-  },
-};
+import { StaggerContainer, StaggerItem } from "@/components/ui/ScrollAnimation";
+import { EditableText } from "@/components/editor/EditableText";
+import { EditableImage } from "@/components/editor/EditableImage";
 
 const memberBenefits = [
   {
@@ -111,6 +104,8 @@ const faqSchema = {
 };
 
 export default function AssociationsPage() {
+  const pageId = "solutions-associations";
+
   return (
     <div className="pt-16 lg:pt-20">
       {/* Schema */}
@@ -124,21 +119,48 @@ export default function AssociationsPage() {
       />
 
       {/* Hero */}
-      <section className="section-padding bg-gradient-dark">
-        <div className="section-container">
+      <section className="section-padding bg-gradient-dark relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <EditableImage
+            pageId={pageId}
+            sectionId="hero"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/conference-attendees.jpg"
+            alt="Conference attendees"
+            fill
+            className="object-cover opacity-20"
+          />
+        </div>
+        <div className="section-container relative z-10">
           <div className="max-w-3xl">
-            <p className="text-jhr-gold font-medium text-body-lg mb-4">
-              For Associations & Conferences
-            </p>
-            <h1 className="text-display-lg font-display font-bold text-jhr-white mb-6">
-              Give Your Members Something They'll Actually Value
-            </h1>
-            <p className="text-body-lg text-jhr-white-muted mb-8">
-              Your conference is more than sessions and networking—it's a
-              demonstration of member value. JHR helps you document the
-              experience, celebrate achievements, and provide benefits members
-              talk about long after they return home.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="hero"
+              contentKey="subtitle"
+              defaultValue="For Associations & Conferences"
+              as="p"
+              className="text-jhr-gold font-medium text-body-lg mb-4"
+              contentType="tagline"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="hero"
+              contentKey="title"
+              defaultValue="Give Your Members Something They'll Actually Value"
+              as="h1"
+              className="text-display-lg font-display font-bold text-jhr-white mb-6"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="hero"
+              contentKey="description"
+              defaultValue="Your conference is more than sessions and networking—it's a demonstration of member value. JHR helps you document the experience, celebrate achievements, and provide benefits members talk about long after they return home."
+              as="p"
+              className="text-body-lg text-jhr-white-muted mb-8"
+              contentType="paragraph"
+              multiline
+            />
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/schedule" className="btn-primary">
                 Schedule a Strategy Call
@@ -156,34 +178,59 @@ export default function AssociationsPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <div className="text-center mb-12">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-              Member-Centric Photography
-            </h2>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-              Every photo we take should demonstrate value—to members, to
-              sponsors, and to stakeholders.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="approach"
+              contentKey="title"
+              defaultValue="Member-Centric Photography"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="approach"
+              contentKey="subtitle"
+              defaultValue="Every photo we take should demonstrate value—to members, to sponsors, and to stakeholders."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              contentType="paragraph"
+            />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            {memberBenefits.map((benefit) => (
-              <div key={benefit.title} className="card">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center flex-shrink-0">
-                    <benefit.icon className="w-6 h-6 text-jhr-gold" />
-                  </div>
-                  <div>
-                    <h3 className="text-heading-md font-semibold text-jhr-white mb-2">
-                      {benefit.title}
-                    </h3>
-                    <p className="text-body-md text-jhr-white-dim">
-                      {benefit.description}
-                    </p>
+          <StaggerContainer className="grid md:grid-cols-2 gap-6">
+            {memberBenefits.map((benefit, index) => (
+              <StaggerItem key={benefit.title}>
+                <div className="card">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center flex-shrink-0">
+                      <benefit.icon className="w-6 h-6 text-jhr-gold" />
+                    </div>
+                    <div>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="approach"
+                        contentKey={`benefit${index}-title`}
+                        defaultValue={benefit.title}
+                        as="h3"
+                        className="text-heading-md font-semibold text-jhr-white mb-2"
+                        contentType="heading"
+                      />
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="approach"
+                        contentKey={`benefit${index}-description`}
+                        defaultValue={benefit.description}
+                        as="p"
+                        className="text-body-md text-jhr-white-dim"
+                        contentType="paragraph"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -192,34 +239,60 @@ export default function AssociationsPage() {
         <div className="section-container">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                What You Get
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted mb-6">
-                Photography isn't just documentation—it's proof of value.
-                When the board asks about conference ROI, you'll have more than
-                attendance numbers. You'll have visual evidence of engagement,
-                learning, and community.
-              </p>
-              <p className="text-body-md text-jhr-white-dim">
-                When members share their professional headshots on LinkedIn,
-                they're extending your association's reach. When award recipients
-                post their recognition photos, they're demonstrating what
-                membership means.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="outcomes"
+                contentKey="title"
+                defaultValue="What You Get"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="outcomes"
+                contentKey="description1"
+                defaultValue="Photography isn't just documentation—it's proof of value. When the board asks about conference ROI, you'll have more than attendance numbers. You'll have visual evidence of engagement, learning, and community."
+                as="p"
+                className="text-body-lg text-jhr-white-muted mb-6"
+                contentType="paragraph"
+                multiline
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="outcomes"
+                contentKey="description2"
+                defaultValue="When members share their professional headshots on LinkedIn, they're extending your association's reach. When award recipients post their recognition photos, they're demonstrating what membership means."
+                as="p"
+                className="text-body-md text-jhr-white-dim"
+                contentType="paragraph"
+                multiline
+              />
             </div>
             <div>
               <div className="bg-jhr-black border border-jhr-black-lighter rounded-xl p-8">
-                <h3 className="text-heading-lg font-semibold text-jhr-gold mb-6">
-                  Conference Deliverables
-                </h3>
+                <EditableText
+                  pageId={pageId}
+                  sectionId="outcomes"
+                  contentKey="deliverablesTitle"
+                  defaultValue="Conference Deliverables"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-gold mb-6"
+                  contentType="heading"
+                />
                 <ul className="space-y-4">
-                  {outcomes.map((outcome) => (
+                  {outcomes.map((outcome, index) => (
                     <li key={outcome} className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-jhr-gold mt-0.5 flex-shrink-0" />
-                      <span className="text-body-md text-jhr-white">
-                        {outcome}
-                      </span>
+                      <EditableText
+                        pageId={pageId}
+                        sectionId="outcomes"
+                        contentKey={`outcome-${index}`}
+                        defaultValue={outcome}
+                        as="span"
+                        className="text-body-md text-jhr-white"
+                        contentType="feature"
+                      />
                     </li>
                   ))}
                 </ul>
@@ -233,55 +306,106 @@ export default function AssociationsPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <div className="text-center mb-12">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-              Services for Associations
-            </h2>
-            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-              Comprehensive solutions for annual conferences and member events.
-            </p>
+            <EditableText
+              pageId={pageId}
+              sectionId="services"
+              contentKey="title"
+              defaultValue="Services for Associations"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              contentType="heading"
+            />
+            <EditableText
+              pageId={pageId}
+              sectionId="services"
+              contentKey="subtitle"
+              defaultValue="Comprehensive solutions for annual conferences and member events."
+              as="p"
+              className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              contentType="paragraph"
+            />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <Link
-              href="/services/corporate-event-coverage"
-              className="card group"
-            >
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Conference Coverage
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                Keynotes, breakouts, networking, awards—comprehensive
-                documentation of your entire event.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                Learn more <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-            <Link href="/services/headshot-activation" className="card group">
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Member Headshots
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                Professional headshots as a member benefit. Instantly delivered
-                and branded to your association.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                Learn more <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-            <Link href="/services/event-video-systems" className="card group">
-              <h3 className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
-                Event Video
-              </h3>
-              <p className="text-body-md text-jhr-white-dim mb-4">
-                Keynote capture, highlights, and testimonials that extend
-                conference value for members who couldn't attend.
-              </p>
-              <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
-                Learn more <ArrowRight className="w-4 h-4" />
-              </span>
-            </Link>
-          </div>
+          <StaggerContainer className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <StaggerItem>
+              <Link
+                href="/services/corporate-event-coverage"
+                className="card group"
+              >
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service1-title"
+                  defaultValue="Conference Coverage"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service1-description"
+                  defaultValue="Keynotes, breakouts, networking, awards—comprehensive documentation of your entire event."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  Learn more <ArrowRight className="w-4 h-4" />
+                </span>
+              </Link>
+            </StaggerItem>
+            <StaggerItem>
+              <Link href="/services/headshot-activation" className="card group">
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service2-title"
+                  defaultValue="Member Headshots"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service2-description"
+                  defaultValue="Professional headshots as a member benefit. Instantly delivered and branded to your association."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  Learn more <ArrowRight className="w-4 h-4" />
+                </span>
+              </Link>
+            </StaggerItem>
+            <StaggerItem>
+              <Link href="/services/event-video-systems" className="card group">
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service3-title"
+                  defaultValue="Event Video"
+                  as="h3"
+                  className="text-heading-lg font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2"
+                  contentType="heading"
+                />
+                <EditableText
+                  pageId={pageId}
+                  sectionId="services"
+                  contentKey="service3-description"
+                  defaultValue="Keynote capture, highlights, and testimonials that extend conference value for members who couldn't attend."
+                  as="p"
+                  className="text-body-md text-jhr-white-dim mb-4"
+                  contentType="paragraph"
+                />
+                <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium">
+                  Learn more <ArrowRight className="w-4 h-4" />
+                </span>
+              </Link>
+            </StaggerItem>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -290,19 +414,35 @@ export default function AssociationsPage() {
         <div className="section-container">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-                Nashville Expertise
-              </h2>
-              <p className="text-body-lg text-jhr-white-muted mb-6">
-                If your association is meeting in Nashville, you need a partner
-                who knows the terrain. We've worked extensively at Music City
-                Center, Gaylord Opryland, and all major Nashville venues.
-              </p>
-              <p className="text-body-md text-jhr-white-dim mb-8">
-                We understand the logistics, the lighting challenges, and the
-                people who run these properties. This local knowledge reduces
-                friction for you and ensures smooth execution.
-              </p>
+              <EditableText
+                pageId={pageId}
+                sectionId="nashville"
+                contentKey="title"
+                defaultValue="Nashville Expertise"
+                as="h2"
+                className="text-display-sm font-display font-bold text-jhr-white mb-6"
+                contentType="heading"
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="nashville"
+                contentKey="description1"
+                defaultValue="If your association is meeting in Nashville, you need a partner who knows the terrain. We've worked extensively at Music City Center, Gaylord Opryland, and all major Nashville venues."
+                as="p"
+                className="text-body-lg text-jhr-white-muted mb-6"
+                contentType="paragraph"
+                multiline
+              />
+              <EditableText
+                pageId={pageId}
+                sectionId="nashville"
+                contentKey="description2"
+                defaultValue="We understand the logistics, the lighting challenges, and the people who run these properties. This local knowledge reduces friction for you and ensures smooth execution."
+                as="p"
+                className="text-body-md text-jhr-white-dim mb-8"
+                contentType="paragraph"
+                multiline
+              />
               <Link
                 href="/venues"
                 className="text-jhr-gold hover:text-jhr-gold-light transition-colors font-medium flex items-center gap-2"
@@ -311,46 +451,54 @@ export default function AssociationsPage() {
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Link
-                href="/venues/music-city-center"
-                className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors"
-              >
-                <p className="text-body-md font-medium text-jhr-white">
-                  Music City Center
-                </p>
-                <p className="text-body-sm text-jhr-white-dim">
-                  Downtown Nashville
-                </p>
-              </Link>
-              <Link
-                href="/venues/gaylord-opryland"
-                className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors"
-              >
-                <p className="text-body-md font-medium text-jhr-white">
-                  Gaylord Opryland
-                </p>
-                <p className="text-body-sm text-jhr-white-dim">Music Valley</p>
-              </Link>
-              <Link
-                href="/venues/omni-hotel-nashville"
-                className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors"
-              >
-                <p className="text-body-md font-medium text-jhr-white">
-                  Omni Hotel
-                </p>
-                <p className="text-body-sm text-jhr-white-dim">Downtown Nashville</p>
-              </Link>
-              <Link
-                href="/venues/jw-marriott-nashville"
-                className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors"
-              >
-                <p className="text-body-md font-medium text-jhr-white">
-                  JW Marriott
-                </p>
-                <p className="text-body-sm text-jhr-white-dim">Downtown Nashville</p>
-              </Link>
-            </div>
+            <StaggerContainer className="grid grid-cols-2 gap-4">
+              <StaggerItem>
+                <Link
+                  href="/venues/music-city-center"
+                  className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors"
+                >
+                  <p className="text-body-md font-medium text-jhr-white">
+                    Music City Center
+                  </p>
+                  <p className="text-body-sm text-jhr-white-dim">
+                    Downtown Nashville
+                  </p>
+                </Link>
+              </StaggerItem>
+              <StaggerItem>
+                <Link
+                  href="/venues/gaylord-opryland"
+                  className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors"
+                >
+                  <p className="text-body-md font-medium text-jhr-white">
+                    Gaylord Opryland
+                  </p>
+                  <p className="text-body-sm text-jhr-white-dim">Music Valley</p>
+                </Link>
+              </StaggerItem>
+              <StaggerItem>
+                <Link
+                  href="/venues/omni-hotel-nashville"
+                  className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors"
+                >
+                  <p className="text-body-md font-medium text-jhr-white">
+                    Omni Hotel
+                  </p>
+                  <p className="text-body-sm text-jhr-white-dim">Downtown Nashville</p>
+                </Link>
+              </StaggerItem>
+              <StaggerItem>
+                <Link
+                  href="/venues/jw-marriott-nashville"
+                  className="bg-jhr-black border border-jhr-black-lighter rounded-lg p-4 hover:border-jhr-gold transition-colors"
+                >
+                  <p className="text-body-md font-medium text-jhr-white">
+                    JW Marriott
+                  </p>
+                  <p className="text-body-sm text-jhr-white-dim">Downtown Nashville</p>
+                </Link>
+              </StaggerItem>
+            </StaggerContainer>
           </div>
         </div>
       </section>
@@ -359,34 +507,79 @@ export default function AssociationsPage() {
       <section className="section-padding bg-jhr-black">
         <div className="section-container">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center">
-              Common Questions
-            </h2>
-            <div className="space-y-6">
+            <EditableText
+              pageId={pageId}
+              sectionId="faqs"
+              contentKey="title"
+              defaultValue="Common Questions"
+              as="h2"
+              className="text-display-sm font-display font-bold text-jhr-white mb-8 text-center"
+              contentType="heading"
+            />
+            <StaggerContainer className="space-y-6">
               {faqs.map((faq, index) => (
-                <div key={index} className="card">
-                  <h3 className="text-heading-md font-semibold text-jhr-white mb-3">
-                    {faq.question}
-                  </h3>
-                  <p className="text-body-md text-jhr-white-dim">{faq.answer}</p>
-                </div>
+                <StaggerItem key={index}>
+                  <div className="card">
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-question`}
+                      defaultValue={faq.question}
+                      as="h3"
+                      className="text-heading-md font-semibold text-jhr-white mb-3"
+                      contentType="heading"
+                    />
+                    <EditableText
+                      pageId={pageId}
+                      sectionId="faqs"
+                      contentKey={`faq${index}-answer`}
+                      defaultValue={faq.answer}
+                      as="p"
+                      className="text-body-md text-jhr-white-dim"
+                      contentType="paragraph"
+                      multiline
+                    />
+                  </div>
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerContainer>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="section-padding bg-gradient-dark">
-        <div className="section-container text-center">
-          <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
-            Let's Discuss Your Annual Conference
-          </h2>
-          <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
-            Every association has different needs. Schedule a call and we'll
-            discuss your conference, your members, and how we can help deliver
-            value that extends beyond the event.
-          </p>
+      <section className="section-padding bg-gradient-dark relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <EditableImage
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="backgroundImage"
+            defaultSrc="/images/generated/conference-hall.jpg"
+            alt="Conference hall"
+            fill
+            className="object-cover opacity-20"
+          />
+        </div>
+        <div className="section-container text-center relative z-10">
+          <EditableText
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="title"
+            defaultValue="Let's Discuss Your Annual Conference"
+            as="h2"
+            className="text-display-sm font-display font-bold text-jhr-white mb-6"
+            contentType="heading"
+          />
+          <EditableText
+            pageId={pageId}
+            sectionId="cta"
+            contentKey="description"
+            defaultValue="Every association has different needs. Schedule a call and we'll discuss your conference, your members, and how we can help deliver value that extends beyond the event."
+            as="p"
+            className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+            contentType="paragraph"
+            multiline
+          />
           <Link href="/schedule" className="btn-primary text-lg px-10 py-4">
             Schedule a Strategy Call
             <ArrowRight className="w-5 h-5 ml-2" />
