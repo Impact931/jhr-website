@@ -1,89 +1,20 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEditor, EditorContent } from '@tiptap/react';
 import {
   ArrowLeft, FileText, Save, Loader2, AlertCircle, Eye, EyeOff,
   Image as ImageIcon, X, CheckCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import MediaPicker from '@/components/admin/media/MediaPicker';
+import { FloatingToolbar } from '@/components/inline-editor/FloatingToolbar';
+import { createContentEditorExtensions, EDITOR_CLASSES } from '@/lib/tiptap-config';
+import { blogTemplates, applyTemplate } from '@/lib/blog-templates';
 import type { MediaPickerResult } from '@/types/media';
 
-interface BlogTemplate {
-  id: string;
-  name: string;
-  description: string;
-  variables: { key: string; label: string; placeholder: string; required: boolean }[];
-  body: string;
-  defaultTags: string[];
-  defaultCategories: string[];
-  seoTitleTemplate: string;
-  seoDescriptionTemplate: string;
-}
-
-// Templates defined inline to avoid importing server-side code in client component
-const templates: BlogTemplate[] = [
-  {
-    id: 'how-to-guide',
-    name: 'How-To Guide',
-    description: 'Step-by-step instructions for a specific topic.',
-    variables: [
-      { key: 'topic', label: 'Topic', placeholder: 'e.g., Plan a Corporate Headshot Day', required: true },
-      { key: 'audience', label: 'Target Audience', placeholder: 'e.g., Event planners', required: false },
-    ],
-    body: '# How to {{topic}}\n\n{{audience}} — here\'s everything you need to know about {{topic}}.\n\n## What You\'ll Need\n\n- Item 1\n- Item 2\n\n## Step 1: Getting Started\n\nDescribe the first step.\n\n## Step 2: Implementation\n\nDescribe the second step.\n\n## Conclusion\n\nSummarize key takeaways.',
-    defaultTags: ['how-to', 'guide'],
-    defaultCategories: ['Guides'],
-    seoTitleTemplate: 'How to {{topic}} | JHR Photography',
-    seoDescriptionTemplate: 'Learn how to {{topic}} with this step-by-step guide from JHR Photography.',
-  },
-  {
-    id: 'listicle',
-    name: 'Listicle',
-    description: 'Numbered list format for tips, ideas, or recommendations.',
-    variables: [
-      { key: 'count', label: 'Number of Items', placeholder: 'e.g., 10', required: true },
-      { key: 'topic', label: 'Topic', placeholder: 'e.g., Corporate Event Photography Tips', required: true },
-    ],
-    body: '# {{count}} {{topic}}\n\nIntroduction about {{topic}}.\n\n## 1. First Item\n\nDescription.\n\n## 2. Second Item\n\nDescription.\n\n## 3. Third Item\n\nDescription.\n\n## Final Thoughts\n\nWrap up with a summary.',
-    defaultTags: ['tips', 'list'],
-    defaultCategories: ['Tips & Advice'],
-    seoTitleTemplate: '{{count}} {{topic}} | JHR Photography',
-    seoDescriptionTemplate: 'Discover {{count}} {{topic}} from JHR Photography.',
-  },
-  {
-    id: 'location-seo',
-    name: 'Location-Based SEO',
-    description: 'Service + city pattern for local search optimization.',
-    variables: [
-      { key: 'service', label: 'Service', placeholder: 'e.g., Corporate Event Photography', required: true },
-      { key: 'city', label: 'City', placeholder: 'e.g., Nashville', required: true },
-      { key: 'venue', label: 'Featured Venue', placeholder: 'e.g., Music City Center', required: false },
-    ],
-    body: '# {{service}} in {{city}}\n\nLooking for professional {{service}} in {{city}}? JHR Photography delivers agency-grade results.\n\n## Why Choose JHR in {{city}}\n\n- Local expertise\n- Professional equipment\n- Same-day delivery\n\n## Our Services\n\nEvent coverage, headshot activations, and video services.\n\n## Book Your {{city}} Photographer\n\n[Contact us](/contact) for a free consultation.',
-    defaultTags: ['local-seo'],
-    defaultCategories: ['Local SEO'],
-    seoTitleTemplate: '{{service}} in {{city}} | JHR Photography',
-    seoDescriptionTemplate: 'Professional {{service}} in {{city}}. JHR Photography provides agency-grade event photography.',
-  },
-  {
-    id: 'case-study',
-    name: 'Case Study',
-    description: 'Challenge / Solution / Results format for showcasing work.',
-    variables: [
-      { key: 'client', label: 'Client Name', placeholder: 'e.g., ACME Corporation', required: true },
-      { key: 'event', label: 'Event Name', placeholder: 'e.g., Annual Leadership Summit', required: true },
-      { key: 'venue', label: 'Venue', placeholder: 'e.g., Gaylord Opryland', required: false },
-    ],
-    body: '# Case Study: {{client}} — {{event}}\n\n## Overview\n\nJHR Photography provided event photography for {{client}} at {{event}}.\n\n## The Challenge\n\n- Challenge 1\n- Challenge 2\n\n## Our Solution\n\nDescribe the approach.\n\n## Results\n\n- **Photos Delivered**: X\n- **Turnaround**: X hours\n\n> "Great experience." — Client',
-    defaultTags: ['case-study', 'portfolio'],
-    defaultCategories: ['Case Studies'],
-    seoTitleTemplate: '{{client}} {{event}} Photography | JHR Photography',
-    seoDescriptionTemplate: 'See how JHR Photography delivered professional photography for {{client}} at {{event}}.',
-  },
-];
-
+// Helper to replace template variables
 function replaceVars(text: string, vars: Record<string, string>): string {
   let result = text;
   for (const [key, value] of Object.entries(vars)) {
@@ -92,12 +23,39 @@ function replaceVars(text: string, vars: Record<string, string>): string {
   return result;
 }
 
+// Convert markdown-style headers to HTML
+function markdownToHtml(markdown: string): string {
+  return markdown
+    // Headers
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Links
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
+    // Blockquotes
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    // List items
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    // Wrap consecutive list items in ul
+    .replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`)
+    // Paragraphs (lines that aren't already HTML)
+    .split('\n\n')
+    .map((block) => {
+      block = block.trim();
+      if (!block) return '';
+      if (block.startsWith('<')) return block;
+      return `<p>${block.replace(/\n/g, '<br>')}</p>`;
+    })
+    .join('\n');
+}
+
 export default function BlogCreatePage() {
   const router = useRouter();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [templateVars, setTemplateVars] = useState<Record<string, string>>({});
   const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [tags, setTags] = useState('');
   const [categories, setCategories] = useState('');
@@ -106,37 +64,59 @@ export default function BlogCreatePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
+  const [editorFocused, setEditorFocused] = useState(false);
+
+  // Initialize Tiptap editor with content editor extensions
+  const editor = useEditor({
+    extensions: createContentEditorExtensions('Write your post content...'),
+    content: '',
+    editable: true,
+    immediatelyRender: false,
+    onFocus: () => setEditorFocused(true),
+    onBlur: () => setEditorFocused(false),
+  });
 
   const template = useMemo(
-    () => templates.find((t) => t.id === selectedTemplate),
+    () => blogTemplates.find((t) => t.id === selectedTemplate),
     [selectedTemplate]
   );
 
-  const handleSelectTemplate = (id: string) => {
-    const tpl = templates.find((t) => t.id === id);
-    if (!tpl) return;
+  const handleSelectTemplate = useCallback((id: string) => {
+    const tpl = blogTemplates.find((t) => t.id === id);
+    if (!tpl || !editor) return;
     setSelectedTemplate(id);
     setTemplateVars({});
-    setBody(tpl.body);
+    // Convert markdown template to HTML and set in editor
+    const htmlContent = markdownToHtml(tpl.body);
+    editor.commands.setContent(htmlContent);
     setTags(tpl.defaultTags.join(', '));
     setCategories(tpl.defaultCategories.join(', '));
-  };
+  }, [editor]);
 
-  const handleApplyVars = () => {
-    if (!template) return;
-    const applied = replaceVars(template.body, templateVars);
-    setBody(applied);
+  const handleClearTemplate = useCallback(() => {
+    setSelectedTemplate(null);
+    editor?.commands.setContent('');
+    setTags('');
+    setCategories('');
+  }, [editor]);
+
+  const handleApplyVars = useCallback(() => {
+    if (!template || !editor) return;
+    const { body, tags: appliedTags, seoTitle, seoDescription } = applyTemplate(template, templateVars);
+    const htmlContent = markdownToHtml(body);
+    editor.commands.setContent(htmlContent);
     if (!title) {
-      setTitle(replaceVars(template.seoTitleTemplate, templateVars).replace(' | JHR Photography', ''));
+      setTitle(seoTitle.replace(' | JHR Photography', ''));
     }
     if (!excerpt) {
-      setExcerpt(replaceVars(template.seoDescriptionTemplate, templateVars));
+      setExcerpt(seoDescription);
     }
-    setTags(template.defaultTags.map((t) => replaceVars(t, templateVars)).join(', '));
-  };
+    setTags(appliedTags.join(', '));
+  }, [template, templateVars, editor, title, excerpt]);
 
   const handleSave = async () => {
-    if (!title.trim() || !body.trim()) {
+    const bodyHtml = editor?.getHTML() || '';
+    if (!title.trim() || !bodyHtml.trim() || bodyHtml === '<p></p>') {
       setError('Title and body are required.');
       return;
     }
@@ -148,7 +128,7 @@ export default function BlogCreatePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
-          body,
+          body: bodyHtml,
           excerpt: excerpt || undefined,
           tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
           categories: categories.split(',').map((c) => c.trim()).filter(Boolean),
@@ -222,8 +202,8 @@ export default function BlogCreatePage() {
       {/* Template Selector */}
       <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-6">
         <h2 className="text-body-md font-semibold text-jhr-white mb-4">Choose a Template</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {templates.map((tpl) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {blogTemplates.map((tpl) => (
             <button
               key={tpl.id}
               onClick={() => handleSelectTemplate(tpl.id)}
@@ -243,7 +223,7 @@ export default function BlogCreatePage() {
             </button>
           ))}
           <button
-            onClick={() => { setSelectedTemplate(null); setBody(''); setTags(''); setCategories(''); }}
+            onClick={handleClearTemplate}
             className={`text-left p-4 rounded-lg border transition-colors ${
               selectedTemplate === null
                 ? 'border-jhr-gold bg-jhr-gold/5'
@@ -307,14 +287,37 @@ export default function BlogCreatePage() {
           </div>
 
           <div>
-            <label className="block text-body-sm font-medium text-jhr-white mb-2">Body (Markdown/HTML)</label>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Write your post content..."
-              rows={20}
-              className="w-full px-4 py-3 bg-jhr-black-light border border-jhr-black-lighter rounded-lg text-jhr-white placeholder:text-jhr-white-dim focus:outline-none focus:border-jhr-gold/50 transition-colors font-mono text-sm resize-y"
-            />
+            <label className="block text-body-sm font-medium text-jhr-white mb-2">Body</label>
+            <div className="relative">
+              {/* Floating Toolbar */}
+              <FloatingToolbar editor={editor} visible={editorFocused} />
+
+              {/* Editor Container */}
+              <div
+                className={`
+                  min-h-[500px] bg-jhr-black-light border rounded-lg transition-colors
+                  ${editorFocused ? 'border-jhr-gold/50' : 'border-jhr-black-lighter'}
+                `}
+              >
+                <EditorContent
+                  editor={editor}
+                  className={`
+                    ${EDITOR_CLASSES.prose}
+                    p-4 min-h-[500px]
+                    prose prose-invert prose-gold max-w-none
+                    prose-headings:font-display prose-headings:text-jhr-white
+                    prose-h1:text-2xl prose-h1:mt-6 prose-h1:mb-4
+                    prose-h2:text-xl prose-h2:mt-5 prose-h2:mb-3
+                    prose-h3:text-lg prose-h3:mt-4 prose-h3:mb-2
+                    prose-p:text-jhr-white-dim prose-p:mb-3
+                    prose-li:text-jhr-white-dim
+                    prose-strong:text-jhr-white
+                    prose-a:text-jhr-gold
+                    prose-ul:my-3 prose-ol:my-3
+                  `}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
