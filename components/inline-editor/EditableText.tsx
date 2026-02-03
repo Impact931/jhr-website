@@ -34,6 +34,8 @@ interface EditableTextProps {
   variant?: EditorVariant;
   /** Placeholder text shown in the editor when empty. */
   placeholder?: string;
+  /** Optional callback when content changes (receives HTML string). */
+  onChange?: (html: string) => void;
 }
 
 // ============================================================================
@@ -48,6 +50,7 @@ export function EditableText({
   multiline = false,
   variant,
   placeholder,
+  onChange,
 }: EditableTextProps) {
   const { canEdit, isEditMode } = useEditMode();
   const { updateContent, pendingChanges } = useContent();
@@ -80,6 +83,8 @@ export function EditableText({
       onUpdate: ({ editor: ed }) => {
         const html = ed.getHTML();
         updateContent(contentKey, html, 'text');
+        // Call optional onChange callback for external state management
+        onChange?.(html);
       },
       onFocus: () => {
         setIsFocused(true);

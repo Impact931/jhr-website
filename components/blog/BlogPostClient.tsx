@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calendar, Clock, User, ArrowLeft, Tag, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, User, ArrowLeft, Tag, ChevronRight, Save, Loader2, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { BlogPost } from '@/types/blog';
 import { formatBlogDate } from '@/types/blog';
+import { useEditMode } from '@/context/inline-editor/EditModeContext';
+import { EditableText } from '@/components/inline-editor/EditableText';
 
 // ============================================================================
 // Related Post Card
@@ -53,6 +55,16 @@ interface BlogPostClientProps {
 export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   const [post, setPost] = useState<BlogPost>(initialPost);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
+  const [editedTitle, setEditedTitle] = useState(initialPost.title);
+  const [editedBody, setEditedBody] = useState(initialPost.body);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const { canEdit, isEditMode } = useEditMode();
+
+  // Track if there are unsaved changes
+  const hasChanges = editedTitle !== post.title || editedBody !== post.body;
 
   // Fetch related posts client-side (non-critical for SEO)
   useEffect(() => {
@@ -73,13 +85,101 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
     fetchRelatedPosts();
   }, [post.slug]);
 
-  // Keep post state in sync if initialPost changes (e.g., after save)
+  // Keep post state in sync if initialPost changes
   useEffect(() => {
     setPost(initialPost);
+    setEditedTitle(initialPost.title);
+    setEditedBody(initialPost.body);
   }, [initialPost]);
+
+  // Handle title changes from EditableText
+  const handleTitleChange = useCallback((html: string) => {
+    // Strip HTML tags for title (it's plain text)
+    const plainText = html.replace(/<[^>]*>/g, '').trim();
+    setEditedTitle(plainText);
+  }, []);
+
+  // Handle body changes from EditableText
+  const handleBodyChange = useCallback((html: string) => {
+    setEditedBody(html);
+  }, []);
+
+  // Save changes to API
+  const handleSave = async () => {
+    if (!hasChanges) return;
+
+    setSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    try {
+      const res = await fetch(`/api/admin/blog/${post.slug}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editedTitle,
+          body: editedBody,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save changes');
+      }
+
+      const data = await res.json();
+      setPost(data.post);
+      setSaveSuccess(true);
+
+      // Clear success indicator after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-jhr-black">
+      {/* Edit Mode Save Bar */}
+      {canEdit && isEditMode && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-jhr-black-light border border-jhr-black-lighter rounded-lg shadow-xl px-4 py-2 flex items-center gap-3">
+          <span className="text-body-sm text-jhr-white-dim">
+            Editing: {post.title.slice(0, 30)}...
+          </span>
+          {saveError && (
+            <span className="text-body-sm text-red-400">{saveError}</span>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving || !hasChanges}
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors ${
+              hasChanges
+                ? 'bg-jhr-gold text-jhr-black hover:bg-jhr-gold/90'
+                : 'bg-jhr-black-lighter text-jhr-white-dim cursor-not-allowed'
+            }`}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : saveSuccess ? (
+              <>
+                <Check className="w-4 h-4" />
+                Saved!
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save Changes
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Featured Image Hero */}
       {post.featuredImage && (
         <section className="relative w-full h-[50vh] min-h-[400px] max-h-[600px]">
@@ -119,10 +219,23 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
               </span>
             )}
 
-            {/* Title */}
-            <h1 className="text-display-md font-display font-bold text-jhr-white mb-6">
-              {post.title}
-            </h1>
+            {/* Title - Editable when in edit mode */}
+            {canEdit && isEditMode ? (
+              <EditableText
+                contentKey={`blog:${post.slug}:title`}
+                as="h1"
+                className="text-display-md font-display font-bold text-jhr-white mb-6"
+                variant="simple"
+                placeholder="Post title..."
+                onChange={handleTitleChange}
+              >
+                {editedTitle}
+              </EditableText>
+            ) : (
+              <h1 className="text-display-md font-display font-bold text-jhr-white mb-6">
+                {post.title}
+              </h1>
+            )}
 
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-4 text-jhr-white-dim text-body-sm pb-6 border-b border-jhr-black-lighter">
@@ -152,35 +265,61 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="prose prose-invert prose-gold max-w-none
-              prose-headings:font-display prose-headings:text-jhr-white
-              prose-h2:text-heading-md prose-h2:mt-10 prose-h2:mb-4
-              prose-h3:text-heading-sm prose-h3:mt-8 prose-h3:mb-3
-              prose-p:text-jhr-white-dim prose-p:text-body prose-p:leading-relaxed prose-p:mb-4
-              prose-li:text-jhr-white-dim prose-li:text-body
-              prose-strong:text-jhr-white
-              prose-a:text-jhr-gold prose-a:no-underline hover:prose-a:text-jhr-gold-light
-              prose-ul:my-4 prose-ol:my-4"
-            dangerouslySetInnerHTML={{ __html: post.body }}
-          />
+          >
+            {/* Body - Editable when in edit mode */}
+            {canEdit && isEditMode ? (
+              <EditableText
+                contentKey={`blog:${post.slug}:body`}
+                as="div"
+                className="prose prose-invert prose-gold max-w-none
+                  prose-headings:font-display prose-headings:text-jhr-white
+                  prose-h2:text-heading-md prose-h2:mt-10 prose-h2:mb-4
+                  prose-h3:text-heading-sm prose-h3:mt-8 prose-h3:mb-3
+                  prose-p:text-jhr-white-dim prose-p:text-body prose-p:leading-relaxed prose-p:mb-4
+                  prose-li:text-jhr-white-dim prose-li:text-body
+                  prose-strong:text-jhr-white
+                  prose-a:text-jhr-gold prose-a:no-underline hover:prose-a:text-jhr-gold-light
+                  prose-ul:my-4 prose-ol:my-4"
+                variant="rich"
+                multiline
+                placeholder="Write your blog post content..."
+                onChange={handleBodyChange}
+              >
+                {editedBody}
+              </EditableText>
+            ) : (
+              <div
+                className="prose prose-invert prose-gold max-w-none
+                  prose-headings:font-display prose-headings:text-jhr-white
+                  prose-h2:text-heading-md prose-h2:mt-10 prose-h2:mb-4
+                  prose-h3:text-heading-sm prose-h3:mt-8 prose-h3:mb-3
+                  prose-p:text-jhr-white-dim prose-p:text-body prose-p:leading-relaxed prose-p:mb-4
+                  prose-li:text-jhr-white-dim prose-li:text-body
+                  prose-strong:text-jhr-white
+                  prose-a:text-jhr-gold prose-a:no-underline hover:prose-a:text-jhr-gold-light
+                  prose-ul:my-4 prose-ol:my-4"
+                dangerouslySetInnerHTML={{ __html: post.body }}
+              />
+            )}
 
-          {/* Tags */}
-          {post.tags.length > 0 && (
-            <div className="mt-12 pt-6 border-t border-jhr-black-lighter">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Tag className="w-4 h-4 text-jhr-white-dim" />
-                {post.tags.map((tag) => (
-                  <Link
-                    key={tag}
-                    href={`/blog?tag=${encodeURIComponent(tag)}`}
-                    className="px-3 py-1 bg-jhr-black-light border border-jhr-black-lighter text-jhr-white-dim text-xs rounded-full hover:text-jhr-gold hover:border-jhr-gold/30 transition-colors"
-                  >
-                    {tag}
-                  </Link>
-                ))}
+            {/* Tags */}
+            {post.tags.length > 0 && (
+              <div className="mt-12 pt-6 border-t border-jhr-black-lighter">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Tag className="w-4 h-4 text-jhr-white-dim" />
+                  {post.tags.map((tag) => (
+                    <Link
+                      key={tag}
+                      href={`/blog?tag=${encodeURIComponent(tag)}`}
+                      className="px-3 py-1 bg-jhr-black-light border border-jhr-black-lighter text-jhr-white-dim text-xs rounded-full hover:text-jhr-gold hover:border-jhr-gold/30 transition-colors"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </motion.div>
         </div>
       </section>
 
