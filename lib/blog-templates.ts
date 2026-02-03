@@ -215,6 +215,101 @@ Describe editing, delivery, and any special processing.
     seoTitleTemplate: '{{client}} {{event}} Photography | Case Study | JHR Photography',
     seoDescriptionTemplate: 'See how JHR Photography delivered professional event photography for {{client}} at {{event}}.',
   },
+  {
+    id: 'venue-guide',
+    name: 'Venue Guide',
+    description: 'Comprehensive venue photography guide optimized for local SEO.',
+    variables: [
+      { key: 'venue', label: 'Venue Name', placeholder: 'e.g., Noelle Nashville', required: true },
+      { key: 'keyword', label: 'Target Keyword', placeholder: 'e.g., Nashville Corporate Event Photographer', required: true },
+      { key: 'city', label: 'City', placeholder: 'Nashville', required: false },
+    ],
+    body: `# {{keyword}} at {{venue}}: A Venue Guide for Event Planners
+
+Planning a corporate event at {{venue}}? This comprehensive guide covers everything you need to know about photography at one of {{city}}'s premier event venues.
+
+## About {{venue}}
+
+{{venue}} is a standout destination for corporate events in {{city}}. With its unique blend of historic architecture and modern amenities, the venue offers exceptional opportunities for event photography.
+
+### Why Event Planners Choose {{venue}}
+
+- Distinctive aesthetic that photographs beautifully
+- Versatile spaces for events of all sizes
+- Professional event coordination team
+- Central {{city}} location
+
+## Event Spaces at {{venue}}
+
+### Main Event Space
+
+The primary event space offers [describe features]. Key photography considerations:
+
+- Natural light availability during daytime events
+- Optimal angles for group shots
+- Backdrop opportunities for portraits
+
+### Secondary Spaces
+
+Additional areas available for breakout sessions, networking, and smaller gatherings.
+
+### Outdoor Options
+
+[Describe any outdoor spaces and their photography potential]
+
+## Photography Tips for {{venue}}
+
+### Best Times for Natural Light
+
+Morning events benefit from [describe lighting]. Evening events require [describe approach].
+
+### Recommended Equipment
+
+- Primary: Full-frame camera with 24-70mm f/2.8
+- Portraits: 70-200mm f/2.8 or 85mm prime
+- Wide angles for venue establishing shots
+
+### Power and Setup
+
+[Describe power access and staging areas]
+
+## Frequently Asked Questions
+
+### What makes {{venue}} ideal for corporate event photography?
+
+{{venue}} offers a unique combination of architectural character and modern event amenities. The venue's design provides natural separation between event activities, allowing for dynamic photography coverage. The distinctive aesthetic creates memorable backdrops that elevate corporate event imagery beyond typical hotel ballroom photography.
+
+### How early should a photographer arrive at {{venue}}?
+
+Professional photographers should arrive 60-90 minutes before event start time at {{venue}}. This allows time for equipment setup, venue walkthrough, coordination with the event team, and capturing establishing shots before guests arrive.
+
+### What are the lighting conditions like at {{venue}}?
+
+{{venue}} features a mix of natural and artificial lighting. Daytime events benefit from window light in certain spaces, while evening events rely on the venue's ambient lighting supplemented by professional photography equipment. An experienced {{city}} event photographer will be prepared for both scenarios.
+
+### Can photography equipment be stored on-site during multi-day events?
+
+[Answer based on typical venue policies]
+
+### Does {{venue}} have restrictions on photography equipment or flash usage?
+
+Most corporate events at {{venue}} allow standard professional photography equipment including flash units. Specific restrictions may apply during certain hours or in heritage areas. Confirm details with the venue coordinator during event planning.
+
+## Book Your {{keyword}}
+
+Ready to capture your next event at {{venue}}? JHR Photography has extensive experience shooting at {{city}}'s top venues and understands the unique opportunities each space presents.
+
+[Contact us](/contact) to discuss your upcoming event at {{venue}}.
+
+---
+
+*This guide is part of our {{city}} Venue Series, helping event planners make informed decisions about photography coverage at the region's premier corporate event destinations.*
+`,
+    defaultTags: ['venue-guide', '{{venue}}', '{{city}}', 'corporate-events'],
+    defaultCategories: ['Venue Guides'],
+    seoTitleTemplate: '{{keyword}} at {{venue}} | Venue Guide | JHR Photography',
+    seoDescriptionTemplate: 'Complete photography guide for {{venue}} in {{city}}. Tips, spaces, FAQs, and expert recommendations for your next corporate event.',
+  },
 ];
 
 export function getTemplate(id: string): BlogTemplate | undefined {
