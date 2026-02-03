@@ -1,0 +1,332 @@
+{
+  "project": "JHR-Website",
+  "branchName": "ralph/sprint2-backend-editor",
+  "description": "Sprint 2: Backend Editor - DynamoDB content storage, Content API, Tiptap editor, S3 image upload, Draft/Publish workflow",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add DynamoDB and S3 dependencies",
+      "description": "As a developer, I need the AWS SDK packages for DynamoDB and S3 operations.",
+      "acceptanceCriteria": [
+        "Install @aws-sdk/client-dynamodb if not present",
+        "Install @aws-sdk/lib-dynamodb for document client",
+        "Install @aws-sdk/client-s3 if not present",
+        "Install @aws-sdk/s3-request-presigner for signed URLs",
+        "npm install runs without errors",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Also added next-auth (missing dep) and types/next-auth.d.ts for typecheck to pass"
+    },
+    {
+      "id": "US-002",
+      "title": "Create DynamoDB client and configuration",
+      "description": "As a developer, I need a configured DynamoDB client for content operations.",
+      "acceptanceCriteria": [
+        "Create /lib/dynamodb.ts",
+        "Export configured DynamoDBDocumentClient",
+        "Use environment variables for region and table name",
+        "Export helper functions: getItem, putItem, queryItems, deleteItem",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Created DynamoDB client with Document Client wrapper and CRUD helper functions"
+    },
+    {
+      "id": "US-003",
+      "title": "Create S3 client and upload utilities",
+      "description": "As a developer, I need S3 utilities for image upload and retrieval.",
+      "acceptanceCriteria": [
+        "Create /lib/s3.ts",
+        "Export configured S3Client",
+        "Create generatePresignedUploadUrl function",
+        "Create generatePresignedDownloadUrl function",
+        "Create getPublicUrl function using CloudFront domain",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Created S3 client with presigned URL functions and CloudFront public URL support"
+    },
+    {
+      "id": "US-004",
+      "title": "Create content schema and types",
+      "description": "As a developer, I need TypeScript types for the content management system.",
+      "acceptanceCriteria": [
+        "Create /types/content.ts",
+        "Define PageContent type with sections",
+        "Define ContentSection type (text, image, structured)",
+        "Define ContentStatus enum (draft, published)",
+        "Define ContentMetadata type (title, description, ogImage)",
+        "Export all types",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Created comprehensive type system with ContentStatus enum, ContentSection union type (text/image/structured), ContentMetadata, PageContent, and helper types"
+    },
+    {
+      "id": "US-005",
+      "title": "Create content service layer",
+      "description": "As a developer, I need a service layer for content CRUD operations.",
+      "acceptanceCriteria": [
+        "Create /lib/content.ts",
+        "Implement getPageContent(slug, status) function",
+        "Implement savePageContent(slug, content, status) function",
+        "Implement publishPage(slug) function (copies draft to published)",
+        "Implement listPages() function",
+        "Support both draft and published content states",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Created content service layer with getPageContent, savePageContent, publishPage, listPages, and hasUnpublishedChanges functions"
+    },
+    {
+      "id": "US-006",
+      "title": "Create content API route - GET",
+      "description": "As an admin, I need an API to fetch page content.",
+      "acceptanceCriteria": [
+        "Create /app/api/admin/content/route.ts",
+        "Implement GET handler",
+        "Accept slug query parameter",
+        "Accept status query parameter (draft/published)",
+        "Return content JSON or 404 if not found",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Created GET handler with slug and status query params, returns content or 404"
+    },
+    {
+      "id": "US-007",
+      "title": "Create content API route - PUT",
+      "description": "As an admin, I need an API to save page content.",
+      "acceptanceCriteria": [
+        "Add PUT handler to /app/api/admin/content/route.ts",
+        "Accept slug and content in request body",
+        "Save as draft by default",
+        "Return saved content or error",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Added PUT handler with validation for slug, content, sections, metadata. Defaults to draft status."
+    },
+    {
+      "id": "US-008",
+      "title": "Create publish API route",
+      "description": "As an admin, I need an API to publish draft content.",
+      "acceptanceCriteria": [
+        "Create /app/api/admin/content/publish/route.ts",
+        "Implement POST handler",
+        "Accept slug in request body",
+        "Copy draft content to published",
+        "Return success or error",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Created POST handler that uses publishPage from content service, returns success with published content or 404 if no draft exists"
+    },
+    {
+      "id": "US-009",
+      "title": "Create image upload API route",
+      "description": "As an admin, I need an API to get presigned URLs for image upload.",
+      "acceptanceCriteria": [
+        "Create /app/api/admin/images/upload/route.ts",
+        "Implement POST handler",
+        "Accept filename and contentType in request body",
+        "Generate presigned upload URL",
+        "Return uploadUrl and publicUrl",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Created POST handler that generates presigned upload URL and returns uploadUrl, publicUrl, and key"
+    },
+    {
+      "id": "US-010",
+      "title": "Add Tiptap editor dependencies",
+      "description": "As a developer, I need Tiptap packages for rich text editing.",
+      "acceptanceCriteria": [
+        "Install @tiptap/react",
+        "Install @tiptap/starter-kit",
+        "Install @tiptap/extension-image",
+        "Install @tiptap/extension-link",
+        "Install @tiptap/extension-placeholder",
+        "npm install runs without errors",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Installed all Tiptap dependencies including @tiptap/pm for ProseMirror compatibility"
+    },
+    {
+      "id": "US-011",
+      "title": "Create Tiptap editor component",
+      "description": "As an admin, I need a rich text editor for page content.",
+      "acceptanceCriteria": [
+        "Create /components/admin/Editor.tsx",
+        "Implement Tiptap editor with StarterKit",
+        "Add toolbar with: Bold, Italic, Headings, Lists, Link",
+        "Style toolbar to match admin theme (dark with gold accents)",
+        "Accept value and onChange props",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Created Tiptap editor with full toolbar (undo/redo, bold, italic, code, h1-h3, bullet/ordered lists, blockquote, horizontal rule, link/unlink). Styled with dark theme, gold accents for active states. Includes prose styling for editor content area."
+    },
+    {
+      "id": "US-012",
+      "title": "Create image uploader component",
+      "description": "As an admin, I need a component to upload images to S3.",
+      "acceptanceCriteria": [
+        "Create /components/admin/ImageUploader.tsx",
+        "Implement drag-and-drop file upload",
+        "Call upload API to get presigned URL",
+        "Upload file directly to S3",
+        "Show upload progress indicator",
+        "Return public URL on success",
+        "Accept onUpload callback prop",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "Created ImageUploader with drag-and-drop, file input, progress bar (XHR for tracking), success/error states, preview thumbnails, and styled with dark theme and gold accents."
+    },
+    {
+      "id": "US-013",
+      "title": "Update page editor with content loading",
+      "description": "As an admin, I need the page editor to load existing content.",
+      "acceptanceCriteria": [
+        "Update /app/admin/pages/[slug]/edit/page.tsx",
+        "Fetch page content on load using content API",
+        "Show loading state while fetching",
+        "Display content in Tiptap editor",
+        "Show error state if content not found",
+        "Typecheck passes",
+        "Verify in browser: editor loads with content"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": "Updated page editor with: loading state (spinner), error state (red alert with retry button), not-found state (allows creating new content), content loading from API, Tiptap editor integration with text section content extraction."
+    },
+    {
+      "id": "US-014",
+      "title": "Add save draft functionality to page editor",
+      "description": "As an admin, I need to save my edits as a draft.",
+      "acceptanceCriteria": [
+        "Add Save Draft button to page editor",
+        "Button calls PUT /api/admin/content with draft status",
+        "Show saving indicator during API call",
+        "Show success toast on save",
+        "Show error message on failure",
+        "Typecheck passes",
+        "Verify in browser: save draft works"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": "Added Save Draft button with gold styling, loading state with spinner, success toast (green), error toast (red). Uses SaveState union type and useCallback for saveDraft function. Toasts auto-dismiss after 3s (success) or 5s (error)."
+    },
+    {
+      "id": "US-015",
+      "title": "Add publish functionality to page editor",
+      "description": "As an admin, I need to publish my draft content.",
+      "acceptanceCriteria": [
+        "Add Publish button to page editor",
+        "Button calls POST /api/admin/content/publish",
+        "Show confirmation dialog before publishing",
+        "Show publishing indicator during API call",
+        "Show success toast on publish",
+        "Update page status indicator to 'Published'",
+        "Typecheck passes",
+        "Verify in browser: publish works"
+      ],
+      "priority": 15,
+      "passes": true,
+      "notes": "Added Publish button with gold styling, confirmation modal dialog, publishing indicator with spinner, success/error toasts, and status badge (Draft/Published) that updates after publish. Uses PublishState type for state management."
+    },
+    {
+      "id": "US-016",
+      "title": "Add image insertion to page editor",
+      "description": "As an admin, I need to insert images into page content.",
+      "acceptanceCriteria": [
+        "Add Insert Image button to editor toolbar",
+        "Button opens ImageUploader in modal",
+        "After upload, insert image into editor at cursor",
+        "Image displays in editor preview",
+        "Typecheck passes",
+        "Verify in browser: image insertion works"
+      ],
+      "priority": 16,
+      "passes": true,
+      "notes": "Added Insert Image button to toolbar (ImageIcon from Lucide), opens modal with ImageUploader component, after upload inserts image at cursor using editor.setImage(). Modal styled with dark theme, X button to close, backdrop blur."
+    },
+    {
+      "id": "US-017",
+      "title": "Add metadata editing to page editor",
+      "description": "As an admin, I need to edit page SEO metadata.",
+      "acceptanceCriteria": [
+        "Add collapsible SEO section to page editor",
+        "Include fields: Page Title, Meta Description, OG Image",
+        "OG Image field uses ImageUploader",
+        "Metadata saved with page content",
+        "Typecheck passes",
+        "Verify in browser: metadata fields work"
+      ],
+      "priority": 17,
+      "passes": true,
+      "notes": "Added collapsible SEO Settings section with Page Title (input), Meta Description (textarea), and OG Image (ImageUploader with preview). Metadata state synced with pageContent on load and saved via saveDraft function. ChevronDown/ChevronUp icons for expand/collapse. OG Image shows preview with remove button when set."
+    },
+    {
+      "id": "US-018",
+      "title": "Update pages list with status indicators",
+      "description": "As an admin, I need to see draft/published status on pages list.",
+      "acceptanceCriteria": [
+        "Update /app/admin/pages/page.tsx",
+        "Fetch page list from API (or show static list with mock status)",
+        "Show status badge: Draft (amber) or Published (green)",
+        "Show last modified date",
+        "Typecheck passes",
+        "Verify in browser: status badges display"
+      ],
+      "priority": 18,
+      "passes": true,
+      "notes": "Created /app/api/admin/pages/route.ts API that fetches content status from DynamoDB for all site pages. Updated pages list with: loading state (spinner), error state with retry, status summary cards (Published/Draft/No Content counts), dynamic status badges (green for published, amber for draft, gray for no-content), last modified dates from DynamoDB, and search filter. Exported PageWithStatus type for client consumption."
+    },
+    {
+      "id": "US-019",
+      "title": "Add unsaved changes warning",
+      "description": "As an admin, I need to be warned about unsaved changes.",
+      "acceptanceCriteria": [
+        "Track changes in page editor state",
+        "Show unsaved indicator when content modified",
+        "Warn before navigation if unsaved changes exist",
+        "Use browser beforeunload event",
+        "Typecheck passes"
+      ],
+      "priority": 19,
+      "passes": true,
+      "notes": "Added hasUnsavedChanges computed state that compares current editor content and metadata with initial state. Added beforeunload event handler to warn on browser navigation/refresh. Added orange 'Unsaved changes' badge with pulsing dot indicator. Initial state updated on content load and after successful save."
+    },
+    {
+      "id": "US-020",
+      "title": "Add preview mode to page editor",
+      "description": "As an admin, I need to preview my changes before publishing.",
+      "acceptanceCriteria": [
+        "Add Preview button to page editor",
+        "Button opens new tab with preview URL",
+        "Preview shows draft content",
+        "Preview URL format: /preview/[slug]?token=xxx",
+        "Typecheck passes"
+      ],
+      "priority": 20,
+      "passes": true,
+      "notes": "Added Preview button with Eye icon to page editor header. Creates /preview/[slug]?token=xxx URL where token is base64-encoded slug:timestamp. Created preview route at /app/preview/[slug]/page.tsx that validates token (24h expiry), fetches draft content, and renders with preview banner and metadata debug section."
+    }
+  ]
+}

@@ -1,0 +1,533 @@
+# Ralph Progress Log - JHR Website
+Started: Wed Jan 28 16:47:34 CST 2026
+---
+
+## Codebase Patterns
+- Content schemas live in `/content/schemas/` and follow the PageSchema type from `/types/inline-editor.ts`
+- Each schema file exports: individual section constants (typed as HeroSectionContent, FeatureGridSectionContent, etc.), a SECTIONS array, a PAGE_SCHEMA, and helper functions (getSectionById, getContentKeyPrefix)
+- Content key format: `{pageSlug}:{sectionId}:{elementId}` (e.g., `services:hero:title`)
+- Available section types: hero, text-block, feature-grid, image-gallery, cta, testimonials, faq
+- FeatureGrid is the most versatile section type — used for process timelines, benefit cards, outcomes checklists, and service cards
+- Service pages all follow a consistent pattern: Hero → Content sections → FAQs → CTA
+- All service sub-pages use `PageHero` component with `backLink` prop for "Back to Services" navigation
+- The ROI Calculator on headshot-activation is a custom interactive component not representable as a schema section
+- Icon names in schemas are Lucide React icon component names as strings (e.g., 'Camera', 'CheckCircle')
+- Dual-mode page pattern: `useEditMode()` + `useContent()` hooks, load schema sections in useEffect, branch on isEditMode for view/edit rendering
+- View mode uses SectionWrapper (read-only props), Edit mode adds onMoveUp/onMoveDown/onDelete/onAddSection/onAddSectionWithContent/onUpdateSEO
+- Static interactive components (ROI Calculator, TrustBadgesInline) live outside the CMS sections map
+- SectionWrapper and AddSectionButton are imported from `@/components/inline-editor/SectionWrapper`
+- createDefaultSection is imported from `@/types/inline-editor`
+- `text-block` schema type uses `EditableText` with `variant="rich"` for content and `EditableText` as="h2" for heading (no EditableTextBlock component exists)
+- EditableCTA supports `secondaryButton` prop for pages with two CTA buttons
+- Lead/contact submissions use pk=`LEAD#{timestamp}`, sk=`contact` in DynamoDB; query with pk prefix `LEAD#` to list all
+- API routes use `putItem`/`queryItems`/`scanItemsByPkPrefix` from `/lib/dynamodb.ts` for DynamoDB operations
+- For items with unique pks (like leads: `LEAD#{timestamp}`), use `scanItemsByPkPrefix('LEAD#')` instead of `queryItems`
+- Client component pages get SEO metadata via sibling `layout.tsx` files (not from the page.tsx itself)
+- JSON-LD structured data: Organization in root layout, FAQPage in `/app/faqs/layout.tsx`, Service ItemList in `/app/services/layout.tsx`
+- Blog posts use `BlogPost` type from `/types/blog.ts` with optional SEO/GEO metadata fields
+- Blog API pattern: listing at `/api/blog`, single post at `/api/blog/[slug]`, upload at `/api/blog/upload`
+- Blog DynamoDB pattern: pk=`BLOG#{slug}`, sk=`post`
+- Blog pages are client components that fetch from API with sample data fallback
+- Blog upload API uses x-api-key header auth (env var BLOG_API_KEY); listing/single-post GETs are public
+- API key auth pattern: reject if env var not set (fail-closed)
+- AI SEO generation: `/lib/blog-seo.ts` exports `generateBlogSEO()` — calls OpenAI gpt-4o-mini, falls back to basic extraction if unavailable
+- SEO generation is async (fire-and-forget) — post stored immediately, metadata updates within seconds
+- OpenAI SDK is installed as `openai` package; requires `OPENAI_API_KEY` env var
+- Responsive typography pattern: hero titles use `text-display-sm sm:text-display-md lg:text-display-lg`; never use `text-display-lg` alone
+- All buttons and inputs must have `min-h-[44px]` for WCAG touch target compliance
+- `heading-display` and `heading-section` utility classes in globals.css are responsive — use them where possible
+---
+
+## 2026-01-28 - US-401
+- Created content schemas for all 5 services pages
+- Files created:
+  - `/content/schemas/services.ts` (3 sections: hero, services-grid, final-cta)
+  - `/content/schemas/corporate-event-coverage.ts` (6 sections: hero, differentiators, coverage-areas, process, faqs, final-cta)
+  - `/content/schemas/corporate-headshot-program.ts` (7 sections: hero, problem-solution, benefits, process, gallery, faqs, final-cta)
+  - `/content/schemas/event-video-systems.ts` (7 sections: hero, value-prop, services, use-cases, process, faqs, final-cta)
+  - `/content/schemas/headshot-activation.ts` (7 sections: hero, problem-solution, how-it-works, features, gallery, faqs, final-cta)
+- **Learnings for future iterations:**
+  - The home.ts schema is the reference implementation — follow its pattern exactly (comment header, section map table, content key docs, helpers)
+  - All page content is currently hardcoded in page.tsx files — schemas define the editable structure for future inline editor integration
+  - FeatureGridColumns type only allows 2, 3, or 4 — keep this in mind when mapping page sections
+  - Some complex page sections (e.g., testimonial quotes inline with text, ROI calculator) can't be directly mapped to schema section types and should remain as static components
+  - Solutions pages all follow a consistent pattern: Hero → Feature Grid → Checklist/Outcomes → Services Grid → (optional Nashville/Venue section) → FAQs → CTA
+  - 2-column text + checklist hybrid sections are mapped to feature-grid with CheckCircle icons
+  - Venue link grids are mapped to feature-grid with Building icons and link props
+  - Stats/metrics sections (like "Real Results" on exhibitors page) map to feature-grid with stat values as titles
+  - The ROI Calculator on exhibitors-sponsors is an interactive component not representable as a schema section
+---
+
+## 2026-01-28 - US-402
+- Created content schemas for all 4 solutions pages
+- Files created:
+  - `/content/schemas/associations.ts` (7 sections: hero, member-benefits, outcomes, services, nashville-expertise, faqs, final-cta)
+  - `/content/schemas/dmcs-agencies.ts` (6 sections: hero, pain-points, partnership, services, faqs, final-cta)
+  - `/content/schemas/exhibitors-sponsors.ts` (7 sections: hero, challenges, advantage, process, results, faqs, final-cta)
+  - `/content/schemas/venues-solution.ts` (7 sections: hero, venue-needs, partnership, services, venue-experience, faqs, final-cta)
+- **Learnings for future iterations:**
+  - Solutions pages follow a consistent pattern similar to service pages but with audience-specific framing
+  - All 4 solutions pages have a "text + checklist" hybrid section — use feature-grid with CheckCircle icons as the pattern
+  - The exhibitors-sponsors page has unique section types: stats grid (mapped as feature-grid) and ROI Calculator (not schema-representable)
+  - Venue link grids appear on associations and venues-solution pages — mapped as feature-grid with Building icons and link props
+  - All solutions pages use `half-height` hero variant (not `full-height` as they use `bg-gradient-dark` not full background images)
+  - Core pages (about, contact, faqs, schedule) all use `half-height` hero variant
+  - Contact page form and Schedule page calendar embed are interactive components not representable as schema sections — only surrounding text is captured
+  - FAQs page has 5 FAQ categories — each maps to a separate FAQSectionContent section for granular editing
+  - About page "Why JHR" section uses stacked cards (visually single-column) but mapped as 2-column feature-grid to stay within FeatureGridColumns type
+  - Stats sections (like on about page) map to feature-grid with stat values as titles and labels as descriptions
+---
+
+## 2026-01-28 - US-403
+- Created content schemas for all 4 core pages (about, contact, faqs, schedule)
+- Files created:
+  - `/content/schemas/about.ts` (6 sections: hero, guide, values, why-jhr, stats, final-cta)
+  - `/content/schemas/contact.ts` (2 sections: hero, info)
+  - `/content/schemas/faqs.ts` (7 sections: hero, general, headshot-activation, event-coverage, logistics, pricing, final-cta)
+  - `/content/schemas/schedule.ts` (4 sections: hero, what-to-expect, topics, faqs)
+- **Learnings for future iterations:**
+  - Contact page is minimal in schema terms — the form is the main content and it's interactive, not schema-representable
+  - FAQs page is the most section-heavy core page due to 5 FAQ categories each becoming a separate FAQ section
+  - Schedule page calendar widget is a placeholder — will be a Calendly/Cal.com embed, not schema content
+  - The about page "Meet Jayson Rivas" section is a two-column layout with text + image; mapped as text-block for the editable text, image stays in template
+- Venue detail pages use a reusable schema pattern with a `VenueData` interface and `buildVenueDetailSchema()` builder function, unlike other pages which define sections as individual constants
+- Venue detail pages have two styles: "original" (Music City Center, Gaylord Opryland) use PageHero with images/animations; remaining 6 use simpler gradient-dark hero with Building icon placeholders
+- The Gaylord Opryland page has a unique "challenges" section (not present on other venues) mapped as feature-grid
+---
+
+## 2026-01-28 - US-404
+- Created content schemas for the venues hub page and all 8 individual venue pages
+- Files created:
+  - `/content/schemas/venues.ts` (4 sections: hero, venue-fluency, venues-grid, final-cta)
+  - `/content/schemas/venue-detail.ts` (reusable schema with VenueData interface, builder function, and pre-built schemas for all 8 venues)
+- Venue detail schema sections: hero, gallery, experience, spaces, services, faqs, final-cta (7 sections per venue)
+- All 8 venues have complete default content matching their current hardcoded page content
+- **Learnings for future iterations:**
+  - For pages with many similar instances (8 venues), a builder pattern with data interface is cleaner than 8 separate schema files
+  - The `VenueData` interface captures all venue-specific fields; `buildVenueDetailSchema()` generates the full PageSchema
+  - Pre-built schemas are exported as constants (e.g., `MUSIC_CITY_CENTER_SCHEMA`) plus a lookup helper `getVenueSchemaBySlug()`
+  - Gallery images: Music City Center and Gaylord Opryland have actual gallery images; remaining 6 venues have empty gallery arrays (placeholder image icons on their pages)
+  - Some venue pages (Renaissance, Omni, JW Marriott, Embassy Suites, City Winery, Belmont) are server components with metadata exports; Music City Center and Gaylord Opryland are client components using PageHero
+  - The Renaissance page has a unique "Related Venue" section linking to Music City Center — not captured in schema as it's a static cross-link
+---
+
+## 2026-01-28 - US-405 - Wire inline editor into services pages
+- Implemented dual-mode rendering (view/edit) for all 5 services pages:
+  - `/app/services/page.tsx` (services hub)
+  - `/app/services/corporate-event-coverage/page.tsx`
+  - `/app/services/corporate-headshot-program/page.tsx`
+  - `/app/services/event-video-systems/page.tsx`
+  - `/app/services/headshot-activation/page.tsx`
+- Each page now uses `useEditMode()` and `useContent()` hooks
+- View mode preserves original design with section-specific view components
+- Edit mode renders Editable* components wrapped in SectionWrapper
+- Headshot Activation ROI Calculator and TrustBadgesInline remain as static (non-CMS) components
+- Typecheck passes cleanly
+- **Learnings for future iterations:**
+  - The dual-mode pattern is: load sections from schema on mount, then branch on `isEditMode` for rendering
+  - View mode components should use section IDs to determine specific layouts (e.g., `sectionId === "differentiators"` renders a two-column layout)
+  - Static interactive components (ROI Calculator, TrustBadges) should be placed outside the sections map, after the CMS-managed sections
+  - The `SectionWrapper` in view mode only needs sectionType/sectionId/index/totalSections/sectionSEO; edit mode adds onMoveUp/onMoveDown/onDelete/onAddSection/onAddSectionWithContent/onUpdateSEO
+  - Background color alternation is per-section and should be mapped via a bgMap or conditional on section.id
+  - Schema helpers follow pattern: `get{PREFIX}ContentKeyPrefix(sectionId)` returns `"slug:sectionId"`
+- EditableHero ALWAYS requires `image` and `imageAlt` props even for gradient/half-height heroes — pass a placeholder image path
+- Solution pages use `half-height` hero variant with gradient backgrounds, no full-bleed background images
+---
+
+## 2026-01-28 - US-406
+- Wired inline editor into all 4 solutions pages: associations, dmcs-agencies, exhibitors-sponsors, venues
+- Files changed:
+  - app/solutions/associations/page.tsx
+  - app/solutions/dmcs-agencies/page.tsx
+  - app/solutions/exhibitors-sponsors/page.tsx
+  - app/solutions/venues/page.tsx
+- **Learnings for future iterations:**
+  - EditableHero requires `image` and `imageAlt` even for gradient-only heroes — this caused TS errors on first pass
+  - The exhibitors-sponsors page has an ROI Calculator that sits outside the CMS section map — placed after all sections in both view and edit modes
+  - Each solution page has unique section rendering: icon cards, checklist layouts, numbered process steps, stat cards, venue cards — all handled via section-ID-based conditional rendering in ViewFeatureGrid
+  - All solution page schemas use `half-height` hero variant, unlike services pages which use `full-height`
+---
+
+## 2026-01-28 - US-407 - Wire inline editor into core pages
+- Wired inline editor into all 3 core pages: about, faqs, schedule
+- Files changed:
+  - app/about/page.tsx (dual-mode with hero, text-block, feature-grid, cta)
+  - app/faqs/page.tsx (dual-mode with hero, 5 faq sections, cta)
+  - app/schedule/page.tsx (dual-mode with hero, 2 feature-grids, faq)
+- **Learnings for future iterations:**
+  - `text-block` schema type is new — about page is the first to use it. No `EditableTextBlock` component exists; used `EditableText` with `variant="rich"` for the content field and `EditableText` as="h2" for the heading
+  - The about page "Meet Jayson Rivas" guide section uses `dangerouslySetInnerHTML` to render HTML content from the schema in view mode
+  - FAQs page has 5 separate FAQ category sections (general, headshot-activation, event-coverage, logistics, pricing) — each renders independently with its own heading and border styling
+  - The FAQs CTA has a `secondaryButton` — `EditableCTA` supports this prop natively
+  - Schedule page's calendar embed widget is a static placeholder (not part of the CMS) — placed inside the `what-to-expect` ViewFeatureGrid alongside the editable feature cards
+  - The schedule page `topics` section is a checklist using feature-grid items but rendered as a simple list with CheckCircle icons, not as cards
+  - Core pages all use `half-height` hero variant via PageHero component
+---
+
+## 2026-01-28 - US-408 - Wire inline editor into venues pages
+- Wired inline editor into venues hub page and 2 individual venue pages (Music City Center, Gaylord Opryland) as reference implementations
+- Files changed:
+  - app/venues/page.tsx (dual-mode with hero, 2 feature-grids, cta)
+  - app/venues/music-city-center/page.tsx (dual-mode with hero, image-gallery, 3 feature-grids, faq, cta)
+  - app/venues/gaylord-opryland/page.tsx (dual-mode with hero, image-gallery, 3 feature-grids, faq, cta)
+- **Learnings for future iterations:**
+  - Venue detail pages use `buildVenueDetailSchema()` from `/content/schemas/venue-detail.ts` — pre-built schemas are exported as constants (e.g., `MUSIC_CITY_CENTER_SCHEMA`)
+  - Venue detail content key prefix uses `getVenueContentKeyPrefix(slug, sectionId)` which returns `venue-{slug}:{sectionId}`
+  - Venue detail pages have 7 schema sections: hero, gallery (image-gallery), experience (feature-grid), spaces (feature-grid), services (feature-grid), faqs (faq), final-cta (cta)
+  - The Gaylord Opryland page originally had a unique "challenges" section — this was not captured in the schema, so the dual-mode version uses the standard schema sections instead
+  - For services icon rendering in view mode, use an `iconMap` Record to map string icon names from schema to Lucide React components
+  - The remaining 6 venue pages (Renaissance, Omni, JW Marriott, Embassy Suites, City Winery, Belmont) follow the same pattern and can be wired up following the Music City Center/Gaylord Opryland reference implementations
+  - Venue hub page uses the venues data array directly for the grid rendering (not from schema features) to preserve the rich venue card layout with images, locations, and feature tags
+---
+
+## 2026-01-28 - US-409 - Implement contact form submission
+- Updated `/app/api/contact/route.ts` with full DynamoDB storage and rate limiting
+- Updated `/app/contact/page.tsx` to display API error messages (validation, rate limit)
+- Files changed:
+  - app/api/contact/route.ts (rewrote with DynamoDB putItem, rate limiting, input sanitization)
+  - app/contact/page.tsx (added errorMessage state, parse API error responses)
+- **Learnings for future iterations:**
+  - The contact API route already existed as a stub — just needed DynamoDB integration and rate limiting
+  - The contact page form already had success/error UI states — only needed to wire up specific error messages from API
+  - Lead records use pk=`LEAD#{timestamp}`, sk=`contact` — this pattern allows querying all leads with pk prefix `LEAD#`
+  - In-memory rate limiting (Map) is sufficient for basic spam prevention; resets on server restart
+  - The `putItem` helper from `/lib/dynamodb.ts` handles all DynamoDB write operations with auto-marshalling
+  - Input sanitization: trim + slice to 2000 chars prevents oversized payloads
+---
+
+## 2026-01-28 - US-410 - Wire contact form submissions to admin leads page
+- Created `/app/api/admin/leads/route.ts` — fetches all leads from DynamoDB using scan with pk prefix `LEAD#`
+- Updated `/app/admin/leads/page.tsx` — now fetches real submissions from API, displays full lead details with expandable rows
+- Updated `/app/admin/page.tsx` — dashboard now shows real lead count from API
+- Added `scanItemsByPkPrefix()` helper to `/lib/dynamodb.ts` for scanning items by pk prefix
+- Files changed:
+  - lib/dynamodb.ts (added ScanCommand import, scanItemsByPkPrefix helper)
+  - app/api/admin/leads/route.ts (new — GET endpoint fetching leads from DynamoDB)
+  - app/admin/leads/page.tsx (rewrote with real data fetching, search, expandable rows)
+  - app/admin/page.tsx (added useEffect to fetch lead count, display dynamic count)
+- **Learnings for future iterations:**
+  - Lead records use unique pks (`LEAD#{timestamp}`) so `queryItems` can't list all leads — need scan with pk prefix filter
+  - Added `scanItemsByPkPrefix()` to dynamodb.ts — handles pagination with LastEvaluatedKey loop
+  - The admin leads page was previously hardcoded with an empty array and Notion references — now uses real DynamoDB data
+  - Admin dashboard stats cards can be made dynamic by fetching counts from API in useEffect
+  - For expandable table rows in React, use a Fragment (`<>`) wrapping main row + detail row, with colSpan on detail td
+---
+
+## 2026-01-28 - US-411 - Verify and fix navigation links across all pages
+- Audited all Header nav links (9 links — all valid)
+- Audited all Footer nav links (14 links — 2 broken: /privacy and /terms)
+- Audited CTA buttons across all pages — all point to valid routes (/schedule, /contact, /about, /venues, /services/*)
+- Audited internal links on service cards, venue cards, solution pages — all valid
+- Created `/app/privacy/page.tsx` — privacy policy page (server component with metadata)
+- Created `/app/terms/page.tsx` — terms of service page (server component with metadata)
+- Files created:
+  - app/privacy/page.tsx
+  - app/terms/page.tsx
+- **Learnings for future iterations:**
+  - All Header and Footer nav links now resolve to valid pages
+  - Privacy and terms pages are simple server components with metadata exports — no inline editor needed
+  - Simple content pages use `bg-gradient-dark` hero + `section-container max-w-3xl` for content width
+  - The root layout has a title template `"%s | JHR Photography"` so page metadata just needs `title: "Page Name"`
+  - No `/solutions` hub page exists — only sub-pages. Header/Footer don't link to `/solutions` so this is not a broken link
+  - All CTA buttons consistently link to `/schedule` — this is the primary conversion path
+---
+
+## 2026-01-28 - US-412 - Add SEO metadata to all pages
+- Added metadata via `layout.tsx` files for all public client-component pages (18 layouts created)
+- Each layout exports a Metadata object with unique title, description, and openGraph fields
+- Added FAQPage JSON-LD structured data to `/app/faqs/layout.tsx` with 10 Q&A entries
+- Added Service ItemList JSON-LD structured data to `/app/services/layout.tsx` with all 4 services
+- Root layout already has Organization JSON-LD and comprehensive base metadata
+- Files created:
+  - app/about/layout.tsx
+  - app/contact/layout.tsx
+  - app/faqs/layout.tsx (with FAQPage JSON-LD)
+  - app/schedule/layout.tsx
+  - app/services/layout.tsx (with Service ItemList JSON-LD)
+  - app/services/corporate-event-coverage/layout.tsx
+  - app/services/corporate-headshot-program/layout.tsx
+  - app/services/event-video-systems/layout.tsx
+  - app/services/headshot-activation/layout.tsx
+  - app/solutions/layout.tsx
+  - app/solutions/associations/layout.tsx
+  - app/solutions/dmcs-agencies/layout.tsx
+  - app/solutions/exhibitors-sponsors/layout.tsx
+  - app/solutions/venues/layout.tsx
+  - app/venues/layout.tsx
+  - app/venues/music-city-center/layout.tsx
+  - app/venues/gaylord-opryland/layout.tsx
+- **Learnings for future iterations:**
+  - Client components (`'use client'`) cannot export `metadata` — use a sibling `layout.tsx` file to provide metadata for those routes
+  - Next.js merges metadata from nested layouts; the closest layout wins for overlapping fields
+  - The root layout title template `"%s | JHR Photography"` means page layouts only need `title: "Page Name"` (the suffix is added automatically)
+  - Parent layouts render their JSON-LD on all child routes too — services hub JSON-LD will appear on sub-service pages
+  - Venue detail pages that are server components (6 of 8) already had metadata exports in their page.tsx — only the 2 client-component venue pages (Music City Center, Gaylord Opryland) needed layouts
+  - Admin pages don't need public SEO metadata — they're behind auth
+---
+
+## 2026-01-28 - US-413 - Add static gallery displays with replaceable images
+- Added gallery sections to corporate-event-coverage and event-video-systems service pages (schemas + page rendering)
+- Filled in placeholder gallery images for all 6 venue pages that had empty galleryImages arrays (Renaissance, Omni, JW Marriott, Embassy Suites, City Winery, Belmont)
+- Homepage gallery already existed with 8 images — no changes needed
+- Headshot service pages (headshot-activation, corporate-headshot-program) already had gallery sections — no changes needed
+- All gallery sections use EditableImageGallery view-mode rendering with grid layout
+- Files changed:
+  - content/schemas/corporate-event-coverage.ts (added CEC_GALLERY section, updated section ordering)
+  - content/schemas/event-video-systems.ts (added EVS_GALLERY section, updated section ordering)
+  - content/schemas/venue-detail.ts (added 3 placeholder images to each of the 6 empty venue galleryImages arrays)
+  - app/services/corporate-event-coverage/page.tsx (added image-gallery handling to ViewModeSection + EditModeSection, added ViewImageGallery component)
+  - app/services/event-video-systems/page.tsx (added image-gallery handling to ViewModeSection + EditModeSection, added ViewImageGallery component)
+- **Learnings for future iterations:**
+  - All existing images are in `/public/images/generated/` — 19 total placeholder images covering events, headshots, heroes, services, and venues
+  - Service page gallery sections use 2x3 grid (grid-cols-2 md:grid-cols-3) with aspect-[4/3] images — different from homepage which uses 2x4 grid (grid-cols-2 md:grid-cols-4) with aspect-square images
+  - To add a gallery to a page: (1) add ImageGallerySectionContent to schema, (2) update section ordering, (3) add to SECTIONS array, (4) add image-gallery case to ViewModeSection + EditModeSection, (5) add ViewImageGallery component
+  - Venue detail pages get gallery images from `galleryImages` array in VenueData — the builder function handles converting these to ImageGallerySectionContent
+  - Images will be replaced via the media library in Sprint 6 — current images are placeholders only
+---
+
+## 2026-01-28 - US-416 - Blog listing page and dynamic post template
+- Created blog listing page with featured post hero, post grid, category/tag filtering, and search
+- Created dynamic blog post template with full-width featured image hero, post body (HTML), related posts footer, and JSON-LD structured data
+- Created BlogPost type with all required fields including SEO, structured data, and GEO metadata interfaces
+- Added Blog link to Header navigation (between About and FAQs) and Footer navigation (in Company column)
+- Created blog layout.tsx with SEO metadata for the blog section
+- Includes 6 sample posts for static rendering, with API fetch fallback for real data
+- Files created:
+  - types/blog.ts (BlogPost type, helper functions: generateSlug, estimateReadingTime, formatBlogDate)
+  - app/blog/page.tsx (blog listing with featured post, grid, search, category filters)
+  - app/blog/[slug]/page.tsx (dynamic post template with hero image, body, related posts, CTA)
+  - app/blog/layout.tsx (SEO metadata for blog section)
+- Files changed:
+  - components/layout/Header.tsx (added Blog nav link)
+  - components/layout/Footer.tsx (added Blog to company links)
+- **Learnings for future iterations:**
+  - Blog pages are client components that fetch from `/api/blog` and `/api/blog/[slug]` — falls back to hardcoded sample data when API is unavailable
+  - Blog listing uses `useMemo` for filtered posts (category + search) and `useState` for filter state
+  - Featured post is the first in the filtered list, rendered as a 2-column card; remaining posts use a 3-column grid
+  - Post body is rendered via `dangerouslySetInnerHTML` with Tailwind typography (`prose prose-invert prose-gold`) for HTML content from the API
+  - Related posts are shown in a 3-column grid footer section on individual post pages
+  - Blog post JSON-LD structured data is rendered client-side via script tag (not via layout metadata) since data is fetched dynamically
+  - The `BlogPost` type includes optional `seoMetadata`, `structuredData`, and `geoMetadata` fields — these will be populated by the AI SEO generation in US-418
+  - Sample posts use existing images from `/public/images/generated/` — no new images were created
+  - Blog navigation: Header has a flat "Blog" link (no dropdown), Footer has it in the Company column
+---
+
+## 2026-01-28 - US-417 - Blog upload API for n8n automation
+- Created 3 blog API endpoints for full blog post CRUD operations
+- Files created:
+  - app/api/blog/upload/route.ts (POST to create, PUT to upsert — API key auth via x-api-key header)
+  - app/api/blog/route.ts (GET — list published posts with optional status/category/tag filters)
+  - app/api/blog/[slug]/route.ts (GET — fetch single post by slug)
+- Upload endpoint features:
+  - Validates required fields (title, body)
+  - Auto-generates slug from title if not provided
+  - Duplicate slug detection (409 Conflict on POST)
+  - PUT preserves createdAt, publishedAt, and existing SEO/GEO metadata
+  - Auto-generates excerpt from body HTML if not provided
+  - Calculates reading time from body content
+  - Input sanitization with configurable max lengths
+- Listing endpoint supports query params: ?status=all|published, ?category=X, ?tag=X
+- Single post endpoint returns full post data stripped of DynamoDB keys
+- **Learnings for future iterations:**
+  - Blog records use pk=`BLOG#{slug}`, sk=`post` — use `getItem` for single post, `scanItemsByPkPrefix('BLOG#')` for listing all
+  - API key auth pattern: check `x-api-key` header against `BLOG_API_KEY` env var; reject if env var not set
+  - For upsert (PUT), preserve existing metadata fields (seoMetadata, structuredData, geoMetadata) that may have been generated by the AI pipeline
+  - Next.js 15+ API route handlers receive `params` as a Promise — use `const { slug } = await params`
+  - DynamoDB keys (pk, sk) are stripped from API responses using destructuring: `const { pk: _pk, sk: _sk, ...post } = record`
+  - The `sanitize()` helper with configurable maxLength is useful for different field types (200 for slugs, 500000 for body HTML)
+---
+
+## 2026-01-28 - US-418 - AI SEO/GEO metadata generation on blog upload
+- Created `/lib/blog-seo.ts` with `generateBlogSEO()` function
+- Integrated async SEO generation into blog upload API (both POST and PUT handlers)
+- Files created:
+  - lib/blog-seo.ts (generateBlogSEO function with OpenAI integration and fallback)
+- Files changed:
+  - app/api/blog/upload/route.ts (added async SEO generation after post storage)
+  - scripts/ralph/prd.json (marked US-418 as passes: true)
+- Features:
+  - Calls OpenAI gpt-4o-mini to generate: meta title (50-60 chars), meta description (150-160 chars), keywords (5-10), OG title/description, BlogPosting structured data, GEO metadata (topic classification, entity extraction, content summary)
+  - Async fire-and-forget pattern — post is stored immediately, metadata updates within seconds
+  - Fallback to basic metadata extraction if OPENAI_API_KEY is not set or API call fails
+  - Truncates body to 4000 chars for AI prompt to stay within token limits
+  - Merges AI output with known fields (author, publishedAt, featuredImage, publisher)
+- **Learnings for future iterations:**
+  - OpenAI SDK (`openai` package) is already installed; use `new OpenAI({ apiKey })` constructor
+  - gpt-4o-mini is the cost-effective model for metadata generation tasks
+  - Fire-and-forget async pattern: call `.then().catch()` on the promise without awaiting — response returns immediately while metadata generates in background
+  - AI responses may include markdown code fences — strip them before JSON.parse
+  - Fallback metadata uses basic text extraction: title as meta title, first 160 chars as description, tags+categories as keywords
+  - The `BlogPostSEOMetadata`, `BlogPostStructuredData`, and `BlogPostGEOMetadata` types were already defined in `/types/blog.ts` from US-416
+---
+
+## 2026-01-28 - US-419 - Blog admin view in dashboard
+- Created `/app/api/admin/blog/route.ts` with GET (list), PATCH (toggle status), DELETE operations
+- Created `/app/admin/blog/page.tsx` — full blog management page with table, search, expandable details, SEO quality indicators
+- Added Blog link to admin sidebar navigation (`components/admin/Sidebar.tsx`)
+- Updated admin dashboard (`app/admin/page.tsx`) to show blog post count alongside lead count
+- Files created:
+  - app/api/admin/blog/route.ts
+  - app/admin/blog/page.tsx
+- Files changed:
+  - components/admin/Sidebar.tsx (added PenLine icon + Blog nav item)
+  - app/admin/page.tsx (added blogCount state, parallel fetch, Blog Posts stats card)
+- **Learnings for future iterations:**
+  - Admin API routes follow pattern: GET for listing, PATCH for status updates, DELETE for removal — all in one route.ts file
+  - Blog records use pk=`BLOG#{slug}`, sk=`post` — use `scanItemsByPkPrefix('BLOG#')` to list all, `deleteItem('BLOG#{slug}', 'post')` to remove
+  - SEO quality indicator: count filled fields in seoMetadata (metaTitle, metaDescription, keywords, ogTitle, ogDescription) — 4+ = good (green), 2-3 = partial (yellow), <2 = missing (red)
+  - Admin sidebar nav items are in `components/admin/Sidebar.tsx` navItems array — just add a new object with label, href, icon
+  - Dashboard stats cards fetch counts in parallel using `Promise.all` — add new API calls there for additional counts
+  - Delete confirmation pattern: use a `deleteConfirm` state holding the slug, show Confirm/Cancel buttons inline replacing the delete icon
+  - The `PostRow` sub-component is extracted for cleanliness — receives callbacks as props to avoid prop drilling state setters
+---
+
+## 2026-01-28 - US-420 - Responsive QA and mobile polish
+- Fixed responsive typography across all pages: `text-display-lg` → `text-display-sm sm:text-display-md lg:text-display-lg`
+- Fixed Header mobile menu button touch target: added `min-w-[44px] min-h-[44px]` (was ~22px)
+- Fixed HeroBanner: responsive hero title, subtitle, badge text; hidden scroll indicator on mobile (`hidden sm:block`)
+- Fixed globals.css: `btn-primary` and `btn-secondary` now have `min-h-[44px]` for touch targets; `heading-display` and `heading-section` now scale responsively
+- Fixed contact form: all inputs have `min-h-[44px]` for proper touch targets
+- Fixed homepage CTA button: responsive padding and text size (`text-base sm:text-lg px-6 sm:px-10 py-3 sm:py-4`)
+- Fixed blog post cards: mobile aspect ratio `aspect-[4/3] sm:aspect-[16/9]` for non-featured cards
+- Files changed:
+  - components/layout/Header.tsx (mobile menu button touch target)
+  - components/ui/HeroBanner.tsx (responsive hero typography, hidden scroll indicator on mobile)
+  - components/inline-editor/EditableHero.tsx (responsive hero title)
+  - app/globals.css (responsive heading/button classes, min-h touch targets)
+  - app/page.tsx (responsive CTA button)
+  - app/contact/page.tsx (form input touch targets)
+  - app/blog/page.tsx (responsive hero title, blog card aspect ratios)
+  - app/privacy/page.tsx, app/terms/page.tsx (responsive hero titles)
+  - 6 venue pages (responsive hero titles)
+  - 4 solutions pages (responsive hero titles)
+- **Learnings for future iterations:**
+  - `text-display-lg` (3.5rem/56px) is too large for mobile — always use responsive scaling: `text-display-sm sm:text-display-md lg:text-display-lg`
+  - All interactive elements (buttons, inputs, links) should have minimum 44px touch targets per WCAG 2.5
+  - The `min-h-[44px]` class is the simplest way to enforce touch target minimums without changing padding
+  - HeroBanner scroll indicator is unnecessary on mobile — `hidden sm:block` removes it
+  - Badge/subtitle text should also scale: `text-body-sm sm:text-body-lg`
+  - The `heading-display` and `heading-section` utility classes in globals.css affect all pages that use them — good place for responsive scaling
+---
+
+## 2026-01-28 - US-421 - Production build validation
+- Ran `npx tsc --noEmit` — passes with zero errors
+- Ran `npm run build` — completes successfully, all 49 routes compile (static + dynamic)
+- Ran `npm run lint` — passes with only non-blocking warnings (unused vars, img elements, missing deps)
+- Updated `.env.example` with all required environment variables: BLOG_API_KEY, OPENAI_API_KEY, AWS_REGION, DYNAMODB_TABLE_NAME, S3_BUCKET_NAME, CLOUDFRONT_DOMAIN, EDITOR_PASSWORD
+- Build output size is reasonable: largest first-load JS is ~321 kB (homepage), most pages under 100 kB
+- All blog routes compile successfully (listing, [slug], upload API)
+- No runtime errors during static page generation
+- Files changed:
+  - .env.example (updated with all Sprint 4 env vars)
+  - scripts/ralph/prd.json (marked US-421 as passes: true)
+- **Learnings for future iterations:**
+  - First build attempt failed with stale `.next` cache — always clean `.next` before production build validation
+  - API routes using `request.url` are automatically marked as dynamic (`ƒ`) by Next.js — the console warnings are expected, not errors
+  - DynamoDB/S3/CloudFront env vars have sensible defaults in code but should still be documented in `.env.example`
+  - The `_pk`/`_sk` destructuring warnings are intentional (stripping DynamoDB keys from responses) — these are non-blocking
+  - Build generates 49 pages total: 36 static (○), 13 dynamic (ƒ) including API routes, blog [slug], admin edit, and auth routes
+---
+
+## Codebase Patterns (Sprint 7 Additions)
+- Settings stored in DynamoDB: pk=`SETTINGS#global`, sk=`config` — lib/settings.ts exports getSettings()/updateSettings()
+- Knowledge entries: pk=`KNOWLEDGE#{uuid}`, sk=`entry` — lib/knowledge.ts exports full CRUD + search
+- Notion integration via `@notionhq/client` — lib/notion.ts handles lead syncing and fetching
+- Analytics scripts use server/client component split: TrackingScripts.tsx (server, fetches settings) → TrackingScriptsClient.tsx (client, uses next/script afterInteractive)
+- Blog templates in lib/blog-templates.ts — 4 templates with variable substitution via getTemplate()/applyTemplate()
+- MediaUploadZone uses concurrency-limited queue (MAX_CONCURRENT=2) with refs for queue management
+- MediaPicker uses debounced fetchMedia (500ms) to batch multiple upload completion re-fetches
+---
+
+## 2026-02-02 - Sprint 7 Phase 1A - Settings Backend Persistence
+- Created `lib/settings.ts` with getSettings()/updateSettings() using DynamoDB (pk: SETTINGS#global, sk: config)
+- Created `app/api/admin/settings/route.ts` with GET/PATCH + NextAuth session auth
+- Rewrote `app/admin/settings/page.tsx` — functional form with fetch-on-mount, Save wired to PATCH, MediaPicker for logo/favicon/OG image, integration fields for Notion/GA4/Meta Pixel
+- Files created: lib/settings.ts, app/api/admin/settings/route.ts
+- Files changed: app/admin/settings/page.tsx
+- **Learnings:**
+  - Settings use nested `integrations` object — updateSettings() merges nested objects, not shallow replace
+  - MediaPickerResult type is exported from `@/types/media`, not from MediaPicker component
+---
+
+## 2026-02-02 - Sprint 7 Phase 1B - Pages Direct Edit Navigation
+- Changed Edit button in `app/admin/pages/page.tsx` to navigate to `${page.path}?editMode=true` instead of intermediate edit page
+- Modified `context/inline-editor/EditModeContext.tsx` to detect `?editMode=true` URL param, auto-enable edit mode, and strip param via history.replaceState
+- Deleted `app/admin/pages/[slug]/edit/page.tsx` (intermediate edit page no longer needed)
+- Files changed: app/admin/pages/page.tsx, context/inline-editor/EditModeContext.tsx
+- Files deleted: app/admin/pages/[slug]/edit/page.tsx
+- **Learnings:**
+  - After deleting pages, clear `.next/types` cache to avoid stale TypeScript references
+  - `history.replaceState(null, '', cleanUrl)` strips URL params without triggering navigation
+---
+
+## 2026-02-02 - Sprint 7 Phase 2 - Leads + Notion Integration
+- Installed `@notionhq/client` package
+- Created `lib/notion.ts` with syncLeadToNotion(), fetchNotionLeads(), bulkSyncLeadsToNotion()
+- Modified `app/api/contact/route.ts` — fire-and-forget syncLeadToNotion after DynamoDB putItem
+- Rewrote `app/api/admin/leads/route.ts` — added ?source=notion param, POST for bulk sync action
+- Rewrote `app/admin/leads/page.tsx` — source toggle (Local/Notion), Sync to Notion button, unified Lead interface
+- Files created: lib/notion.ts
+- Files changed: app/api/contact/route.ts, app/api/admin/leads/route.ts, app/admin/leads/page.tsx
+- Env vars: NOTION_TOKEN, NOTION_LEAD_DB_ID
+- **Learnings:**
+  - Notion property types need exact mapping: title, email, phone_number, rich_text, select, date
+  - Fire-and-forget pattern: `syncLeadToNotion(lead).catch(console.error)` — don't await
+  - Notion API returns different property shapes per type — need extraction helpers for each
+---
+
+## 2026-02-02 - Sprint 7 Phase 3 - Analytics Configuration
+- Created `components/analytics/TrackingScripts.tsx` (server component reads GA4/Pixel IDs from settings)
+- Created `components/analytics/TrackingScriptsClient.tsx` (client component uses next/script afterInteractive)
+- Created `app/admin/analytics/page.tsx` — config form for GA4 Measurement ID + Meta Pixel ID, status indicators, dashboard links
+- Modified `app/layout.tsx` — added `<TrackingScripts />` in body after LayoutShell
+- **Learnings:**
+  - Raw `<script>` tags in server components inside `<head>` don't work reliably in Next.js App Router — use next/script with strategy="afterInteractive"
+  - Server/client split pattern: server component fetches data, passes as props to client component that renders scripts
+  - TrackingScripts goes in `<body>` not `<head>` because next/script afterInteractive injects there
+---
+
+## 2026-02-02 - Sprint 7 Phase 4 - Knowledge Base
+- Created `lib/knowledge.ts` — CRUD + search/filter for knowledge entries (pk: KNOWLEDGE#{uuid}, sk: entry)
+- Created `app/api/admin/knowledge/route.ts` — GET (list/search), POST (create) with auth
+- Created `app/api/admin/knowledge/[id]/route.ts` — GET, PATCH, DELETE with auth
+- Created `app/admin/knowledge/page.tsx` — card grid with search, category filter, create/edit modal with markdown textarea, JSON export
+- **Learnings:**
+  - Use `crypto.randomUUID()` natively — don't import uuid from crypto module (wrong API)
+  - Knowledge categories: FAQ, Script, Template, Document — stored as select field
+  - Simple keyword search on title+content+tags is sufficient for MVP
+---
+
+## 2026-02-02 - Sprint 7 Phase 5 - Blog Enhancements
+- Created `lib/blog-templates.ts` — 4 templates (How-To Guide, Listicle, Location-Based SEO, Case Study) with variable substitution
+- Created `app/admin/blog/create/page.tsx` — template picker, variable inputs, markdown editor, MediaPicker for featured image, draft/publish toggle
+- Modified `app/api/admin/blog/route.ts` — added POST handler for creating posts from admin UI
+- Modified `app/api/blog/upload/route.ts` — added template + templateVariables fields for n8n automation
+- Modified `app/admin/blog/page.tsx` — added Create New Post button, API Docs modal with curl examples
+- **Learnings:**
+  - Template variable substitution uses `{{variableName}}` pattern with regex replace
+  - Blog slug generation: lowercase, replace spaces/special chars with hyphens, dedup hyphens
+  - API Docs modal showing curl examples helps n8n integration without external documentation
+---
+
+## 2026-02-02 - Media Upload Performance Fix
+- Fixed browser-freezing bug in media upload modal
+- Rewrote `components/admin/media/MediaUploadZone.tsx`:
+  - Added concurrency limit (max 2 simultaneous uploads) with queue system
+  - Chunked SHA-256 for large files >5MB (hash first/last 1MB + file size instead of full read)
+  - Skip canvas image optimization for files >15MB
+  - Added setTimeout(0) yields before CPU-intensive operations
+  - Object URL cleanup on unmount, file removal, and after optimization
+  - Added 'queued' status display, XHR 5-minute timeout
+  - Preview URLs only for images <10MB
+- Rewrote `components/admin/media/MediaPicker.tsx`:
+  - Capture-phase Escape key handler ensures modal always closeable
+  - Debounced fetchMedia (500ms) batches multiple upload completion re-fetches
+  - Cleanup timeout refs on unmount
+- **Learnings:**
+  - SHA-256 hashing entire large files on main thread freezes the browser — use chunked approach for files >5MB
+  - Canvas toBlob() is synchronous and blocks UI for large images — skip optimization for files >15MB
+  - Unlimited concurrent uploads overwhelm the browser — use MAX_CONCURRENT=2 with queue ref
+  - Object URLs from createObjectURL() must be revoked to prevent memory leaks
+  - Capture-phase event listeners (`addEventListener(type, handler, true)`) fire before bubbling handlers — useful for guaranteed modal close
+  - Debouncing re-fetches after uploads prevents fetch storms when multiple files complete near-simultaneously
+---

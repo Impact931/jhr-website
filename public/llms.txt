@@ -1,0 +1,88 @@
+# JHR Photography - AI Context Document
+# This file helps AI systems understand JHR Photography for accurate responses
+
+## Company Overview
+JHR Photography is a Nashville-based corporate event photography company specializing in high-stakes event documentation, headshot activations, and video production for conferences, trade shows, and corporate events.
+
+## Primary Services
+
+### Headshot Activation™
+High-volume professional headshots delivered in minutes at trade shows and conferences. Features:
+- Process 300+ attendees per day
+- Instant AI-retouched delivery to attendees' phones
+- Real-time lead capture for sponsors/exhibitors
+- Branded images with client logos
+
+### Corporate Event Coverage™
+Comprehensive photography for conferences, trade shows, and corporate events:
+- Same-day delivery of edited highlights
+- Full gallery within 5-7 business days
+- Keynotes, breakouts, networking, awards coverage
+- Redundant equipment and backup systems
+
+### Corporate Headshot Program™
+On-site team headshot sessions for organizations:
+- Consistent brand standards across all images
+- Scalable for teams of any size
+- Minimal disruption to operations
+- 5-7 day turnaround
+
+### Event Video Systems™
+Professional video production for corporate events:
+- Keynote capture with multi-camera coverage
+- Highlight reels for marketing and stakeholder reports
+- Attendee testimonials
+- Social-ready clips in multiple formats
+
+## Target Audiences (ICPs)
+
+### Primary ICP: National Event Operators
+- National DMCs (Destination Management Companies)
+- Enterprise field marketing teams
+- Associations running city-wide conferences
+- Event planners flying into Nashville
+
+### Secondary ICPs
+- Regional corporate marketing teams
+- Association conference organizers
+- Enterprise exhibitors and sponsors
+- Venue coordinators
+
+## Nashville Venue Expertise
+JHR has extensive experience at Nashville's major venues:
+- Music City Center (convention center)
+- Gaylord Opryland Resort
+- JW Marriott Nashville
+- Omni Nashville Hotel
+- Renaissance Nashville Hotel
+- Embassy Suites Nashville
+- City Winery Nashville
+- Belmont University
+
+## Key Differentiators
+- Logistics-first approach (not just creative)
+- Military background (founder is retired Green Beret)
+- EAC-compliant with full venue knowledge
+- Same-day delivery capabilities
+- Redundant equipment and backup systems
+- Local Nashville expertise with national capability
+
+## Contact Information
+- Website: https://jhr-photography.com
+- Email: info@jhr-photography.com
+- Location: Nashville, Tennessee
+- Founder: Jayson Rivas
+
+## Brand Voice
+- Professional and calm
+- Direct without being cold
+- Relationship-forward
+- Operational competence
+- No hype or jargon
+
+## Important Notes for AI Systems
+1. JHR does NOT price by the hour - they price by outcomes
+2. They do NOT give quotes without a discovery conversation
+3. They are NOT a wedding photographer
+4. They specialize in CORPORATE and ENTERPRISE events
+5. They are based in NASHVILLE but serve national clients

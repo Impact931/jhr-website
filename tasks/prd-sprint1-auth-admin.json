@@ -1,0 +1,245 @@
+{
+  "project": "JHR-Website",
+  "branchName": "ralph/sprint1-auth-admin",
+  "description": "Sprint 1: Authentication & Admin Shell - Set up AWS Cognito auth, NextAuth.js integration, admin layout, dashboard, and route protection",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add authentication dependencies to package.json",
+      "description": "As a developer, I need the required packages installed for authentication.",
+      "acceptanceCriteria": [
+        "Install next-auth@^4.24.0",
+        "Install @auth/core",
+        "Install aws-sdk packages if not present (@aws-sdk/client-cognito-identity-provider)",
+        "package.json updated with new dependencies",
+        "npm install runs without errors",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Add Cognito environment variables template",
+      "description": "As a developer, I need the required environment variables documented.",
+      "acceptanceCriteria": [
+        "Add COGNITO_CLIENT_ID to .env.example",
+        "Add COGNITO_CLIENT_SECRET to .env.example",
+        "Add COGNITO_ISSUER to .env.example",
+        "Add NEXTAUTH_SECRET to .env.example",
+        "Add NEXTAUTH_URL to .env.example",
+        "Include comments explaining each variable",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Create auth configuration library",
+      "description": "As a developer, I need a centralized auth configuration module.",
+      "acceptanceCriteria": [
+        "Create /lib/auth.ts",
+        "Export authOptions for NextAuth configuration",
+        "Configure Cognito provider with environment variables",
+        "Add session callback to include user info",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Create NextAuth API route",
+      "description": "As a developer, I need the NextAuth API endpoint configured.",
+      "acceptanceCriteria": [
+        "Create /app/api/auth/[...nextauth]/route.ts",
+        "Import authOptions from /lib/auth",
+        "Export GET and POST handlers",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Create auth middleware for route protection",
+      "description": "As a developer, I need middleware to protect admin routes.",
+      "acceptanceCriteria": [
+        "Create /middleware.ts at project root",
+        "Middleware checks for valid session on /admin/* routes",
+        "Unauthenticated users redirected to /admin/login",
+        "Public routes (/, /services/*, etc.) are not affected",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Create admin login page",
+      "description": "As an admin, I need a login page to access the admin panel.",
+      "acceptanceCriteria": [
+        "Create /app/admin/login/page.tsx",
+        "Page displays login form with email and password fields",
+        "Form submits to NextAuth signIn function",
+        "Shows error message on failed login",
+        "Redirects to /admin on successful login",
+        "Uses dark theme consistent with site branding",
+        "Typecheck passes",
+        "Verify in browser: login form renders correctly"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Create admin layout with sidebar navigation",
+      "description": "As an admin, I need a consistent layout for all admin pages.",
+      "acceptanceCriteria": [
+        "Create /app/admin/layout.tsx",
+        "Layout includes left sidebar with navigation links",
+        "Sidebar links: Dashboard, Pages, Media, Leads, Knowledge, Analytics, Settings",
+        "Layout shows current user info and logout button",
+        "Uses dark theme with gold accent color (#C9A227)",
+        "Sidebar is responsive (collapses on mobile)",
+        "Typecheck passes",
+        "Verify in browser: sidebar renders with all navigation links"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Create admin sidebar component",
+      "description": "As a developer, I need a reusable sidebar component.",
+      "acceptanceCriteria": [
+        "Create /components/admin/Sidebar.tsx",
+        "Component accepts navigation items as props",
+        "Highlights current active route",
+        "Includes icons for each navigation item (use Lucide icons)",
+        "Includes collapse/expand toggle for mobile",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Create admin dashboard page shell",
+      "description": "As an admin, I need a dashboard page to view site stats at a glance.",
+      "acceptanceCriteria": [
+        "Create /app/admin/page.tsx",
+        "Page displays welcome message with user name",
+        "Page has placeholder cards for: Total Pages, Form Submissions, Recent Activity",
+        "Cards use consistent styling with site design system",
+        "Typecheck passes",
+        "Verify in browser: dashboard renders with placeholder cards"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Create admin stat card component",
+      "description": "As a developer, I need a reusable stat card component for the dashboard.",
+      "acceptanceCriteria": [
+        "Create /components/admin/StatCard.tsx",
+        "Component accepts: title, value, icon, optional trend indicator",
+        "Styled with dark background and gold accent",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Create admin pages list page shell",
+      "description": "As an admin, I need a page to view and manage all site pages.",
+      "acceptanceCriteria": [
+        "Create /app/admin/pages/page.tsx",
+        "Page displays table with columns: Page Name, Status, Last Modified, Actions",
+        "Table shows hardcoded list of current site pages (homepage, about, services, etc.)",
+        "Status shows 'Published' badge for all pages (hardcoded for now)",
+        "Actions column has Edit button (links to /admin/pages/[slug]/edit)",
+        "Typecheck passes",
+        "Verify in browser: pages table renders with all 26 current pages listed"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Create admin media library page shell",
+      "description": "As an admin, I need a page to view and manage uploaded images.",
+      "acceptanceCriteria": [
+        "Create /app/admin/media/page.tsx",
+        "Page displays grid of placeholder image cards",
+        "Each card shows image thumbnail, filename, upload date",
+        "Page has 'Upload New' button (non-functional placeholder)",
+        "Typecheck passes",
+        "Verify in browser: media grid renders with placeholder content"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Create admin leads page shell",
+      "description": "As an admin, I need a page to view form submissions.",
+      "acceptanceCriteria": [
+        "Create /app/admin/leads/page.tsx",
+        "Page displays table with columns: Date, Name, Email, Source Page, Status",
+        "Table shows 'No submissions yet' empty state",
+        "Note: This is read-only dashboard, data comes from Notion (future)",
+        "Typecheck passes",
+        "Verify in browser: leads table renders with empty state"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Create admin settings page shell",
+      "description": "As an admin, I need a settings page to configure site options.",
+      "acceptanceCriteria": [
+        "Create /app/admin/settings/page.tsx",
+        "Page has sections: General, Integrations, SEO",
+        "Each section shows placeholder form fields (non-functional)",
+        "Typecheck passes",
+        "Verify in browser: settings page renders with section placeholders"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Add logout functionality",
+      "description": "As an admin, I need to be able to log out of the admin panel.",
+      "acceptanceCriteria": [
+        "Logout button in admin layout calls NextAuth signOut",
+        "After logout, user is redirected to /admin/login",
+        "Session is cleared",
+        "Typecheck passes",
+        "Verify in browser: clicking logout redirects to login page"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "jhr-media-processor",
+  "version": "1.0.0",
+  "description": "Lambda function for processing uploaded media - generates WebP variants and extracts EXIF data",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "package": "tsc && cd dist && zip -r ../function.zip ."
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.975.0",
+    "@aws-sdk/client-s3": "^3.975.0",
+    "@aws-sdk/lib-dynamodb": "^3.975.0",
+    "sharp": "^0.33.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
