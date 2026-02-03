@@ -10,6 +10,7 @@ import {
 import Link from 'next/link';
 import MediaPicker from '@/components/admin/media/MediaPicker';
 import { FloatingToolbar } from '@/components/inline-editor/FloatingToolbar';
+import { BlogSEOMetrics } from '@/components/blog/BlogSEOMetrics';
 import { createContentEditorExtensions, EDITOR_CLASSES } from '@/lib/tiptap-config';
 import { blogTemplates, applyTemplate } from '@/lib/blog-templates';
 import type { MediaPickerResult } from '@/types/media';
@@ -65,6 +66,8 @@ export default function BlogCreatePage() {
   const [error, setError] = useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [editorFocused, setEditorFocused] = useState(false);
+  const [targetKeyword, setTargetKeyword] = useState('');
+  const [editorContent, setEditorContent] = useState('');
 
   // Initialize Tiptap editor with content editor extensions
   const editor = useEditor({
@@ -74,6 +77,10 @@ export default function BlogCreatePage() {
     immediatelyRender: false,
     onFocus: () => setEditorFocused(true),
     onBlur: () => setEditorFocused(false),
+    onUpdate: ({ editor: ed }) => {
+      // Track content for SEO metrics
+      setEditorContent(ed.getHTML());
+    },
   });
 
   const template = useMemo(
@@ -392,6 +399,13 @@ export default function BlogCreatePage() {
               className="w-full px-3 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white placeholder:text-jhr-white-dim focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold text-sm"
             />
           </div>
+
+          {/* SEO Metrics */}
+          <BlogSEOMetrics
+            content={editorContent}
+            targetKeyword={targetKeyword}
+            onKeywordChange={setTargetKeyword}
+          />
         </div>
       </div>
 
