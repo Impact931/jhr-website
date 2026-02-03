@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { getItem } from '@/lib/dynamodb';
 import type { BlogPost } from '@/types/blog';
 import BlogPostClient from '@/components/blog/BlogPostClient';
@@ -276,3 +278,27 @@ export default async function BlogPostPage({ params }: PageProps) {
   );
 }
 
+// ============================================================================
+// Not Found Component
+// ============================================================================
+
+export function NotFound() {
+  return (
+    <main className="min-h-screen bg-jhr-black">
+      <section className="pt-32 pb-16">
+        <div className="section-container text-center">
+          <h1 className="text-display-md font-display font-bold text-jhr-white mb-4">
+            Post Not Found
+          </h1>
+          <p className="text-body-lg text-jhr-white-dim mb-8">
+            The blog post you&apos;re looking for doesn&apos;t exist or has been removed.
+          </p>
+          <Link href="/blog" className="btn-primary inline-flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Blog
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
+}
