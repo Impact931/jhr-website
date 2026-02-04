@@ -17,6 +17,7 @@ import {
   Check,
   X,
   Type,
+  Palette,
 } from 'lucide-react';
 import {
   INLINE_FORMATS,
@@ -24,6 +25,7 @@ import {
   FONT_FAMILIES,
   FONT_WEIGHTS,
   FONT_SIZES,
+  TEXT_COLORS,
   HEADING_LEVELS,
   PARAGRAPH_OPTION,
   TEXT_ALIGNMENTS,
@@ -41,7 +43,7 @@ interface FloatingToolbarProps {
   visible?: boolean;
 }
 
-type DropdownType = 'heading' | 'font' | 'weight' | 'size' | null;
+type DropdownType = 'heading' | 'font' | 'weight' | 'size' | 'color' | null;
 
 // ============================================================================
 // Icon Mapping
@@ -315,6 +317,21 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
     [editor]
   );
 
+  // ---- Text Color ----
+  const handleTextColor = useCallback(
+    (color: string) => {
+      if (!editor) return;
+      if (color === '') {
+        // Reset to default color
+        editor.chain().focus().unsetColor().run();
+      } else {
+        editor.chain().focus().setColor(color).run();
+      }
+      setActiveDropdown(null);
+    },
+    [editor]
+  );
+
   // ---- Text Alignment ----
   const handleAlignment = useCallback(
     (alignment: string) => {
@@ -409,6 +426,13 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
       return currentSize;
     }
     return 'Size';
+  };
+
+  /** Get current text color. */
+  const getCurrentColor = (): string => {
+    if (!editor) return '';
+    const attrs = editor.getAttributes('textStyle');
+    return (attrs?.color as string) || '';
   };
 
   // Don't render if no editor or not visible
@@ -600,6 +624,66 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
                   )}
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* ---- Text Color Picker ---- */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => toggleDropdown('color')}
+            onMouseDown={(e) => e.preventDefault()}
+            title="Text Color"
+            className={`
+              p-1.5 sm:p-1.5 rounded transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px] flex items-center justify-center touch-manipulation
+              ${activeDropdown === 'color'
+                ? 'bg-jhr-gold/20 text-jhr-gold'
+                : 'text-gray-300 hover:text-white hover:bg-white/10'
+              }
+            `}
+          >
+            <div className="relative">
+              <Palette className="w-4 h-4" />
+              {getCurrentColor() && (
+                <div
+                  className="absolute -bottom-0.5 left-0 right-0 h-1 rounded-full"
+                  style={{ backgroundColor: getCurrentColor() }}
+                />
+              )}
+            </div>
+          </button>
+          {activeDropdown === 'color' && (
+            <div className={`absolute ${dropdownPositionClass} left-0 bg-[#1A1A1A] border border-gray-700 rounded-lg shadow-xl p-2 min-w-[180px] z-10`}>
+              <div className="grid grid-cols-4 gap-1">
+                {TEXT_COLORS.map((c) => (
+                  <button
+                    key={c.value || 'default'}
+                    type="button"
+                    onClick={() => handleTextColor(c.value)}
+                    title={`${c.label} - ${c.description}`}
+                    className={`
+                      w-9 h-9 rounded-lg flex items-center justify-center transition-all touch-manipulation
+                      ${getCurrentColor() === c.value || (!getCurrentColor() && c.value === '')
+                        ? 'ring-2 ring-jhr-gold ring-offset-1 ring-offset-[#1A1A1A]'
+                        : 'hover:scale-110'
+                      }
+                    `}
+                    style={{
+                      backgroundColor: c.value || 'transparent',
+                      border: c.value === '' ? '2px dashed #6B7280' : c.value === '#FFFFFF' ? '1px solid #374151' : 'none',
+                    }}
+                  >
+                    {c.value === '' && <X className="w-4 h-4 text-gray-400" />}
+                    {getCurrentColor() === c.value && c.value !== '' && (
+                      <Check className="w-4 h-4" style={{ color: c.value === '#FFFFFF' || c.value === '#D1D5DB' ? '#000' : '#FFF' }} />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 pt-2 border-t border-gray-700 text-xs text-gray-500 text-center">
+                {TEXT_COLORS.find(c => c.value === getCurrentColor())?.label || 'Select a color'}
+              </div>
             </div>
           )}
         </div>

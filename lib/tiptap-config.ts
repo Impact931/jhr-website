@@ -29,6 +29,7 @@ import Image from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
 import { Extension } from '@tiptap/core';
 import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
@@ -158,6 +159,25 @@ export const FONT_SIZES = [
   { label: '72px', value: '72px' },
 ] as const;
 
+/**
+ * Available text colors for the toolbar color picker.
+ * Includes JHR brand colors and common text colors.
+ */
+export const TEXT_COLORS = [
+  { label: 'Default', value: '', description: 'Reset to default' },
+  { label: 'White', value: '#FFFFFF', description: 'Primary text color' },
+  { label: 'Gold', value: '#C9A227', description: 'JHR brand accent' },
+  { label: 'Light Gold', value: '#D4B548', description: 'JHR secondary accent' },
+  { label: 'Gray', value: '#9CA3AF', description: 'Muted text' },
+  { label: 'Light Gray', value: '#D1D5DB', description: 'Subtle text' },
+  { label: 'Red', value: '#EF4444', description: 'Alert/error' },
+  { label: 'Green', value: '#22C55E', description: 'Success' },
+  { label: 'Blue', value: '#3B82F6', description: 'Link/info' },
+  { label: 'Purple', value: '#A855F7', description: 'Highlight' },
+  { label: 'Orange', value: '#F97316', description: 'Warning' },
+  { label: 'Teal', value: '#14B8A6', description: 'Accent' },
+] as const;
+
 // ============================================================================
 // Heading Configuration
 // ============================================================================
@@ -280,8 +300,11 @@ export function createEditorExtensions(config: TiptapEditorConfig = {}): Extensi
     // Underline text decoration
     Underline,
 
-    // TextStyle mark (required for font-family and font-weight)
+    // TextStyle mark (required for font-family, font-weight, and color)
     TextStyle,
+
+    // Text color support (uses TextStyle)
+    Color,
 
     // Font family support
     FontFamily,
