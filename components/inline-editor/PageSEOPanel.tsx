@@ -13,7 +13,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useContent } from '@/context/inline-editor/ContentContext';
-import ImageUploader from '@/components/admin/ImageUploader';
+import MediaPicker from '@/components/admin/media/MediaPicker';
+import type { MediaPickerResult } from '@/types/media';
 import type { PageSEOMetadata } from '@/types/inline-editor';
 
 /**
@@ -152,7 +153,7 @@ interface GeneratedSEO {
 export function PageSEOPanel({ onClose }: { onClose: () => void }) {
   const { pageSEO, updatePageSEO, sections, pageSlug } = useContent();
   const [activeTab, setActiveTab] = useState<SEOTab>('fields');
-  const [showImageUploader, setShowImageUploader] = useState(false);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
 
   // AI generation state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -163,9 +164,11 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
     updatePageSEO({ [field]: value });
   };
 
-  const handleImageUpload = (url: string) => {
-    updatePageSEO({ ogImage: url });
-    setShowImageUploader(false);
+  const handleMediaSelect = (results: MediaPickerResult[]) => {
+    if (results.length > 0) {
+      updatePageSEO({ ogImage: results[0].publicUrl });
+    }
+    setShowMediaPicker(false);
   };
 
   const handleRemoveImage = () => {
@@ -430,7 +433,7 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end justify-between p-3">
                       <button
-                        onClick={() => setShowImageUploader(true)}
+                        onClick={() => setShowMediaPicker(true)}
                         className="px-3 py-1.5 text-xs font-medium bg-zinc-800/90 text-zinc-200 rounded-md hover:bg-zinc-700 transition-colors"
                       >
                         Replace
@@ -445,7 +448,7 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
                   </div>
                 ) : (
                   <button
-                    onClick={() => setShowImageUploader(true)}
+                    onClick={() => setShowMediaPicker(true)}
                     className="w-full aspect-[1.91/1] max-h-48 bg-zinc-900 border-2 border-dashed border-zinc-700/50 rounded-lg flex flex-col items-center justify-center gap-2 text-zinc-500 hover:text-zinc-400 hover:border-zinc-600 transition-colors cursor-pointer"
                   >
                     <ImageIcon className="w-8 h-8" />
@@ -571,26 +574,13 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* Image Uploader Modal */}
-      {showImageUploader && (
-        <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-md bg-[#0F0F0F] border border-zinc-700/50 rounded-xl shadow-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-jhr-white">Upload OG Image</h3>
-              <button
-                onClick={() => setShowImageUploader(false)}
-                className="p-1 rounded text-zinc-400 hover:text-jhr-white hover:bg-zinc-800 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-xs text-zinc-500 mb-3">
-              Recommended size: 1200 x 630 pixels (1.91:1 ratio)
-            </p>
-            <ImageUploader onUpload={handleImageUpload} />
-          </div>
-        </div>
-      )}
+      {/* Media Picker */}
+      <MediaPicker
+        isOpen={showMediaPicker}
+        onClose={() => setShowMediaPicker(false)}
+        onSelect={handleMediaSelect}
+        options={{ allowedTypes: ['image'] }}
+      />
     </div>
   );
 }
