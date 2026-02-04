@@ -10,6 +10,34 @@ import { formatBlogDate } from '@/types/blog';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { EditableText } from '@/components/inline-editor/EditableText';
 
+/**
+ * Process blog content for display.
+ * If content lacks HTML structure, convert plain text with newlines to proper HTML paragraphs.
+ * This ensures consistent rendering between Tiptap edit mode and static view mode.
+ */
+function processContentForDisplay(content: string): string {
+  if (!content) return '';
+
+  // If content already has HTML block elements, return as-is
+  if (/<(p|div|h[1-6]|ul|ol|blockquote|pre)[\s>]/i.test(content)) {
+    return content;
+  }
+
+  // Convert plain text with newlines to HTML paragraphs
+  // Split by double newlines (paragraph breaks) or single newlines
+  const paragraphs = content
+    .split(/\n\n+/)
+    .map(para => para.trim())
+    .filter(para => para.length > 0)
+    .map(para => {
+      // Convert single newlines within a paragraph to <br>
+      const withBreaks = para.replace(/\n/g, '<br>');
+      return `<p>${withBreaks}</p>`;
+    });
+
+  return paragraphs.join('\n');
+}
+
 // ============================================================================
 // Related Post Card
 // ============================================================================
@@ -298,7 +326,7 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
                   prose-strong:text-jhr-white
                   prose-a:text-jhr-gold prose-a:no-underline hover:prose-a:text-jhr-gold-light
                   prose-ul:my-4 prose-ol:my-4"
-                dangerouslySetInnerHTML={{ __html: post.body }}
+                dangerouslySetInnerHTML={{ __html: processContentForDisplay(post.body) }}
               />
             )}
 
