@@ -9,6 +9,8 @@ import {
   ExternalLink,
   AlertTriangle,
   Check,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import ImageUploader from '@/components/admin/ImageUploader';
@@ -133,14 +135,29 @@ function SocialPreview({ seo }: { seo: PageSEOMetadata }) {
 type SEOTab = 'fields' | 'preview';
 
 /**
+ * Generated SEO metadata from AI.
+ */
+interface GeneratedSEO {
+  pageTitle: string;
+  metaDescription: string;
+  ogTitle: string;
+  ogDescription: string;
+}
+
+/**
  * Page-level SEO editor panel.
  * Shown in the EditModeToggle expanded state.
  * Allows editing: Page Title, Meta Description, OG Image, OG Title, OG Description.
  */
 export function PageSEOPanel({ onClose }: { onClose: () => void }) {
-  const { pageSEO, updatePageSEO } = useContent();
+  const { pageSEO, updatePageSEO, sections, pageSlug } = useContent();
   const [activeTab, setActiveTab] = useState<SEOTab>('fields');
   const [showImageUploader, setShowImageUploader] = useState(false);
+
+  // AI generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedSEO, setGeneratedSEO] = useState<GeneratedSEO | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   const handleChange = (field: keyof PageSEOMetadata, value: string) => {
     updatePageSEO({ [field]: value });
@@ -155,6 +172,56 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
     updatePageSEO({ ogImage: '' });
   };
 
+  const handleGenerateSEO = async () => {
+    setIsGenerating(true);
+    setGenerateError(null);
+    setGeneratedSEO(null);
+
+    try {
+      const response = await fetch(`/api/admin/pages/${pageSlug}/generate-seo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sections }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to generate SEO');
+      }
+
+      const data = await response.json();
+      setGeneratedSEO(data.seo);
+
+      if (data.warning) {
+        setGenerateError(data.warning);
+      }
+    } catch (error) {
+      console.error('SEO generation error:', error);
+      setGenerateError(error instanceof Error ? error.message : 'Failed to generate SEO');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleApplyGenerated = () => {
+    if (!generatedSEO) return;
+
+    updatePageSEO({
+      pageTitle: generatedSEO.pageTitle,
+      metaDescription: generatedSEO.metaDescription,
+      ogTitle: generatedSEO.ogTitle,
+      ogDescription: generatedSEO.ogDescription,
+    });
+
+    setGeneratedSEO(null);
+    setGenerateError(null);
+  };
+
+  const handleDiscardGenerated = () => {
+    setGeneratedSEO(null);
+    setGenerateError(null);
+  };
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-2xl max-h-[85vh] bg-[#0F0F0F] border border-zinc-700/50 rounded-xl shadow-2xl flex flex-col overflow-hidden">
@@ -164,12 +231,31 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
             <Search className="w-5 h-5 text-jhr-gold" />
             <h2 className="text-lg font-semibold text-jhr-white">Page SEO Settings</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-jhr-white hover:bg-zinc-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleGenerateSEO}
+              disabled={isGenerating}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Generate with AI</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-jhr-white hover:bg-zinc-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -198,6 +284,86 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+          {/* Generated SEO Preview Card */}
+          {generatedSEO && (
+            <div className="rounded-lg border border-purple-500/50 bg-purple-950/20 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  <span className="text-sm font-medium text-purple-300">AI-Generated SEO</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleApplyGenerated}
+                    className="px-3 py-1 text-xs font-medium bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors"
+                  >
+                    Apply All
+                  </button>
+                  <button
+                    onClick={handleDiscardGenerated}
+                    className="px-3 py-1 text-xs font-medium bg-zinc-700 text-zinc-300 rounded hover:bg-zinc-600 transition-colors"
+                  >
+                    Discard
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-zinc-400">Page Title</span>
+                    <span className="text-xs text-zinc-500">{generatedSEO.pageTitle.length} chars</span>
+                  </div>
+                  <p className="text-sm text-zinc-200 bg-zinc-900/50 rounded px-2 py-1.5">
+                    {generatedSEO.pageTitle}
+                  </p>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-zinc-400">Meta Description</span>
+                    <span className="text-xs text-zinc-500">{generatedSEO.metaDescription.length} chars</span>
+                  </div>
+                  <p className="text-sm text-zinc-200 bg-zinc-900/50 rounded px-2 py-1.5">
+                    {generatedSEO.metaDescription}
+                  </p>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-zinc-400">OG Title</span>
+                    <span className="text-xs text-zinc-500">{generatedSEO.ogTitle.length} chars</span>
+                  </div>
+                  <p className="text-sm text-zinc-200 bg-zinc-900/50 rounded px-2 py-1.5">
+                    {generatedSEO.ogTitle}
+                  </p>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-zinc-400">OG Description</span>
+                    <span className="text-xs text-zinc-500">{generatedSEO.ogDescription.length} chars</span>
+                  </div>
+                  <p className="text-sm text-zinc-200 bg-zinc-900/50 rounded px-2 py-1.5">
+                    {generatedSEO.ogDescription}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error Toast */}
+          {generateError && !generatedSEO && (
+            <div className="flex items-center justify-between rounded-lg border border-red-500/50 bg-red-950/20 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+                <span className="text-sm text-red-300">{generateError}</span>
+              </div>
+              <button
+                onClick={() => setGenerateError(null)}
+                className="p-1 text-red-400 hover:text-red-300 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {activeTab === 'fields' && (
             <>
               {/* Page Title */}
