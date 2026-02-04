@@ -5,10 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, Clock, User, ArrowLeft, Tag, ChevronRight, Save, Loader2, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useEditor, EditorContent } from '@tiptap/react';
 import type { BlogPost } from '@/types/blog';
 import { formatBlogDate } from '@/types/blog';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
-import { EditableText } from '@/components/inline-editor/EditableText';
+import { FloatingToolbar } from '@/components/inline-editor/FloatingToolbar';
+import { createContentEditorExtensions, EDITOR_CLASSES } from '@/lib/tiptap-config';
 
 /**
  * Process blog content for display.
@@ -88,8 +90,22 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [editorFocused, setEditorFocused] = useState(false);
 
   const { canEdit, isEditMode } = useEditMode();
+
+  // Initialize Tiptap editor for blog body (only when in edit mode)
+  const editor = useEditor({
+    extensions: createContentEditorExtensions('Write your blog post content...'),
+    content: editedBody,
+    editable: canEdit && isEditMode,
+    immediatelyRender: false,
+    onUpdate: ({ editor: ed }) => {
+      setEditedBody(ed.getHTML());
+    },
+    onFocus: () => setEditorFocused(true),
+    onBlur: () => setEditorFocused(false),
+  }, [canEdit, isEditMode]);
 
   // Track if there are unsaved changes
   const hasChanges = editedTitle !== post.title || editedBody !== post.body;
@@ -118,19 +134,18 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
     setPost(initialPost);
     setEditedTitle(initialPost.title);
     setEditedBody(initialPost.body);
-  }, [initialPost]);
+    // Update editor content when initialPost changes
+    if (editor && !editor.isFocused) {
+      editor.commands.setContent(initialPost.body, { emitUpdate: false });
+    }
+  }, [initialPost, editor]);
 
-  // Handle title changes from EditableText
-  const handleTitleChange = useCallback((html: string) => {
-    // Strip HTML tags for title (it's plain text)
-    const plainText = html.replace(/<[^>]*>/g, '').trim();
-    setEditedTitle(plainText);
-  }, []);
-
-  // Handle body changes from EditableText
-  const handleBodyChange = useCallback((html: string) => {
-    setEditedBody(html);
-  }, []);
+  // Update editor editability when edit mode changes
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(canEdit && isEditMode);
+    }
+  }, [editor, canEdit, isEditMode]);
 
   // Save changes to API
   const handleSave = async () => {
@@ -249,16 +264,13 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
 
             {/* Title - Editable when in edit mode */}
             {canEdit && isEditMode ? (
-              <EditableText
-                contentKey={`blog:${post.slug}:title`}
-                as="h1"
-                className="text-display-md font-display font-bold text-jhr-white mb-6"
-                variant="simple"
+              <input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
                 placeholder="Post title..."
-                onChange={handleTitleChange}
-              >
-                {editedTitle}
-              </EditableText>
+                className="w-full text-display-md font-display font-bold text-jhr-white mb-6 bg-transparent border-none outline-none focus:ring-2 focus:ring-jhr-gold/50 rounded px-2 -mx-2"
+              />
             ) : (
               <h1 className="text-display-md font-display font-bold text-jhr-white mb-6">
                 {post.title}
@@ -296,25 +308,34 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
           >
             {/* Body - Editable when in edit mode */}
             {canEdit && isEditMode ? (
-              <EditableText
-                contentKey={`blog:${post.slug}:body`}
-                as="div"
-                className="prose prose-invert prose-gold max-w-none
-                  prose-headings:font-display prose-headings:text-jhr-white
-                  prose-h2:text-heading-md prose-h2:mt-10 prose-h2:mb-4
-                  prose-h3:text-heading-sm prose-h3:mt-8 prose-h3:mb-3
-                  prose-p:text-jhr-white-dim prose-p:text-body prose-p:leading-relaxed prose-p:mb-4
-                  prose-li:text-jhr-white-dim prose-li:text-body
-                  prose-strong:text-jhr-white
-                  prose-a:text-jhr-gold prose-a:no-underline hover:prose-a:text-jhr-gold-light
-                  prose-ul:my-4 prose-ol:my-4"
-                variant="rich"
-                multiline
-                placeholder="Write your blog post content..."
-                onChange={handleBodyChange}
-              >
-                {editedBody}
-              </EditableText>
+              <div className="relative">
+                {/* Floating Toolbar */}
+                <FloatingToolbar editor={editor} visible={editorFocused} />
+
+                {/* Editor Container */}
+                <div
+                  className={`
+                    min-h-[300px] rounded-lg transition-colors
+                    ${editorFocused ? 'ring-2 ring-jhr-gold/50' : ''}
+                  `}
+                >
+                  <EditorContent
+                    editor={editor}
+                    className={`
+                      ${EDITOR_CLASSES.prose}
+                      prose prose-invert prose-gold max-w-none
+                      prose-headings:font-display prose-headings:text-jhr-white
+                      prose-h2:text-heading-md prose-h2:mt-10 prose-h2:mb-4
+                      prose-h3:text-heading-sm prose-h3:mt-8 prose-h3:mb-3
+                      prose-p:text-jhr-white-dim prose-p:text-body prose-p:leading-relaxed prose-p:mb-4
+                      prose-li:text-jhr-white-dim prose-li:text-body
+                      prose-strong:text-jhr-white
+                      prose-a:text-jhr-gold prose-a:no-underline hover:prose-a:text-jhr-gold-light
+                      prose-ul:my-4 prose-ol:my-4
+                    `}
+                  />
+                </div>
+              </div>
             ) : (
               <div
                 className="prose prose-invert prose-gold max-w-none
