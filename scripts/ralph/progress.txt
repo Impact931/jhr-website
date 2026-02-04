@@ -531,3 +531,163 @@ Started: Wed Jan 28 16:47:34 CST 2026
   - Capture-phase event listeners (`addEventListener(type, handler, true)`) fire before bubbling handlers — useful for guaranteed modal close
   - Debouncing re-fetches after uploads prevents fetch storms when multiple files complete near-simultaneously
 ---
+
+## 2026-02-03 - Sprint 5 - Blog Enhancement System Complete
+- All 5 user stories implemented and deployed:
+  - US-501: Fixed blog SEO metadata rendering (converted to Server Component with generateMetadata())
+  - US-502: Added inline editing to blog posts (EditableText integration, PATCH API endpoint)
+  - US-503: Replaced blog create textarea with Tiptap editor
+  - US-504: Added venue-guide blog template
+  - US-505: Added real-time word count and keyword density metrics
+- Files created:
+  - `/components/blog/BlogPostClient.tsx` - Client wrapper for blog post interactivity
+  - `/components/blog/BlogSEOMetrics.tsx` - Real-time SEO metrics panel
+  - `/app/api/admin/blog/[slug]/route.ts` - PATCH endpoint for inline updates
+  - `/app/blog/[slug]/not-found.tsx` - Proper 404 page for blog posts
+- Files changed:
+  - `/app/blog/[slug]/page.tsx` - Converted from 'use client' to Server Component
+  - `/app/admin/blog/create/page.tsx` - Rewrote with Tiptap editor, template picker, SEO metrics
+  - `/lib/blog-templates.ts` - Added venue-guide template with FAQ section
+  - `/components/inline-editor/EditableText.tsx` - Added onChange prop for external state sync
+- Deployment verified on AWS Amplify
+- **Learnings:**
+  - Server Components CANNOT have 'use client' directive — move all interactivity to separate client component
+  - generateMetadata() only works in Server Components — critical for SEO
+  - Next.js App Router: "NotFound" is not a valid page export — must use `not-found.tsx` file
+  - EditableText onChange callback enables external state management alongside ContentContext
+---
+
+## FUTURE FEATURE: OpenAI-Powered Page SEO Generation
+
+**Priority:** High (next sprint candidate)
+**Estimated Scope:** 1 user story
+
+### Overview
+Add a "Generate SEO with AI" button to the PageSEOPanel component that uses OpenAI to analyze page content and generate optimized SEO metadata.
+
+### Implementation Plan
+
+**1. Create API Endpoint**
+- File: `/app/api/admin/pages/[slug]/generate-seo/route.ts`
+- Method: POST
+- Auth: NextAuth session required
+- Input: Page slug (from URL)
+- Process:
+  - Fetch current page content from DynamoDB (use existing content from schema sections)
+  - Extract text content from all sections (strip HTML, concatenate)
+  - Call OpenAI gpt-4o-mini with SEO generation prompt
+  - Return generated metadata (don't save yet — preview first)
+- Output:
+  ```typescript
+  {
+    metaTitle: string;      // 50-60 chars, includes target keyword
+    metaDescription: string; // 150-160 chars, compelling CTA
+    keywords: string[];      // 5-10 relevant keywords
+    ogTitle: string;         // Social sharing title
+    ogDescription: string;   // Social sharing description
+    jsonLd: object;          // Structured data for page type
+    geoMetadata?: {          // GEO optimization fields
+      topicClassification: string;
+      entityExtraction: string[];
+      contentSummary: string;
+    }
+  }
+  ```
+
+**2. Update PageSEOPanel Component**
+- File: `/components/inline-editor/PageSEOPanel.tsx`
+- Add "Generate SEO with AI" button (gold, with sparkle icon)
+- Show loading state during API call
+- Display preview modal with generated metadata
+- Allow user to edit before applying
+- Apply button updates form fields (doesn't save to DB yet — user clicks main Save)
+
+**3. OpenAI Prompt Template**
+```
+You are an SEO expert optimizing a page for JHR Photography, a Nashville corporate event photographer.
+
+Page URL: {pageUrl}
+Page Content:
+{extractedContent}
+
+Generate SEO metadata optimized for:
+- Primary keyword: {suggestedKeyword} (if provided)
+- Local SEO (Nashville)
+- Corporate/B2B audience
+- GEO (AI citation optimization)
+
+Return JSON with: metaTitle, metaDescription, keywords, ogTitle, ogDescription, jsonLd (WebPage or Service schema), geoMetadata
+```
+
+**4. UI Flow**
+1. Admin opens PageSEOPanel for any page
+2. Clicks "Generate SEO with AI"
+3. Loading spinner (2-3 seconds)
+4. Preview modal shows generated fields side-by-side with current values
+5. Admin can edit any field in preview
+6. "Apply" copies values to main SEO form
+7. Admin clicks existing "Save" to persist
+
+### Files to Create/Modify
+| Action | File |
+|--------|------|
+| Create | `/app/api/admin/pages/[slug]/generate-seo/route.ts` |
+| Modify | `/components/inline-editor/PageSEOPanel.tsx` |
+| Create | `/components/inline-editor/SEOPreviewModal.tsx` (optional, could be inline) |
+
+### Dependencies
+- OpenAI SDK (already installed)
+- `OPENAI_API_KEY` env var (already configured)
+- Existing PageSEOPanel component
+- Existing page content storage pattern
+
+### Testing Checklist
+- [ ] API returns valid JSON for each page type (service, solution, venue, core)
+- [ ] Generated titles are 50-60 chars
+- [ ] Generated descriptions are 150-160 chars
+- [ ] Preview modal displays correctly
+- [ ] Apply button populates form fields
+- [ ] Works without keyword suggestion
+- [ ] Handles API errors gracefully
+- [ ] Loading state prevents double-clicks
+
+### Notes
+- Reuse patterns from `/lib/blog-seo.ts` for OpenAI integration
+- Consider caching generated SEO to avoid redundant API calls
+- Could extend to batch-generate SEO for all pages from admin dashboard
+---
+
+## 2026-02-04 - Admin UX Refinements
+
+### Changes Made
+
+**1. Font Color Picker for FloatingToolbar**
+- Installed `@tiptap/extension-color` package
+- Added Color extension to `/lib/tiptap-config.ts`
+- Added `TEXT_COLORS` constant with 12 colors (JHR brand colors + common text colors)
+- Added color picker dropdown to FloatingToolbar with palette icon
+- Shows current color indicator under the icon
+- Files changed:
+  - `lib/tiptap-config.ts` (added Color extension, TEXT_COLORS constant)
+  - `components/inline-editor/FloatingToolbar.tsx` (added color picker UI, handleTextColor handler)
+  - `package.json` (added @tiptap/extension-color dependency)
+
+**2. CloudFront Image Support**
+- Added `*.cloudfront.net` to Next.js image remotePatterns
+- Fixes media library images not displaying on blog listing page
+- File changed: `next.config.mjs`
+
+**3. Blog Inline Editor Fix**
+- Replaced EditableText with direct Tiptap EditorContent for blog body
+- Uses simple input for title editing (doesn't need rich text)
+- Bypasses ContentContext auto-save which was interfering with blog saves
+- Blog now retains styling and edits after saving
+- File changed: `components/blog/BlogPostClient.tsx`
+
+### Learnings
+- ContentContext is designed for page sections, not standalone editors like blog posts
+- EditableText triggers ContentContext's updateContent which has auto-save side effects
+- For standalone editors, use Tiptap's EditorContent directly with local state management
+- Tiptap Color extension requires TextStyle extension (already installed) and uses setColor()/unsetColor() commands
+- CloudFront URLs use `.cloudfront.net` domain, not `*.amazonaws.com`
+---
