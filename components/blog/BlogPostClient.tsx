@@ -19,9 +19,9 @@ import {
 import { motion } from 'framer-motion';
 import type { BlogPost } from '@/types/blog';
 import { formatBlogDate, migrateLegacyBlogPost, extractFeaturedImage } from '@/types/blog';
-import type { PageSectionContent, PageSEOMetadata } from '@/types/inline-editor';
+import type { PageSectionContent } from '@/types/inline-editor';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
-import { ContentProvider, useContent } from '@/context/inline-editor/ContentContext';
+import { BlogContentProvider, useBlogContent } from '@/context/blog/BlogContentContext';
 import { SectionRenderer } from '@/components/inline-editor/SectionRenderer';
 import { SectionWrapper } from '@/components/inline-editor/SectionWrapper';
 import { AddSectionModal } from '@/components/inline-editor/AddSectionModal';
@@ -67,19 +67,11 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
 interface SectionBasedContentProps {
   post: BlogPost;
   isEditing: boolean;
-  onSave: (sections?: PageSectionContent[], seo?: PageSEOMetadata) => Promise<void>;
-  saving: boolean;
-  saveSuccess: boolean;
-  saveError: string | null;
 }
 
 function SectionBasedContent({
   post,
   isEditing,
-  onSave,
-  saving,
-  saveSuccess,
-  saveError,
 }: SectionBasedContentProps) {
   const {
     sections,
@@ -87,23 +79,23 @@ function SectionBasedContent({
     deleteSection,
     moveSectionUp,
     moveSectionDown,
-    loadSections,
-    loadSectionsForPage,
+    loadBlogPost,
     hasUnsavedChanges,
-    pageSEO,
-  } = useContent();
+    saveState,
+    save,
+  } = useBlogContent();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [insertIndex, setInsertIndex] = useState(0);
 
-  // Load sections from post when component mounts or post changes
-  // Use loadSectionsForPage to set the correct page slug for localStorage
+  // Load blog post into context when component mounts or post changes
   useEffect(() => {
-    const sectionsToLoad = post.sections && post.sections.length > 0
-      ? post.sections
-      : migrateLegacyBlogPost(post).sections || [];
-    loadSectionsForPage(post.slug, sectionsToLoad);
-  }, [post, loadSectionsForPage]);
+    // Migrate legacy posts to sections format if needed
+    const postToLoad = post.sections && post.sections.length > 0
+      ? post
+      : { ...post, sections: migrateLegacyBlogPost(post).sections || [] };
+    loadBlogPost(postToLoad);
+  }, [post, loadBlogPost]);
 
   const handleOpenAddModal = useCallback((index: number) => {
     setInsertIndex(index);
@@ -138,24 +130,24 @@ function SectionBasedContent({
             Editing: {post.title.slice(0, 30)}
             {post.title.length > 30 ? '...' : ''}
           </span>
-          {saveError && (
-            <span className="text-body-sm text-red-400">{saveError}</span>
+          {saveState.error && (
+            <span className="text-body-sm text-red-400">{saveState.error}</span>
           )}
           <button
-            onClick={() => onSave(sections, pageSEO)}
-            disabled={saving || !hasUnsavedChanges}
+            onClick={() => save()}
+            disabled={saveState.status === 'saving' || !hasUnsavedChanges}
             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors ${
               hasUnsavedChanges
                 ? 'bg-jhr-gold text-jhr-black hover:bg-jhr-gold/90'
                 : 'bg-jhr-black-lighter text-jhr-white-dim cursor-not-allowed'
             }`}
           >
-            {saving ? (
+            {saveState.status === 'saving' ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Saving...
               </>
-            ) : saveSuccess ? (
+            ) : saveState.status === 'saved' ? (
               <>
                 <Check className="w-4 h-4" />
                 Saved!
@@ -407,9 +399,6 @@ interface BlogPostClientProps {
 export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   const [post, setPost] = useState<BlogPost>(initialPost);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   const { canEdit, isEditMode } = useEditMode();
   const isEditing = canEdit && isEditMode;
@@ -441,74 +430,11 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
     setPost(initialPost);
   }, [initialPost]);
 
-  // Save changes to API - sections are passed from SectionBasedContent which has ContentContext access
-  const handleSave = useCallback(async (sectionsToSave?: PageSectionContent[], seoToSave?: PageSEOMetadata) => {
-    setSaving(true);
-    setSaveError(null);
-    setSaveSuccess(false);
-
-    try {
-      // Try to get sections from localStorage if not passed directly
-      // ContentContext uses key format: jhr-content-{slug}-sections
-      let sections = sectionsToSave;
-      let seo = seoToSave;
-
-      if (!sections) {
-        const rawSections = localStorage.getItem(`jhr-content-${post.slug}-sections`);
-        if (rawSections) {
-          sections = JSON.parse(rawSections);
-        }
-        const rawSeo = localStorage.getItem(`jhr-content-${post.slug}-seo`);
-        if (rawSeo) {
-          seo = JSON.parse(rawSeo);
-        }
-      }
-
-      if (!sections || sections.length === 0) {
-        throw new Error('No sections to save. Please make some changes first.');
-      }
-
-      const res = await fetch(`/api/admin/blog/${post.slug}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sections,
-          seo,
-          version: post.version,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to save changes');
-      }
-
-      const data = await res.json();
-      setPost(data.post);
-      setSaveSuccess(true);
-
-      // Clear localStorage after successful save
-      localStorage.removeItem(`jhr-content-${post.slug}-sections`);
-      localStorage.removeItem(`jhr-content-${post.slug}-seo`);
-
-      // Clear success indicator after 3 seconds
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSaving(false);
-    }
-  }, [post.slug, post.version]);
-
   return (
-    <ContentProvider>
+    <BlogContentProvider>
       <SectionBasedContent
         post={post}
         isEditing={isEditing}
-        onSave={handleSave}
-        saving={saving}
-        saveSuccess={saveSuccess}
-        saveError={saveError}
       />
 
       {/* Related Posts */}
@@ -576,6 +502,6 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
           }}
         />
       )}
-    </ContentProvider>
+    </BlogContentProvider>
   );
 }
