@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { scanItemsByPkPrefix } from '@/lib/dynamodb';
-import type { BlogPost } from '@/types/blog';
-
-interface BlogRecord extends BlogPost {
-  pk: string;
-  sk: string;
-}
+import { listBlogs, searchBlogs } from '@/lib/blog-content';
 
 /**
  * GET /api/blog
  * Fetches all published blog posts for the listing page.
- * Supports optional query params: ?status=all (to include drafts), ?category=X, ?tag=X
+ *
+ * Query params:
+ * - status: 'published' | 'draft' | 'all' (default: 'published')
+ * - category: string (filter by category)
+ * - tag: string (filter by tag)
+ * - q: string (search query)
+ *
+ * Response includes both old (body) and new (sections) format for backward compatibility.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -18,16 +19,12 @@ export async function GET(request: NextRequest) {
     const statusFilter = searchParams.get('status') || 'published';
     const categoryFilter = searchParams.get('category');
     const tagFilter = searchParams.get('tag');
+    const searchQuery = searchParams.get('q');
 
-    const records = await scanItemsByPkPrefix<BlogRecord>('BLOG#');
-
-    // Strip DynamoDB keys and filter
-    let posts: BlogPost[] = records.map(({ pk: _pk, sk: _sk, ...post }) => post);
-
-    // Filter by status (default: only published)
-    if (statusFilter !== 'all') {
-      posts = posts.filter((p) => p.status === statusFilter);
-    }
+    // Get all posts (or search if query provided)
+    let posts = searchQuery
+      ? await searchBlogs(searchQuery, statusFilter === 'all' ? undefined : statusFilter as 'draft' | 'published')
+      : await listBlogs(statusFilter === 'all' ? undefined : statusFilter as 'draft' | 'published');
 
     // Filter by category
     if (categoryFilter) {
@@ -44,7 +41,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Sort by publishedAt descending (most recent first)
-    posts.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+    posts.sort((a, b) => {
+      const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+      const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
     return NextResponse.json({ posts, total: posts.length });
   } catch (error) {

@@ -10,11 +10,13 @@ const STORAGE_KEY = 'jhr-edit-mode';
 
 interface EditModeProviderProps {
   children: ReactNode;
+  /** Force edit mode on regardless of session storage. Used for admin create/edit pages. */
+  forceEditMode?: boolean;
 }
 
-export function EditModeProvider({ children }: EditModeProviderProps) {
+export function EditModeProvider({ children, forceEditMode = false }: EditModeProviderProps) {
   const { data: session, status } = useSession();
-  const [isEditMode, setIsEditModeState] = useState(false);
+  const [isEditMode, setIsEditModeState] = useState(forceEditMode);
 
   const isAuthenticated = status === 'authenticated';
   const user: UserInfo | null = session?.user
@@ -26,11 +28,18 @@ export function EditModeProvider({ children }: EditModeProviderProps) {
     : null;
 
   // Can only edit if authenticated AND edit mode is on
-  const canEdit = isAuthenticated && isEditMode;
+  // Or if forceEditMode is true (admin pages that don't require session check)
+  const canEdit = (isAuthenticated && isEditMode) || forceEditMode;
 
   // Load edit mode from sessionStorage on mount, or from URL param
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // If forceEditMode is true, always enable edit mode
+    if (forceEditMode) {
+      setIsEditModeState(true);
+      return;
+    }
 
     if (isAuthenticated) {
       // Check for ?editMode=true URL param
@@ -52,7 +61,7 @@ export function EditModeProvider({ children }: EditModeProviderProps) {
         setIsEditModeState(true);
       }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, forceEditMode]);
 
   // Persist edit mode to sessionStorage
   const setEditMode = useCallback((enabled: boolean) => {

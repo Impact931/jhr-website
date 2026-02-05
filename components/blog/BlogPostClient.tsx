@@ -3,55 +3,43 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calendar, Clock, User, ArrowLeft, Tag, ChevronRight, Save, Loader2, Check } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  User,
+  ArrowLeft,
+  Tag,
+  ChevronRight,
+  Save,
+  Loader2,
+  Check,
+  Plus,
+  Edit3,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useEditor, EditorContent } from '@tiptap/react';
 import type { BlogPost } from '@/types/blog';
-import { formatBlogDate } from '@/types/blog';
+import { formatBlogDate, migrateLegacyBlogPost, extractFeaturedImage } from '@/types/blog';
+import type { PageSectionContent, PageSEOMetadata } from '@/types/inline-editor';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
-import { FloatingToolbar } from '@/components/inline-editor/FloatingToolbar';
-import { createContentEditorExtensions, EDITOR_CLASSES } from '@/lib/tiptap-config';
-
-/**
- * Process blog content for display.
- * If content lacks HTML structure, convert plain text with newlines to proper HTML paragraphs.
- * This ensures consistent rendering between Tiptap edit mode and static view mode.
- */
-function processContentForDisplay(content: string): string {
-  if (!content) return '';
-
-  // If content already has HTML block elements, return as-is
-  if (/<(p|div|h[1-6]|ul|ol|blockquote|pre)[\s>]/i.test(content)) {
-    return content;
-  }
-
-  // Convert plain text with newlines to HTML paragraphs
-  // Split by double newlines (paragraph breaks) or single newlines
-  const paragraphs = content
-    .split(/\n\n+/)
-    .map(para => para.trim())
-    .filter(para => para.length > 0)
-    .map(para => {
-      // Convert single newlines within a paragraph to <br>
-      const withBreaks = para.replace(/\n/g, '<br>');
-      return `<p>${withBreaks}</p>`;
-    });
-
-  return paragraphs.join('\n');
-}
+import { ContentProvider, useContent } from '@/context/inline-editor/ContentContext';
+import { SectionRenderer } from '@/components/inline-editor/SectionRenderer';
+import { SectionWrapper } from '@/components/inline-editor/SectionWrapper';
+import { AddSectionModal } from '@/components/inline-editor/AddSectionModal';
 
 // ============================================================================
 // Related Post Card
 // ============================================================================
 
 function RelatedPostCard({ post }: { post: BlogPost }) {
+  const featuredImage = post.featuredImage || extractFeaturedImage(post.sections);
+
   return (
     <Link href={`/blog/${post.slug}`} className="group block">
       <article className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg overflow-hidden hover:border-jhr-gold/30 transition-all duration-300">
-        {post.featuredImage && (
+        {featuredImage && (
           <div className="relative aspect-[16/9] overflow-hidden">
             <Image
-              src={post.featuredImage}
+              src={featuredImage}
               alt={post.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -63,7 +51,9 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
           <h3 className="font-display font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors text-body-sm line-clamp-2 mb-2">
             {post.title}
           </h3>
-          <span className="text-xs text-jhr-white-dim">{formatBlogDate(post.publishedAt)}</span>
+          <span className="text-xs text-jhr-white-dim">
+            {formatBlogDate(post.publishedAt)}
+          </span>
         </div>
       </article>
     </Link>
@@ -71,134 +61,91 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
 }
 
 // ============================================================================
-// BlogPostClient Props
+// Section-Based Blog Content Component
 // ============================================================================
 
-interface BlogPostClientProps {
-  initialPost: BlogPost;
+interface SectionBasedContentProps {
+  post: BlogPost;
+  isEditing: boolean;
+  onSave: () => Promise<void>;
+  saving: boolean;
+  saveSuccess: boolean;
+  saveError: string | null;
 }
 
-// ============================================================================
-// BlogPostClient Component
-// ============================================================================
+function SectionBasedContent({
+  post,
+  isEditing,
+  onSave,
+  saving,
+  saveSuccess,
+  saveError,
+}: SectionBasedContentProps) {
+  const {
+    sections,
+    addSection,
+    deleteSection,
+    moveSectionUp,
+    moveSectionDown,
+    loadSections,
+    hasUnsavedChanges,
+  } = useContent();
 
-export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
-  const [post, setPost] = useState<BlogPost>(initialPost);
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
-  const [editedTitle, setEditedTitle] = useState(initialPost.title);
-  const [editedBody, setEditedBody] = useState(initialPost.body);
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [editorFocused, setEditorFocused] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [insertIndex, setInsertIndex] = useState(0);
 
-  const { canEdit, isEditMode } = useEditMode();
+  // Load sections from post when component mounts or post changes
+  useEffect(() => {
+    if (post.sections && post.sections.length > 0) {
+      loadSections(post.sections);
+    } else {
+      // Legacy post - migrate to sections
+      const migrated = migrateLegacyBlogPost(post);
+      loadSections(migrated.sections || []);
+    }
+  }, [post, loadSections]);
 
-  // Initialize Tiptap editor for blog body (only when in edit mode)
-  const editor = useEditor({
-    extensions: createContentEditorExtensions('Write your blog post content...'),
-    content: editedBody,
-    editable: canEdit && isEditMode,
-    immediatelyRender: false,
-    onUpdate: ({ editor: ed }) => {
-      setEditedBody(ed.getHTML());
+  const handleOpenAddModal = useCallback((index: number) => {
+    setInsertIndex(index);
+    setAddModalOpen(true);
+  }, []);
+
+  const handleAddSection = useCallback(
+    (section: PageSectionContent) => {
+      addSection(section, insertIndex);
+      setAddModalOpen(false);
     },
-    onFocus: () => setEditorFocused(true),
-    onBlur: () => setEditorFocused(false),
-  }, [canEdit, isEditMode]);
+    [insertIndex, addSection]
+  );
 
-  // Track if there are unsaved changes
-  const hasChanges = editedTitle !== post.title || editedBody !== post.body;
+  // Find the hero section for featured image and title display
+  const heroSection = sections.find((s) => s.type === 'hero');
+  const featuredImage =
+    heroSection?.type === 'hero'
+      ? heroSection.backgroundImage?.src
+      : post.featuredImage;
 
-  // Fetch related posts client-side (non-critical for SEO)
-  useEffect(() => {
-    async function fetchRelatedPosts() {
-      try {
-        const res = await fetch('/api/blog');
-        if (res.ok) {
-          const data = await res.json();
-          const related = (data.posts || [])
-            .filter((p: BlogPost) => p.slug !== post.slug && p.status === 'published')
-            .slice(0, 3);
-          setRelatedPosts(related);
-        }
-      } catch {
-        // Silently fail - related posts are not critical
-      }
-    }
-    fetchRelatedPosts();
-  }, [post.slug]);
-
-  // Keep post state in sync if initialPost changes
-  useEffect(() => {
-    setPost(initialPost);
-    setEditedTitle(initialPost.title);
-    setEditedBody(initialPost.body);
-    // Update editor content when initialPost changes
-    if (editor && !editor.isFocused) {
-      editor.commands.setContent(initialPost.body, { emitUpdate: false });
-    }
-  }, [initialPost, editor]);
-
-  // Update editor editability when edit mode changes
-  useEffect(() => {
-    if (editor) {
-      editor.setEditable(canEdit && isEditMode);
-    }
-  }, [editor, canEdit, isEditMode]);
-
-  // Save changes to API
-  const handleSave = async () => {
-    if (!hasChanges) return;
-
-    setSaving(true);
-    setSaveError(null);
-    setSaveSuccess(false);
-
-    try {
-      const res = await fetch(`/api/admin/blog/${post.slug}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: editedTitle,
-          body: editedBody,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to save changes');
-      }
-
-      const data = await res.json();
-      setPost(data.post);
-      setSaveSuccess(true);
-
-      // Clear success indicator after 3 seconds
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Get non-hero sections for body content
+  const contentSections = sections.filter((s) => s.type !== 'hero');
 
   return (
     <main className="min-h-screen bg-jhr-black">
       {/* Edit Mode Save Bar */}
-      {canEdit && isEditMode && (
+      {isEditing && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-jhr-black-light border border-jhr-black-lighter rounded-lg shadow-xl px-4 py-2 flex items-center gap-3">
           <span className="text-body-sm text-jhr-white-dim">
-            Editing: {post.title.slice(0, 30)}...
+            <Edit3 className="w-4 h-4 inline mr-1.5" />
+            Editing: {post.title.slice(0, 30)}
+            {post.title.length > 30 ? '...' : ''}
           </span>
           {saveError && (
             <span className="text-body-sm text-red-400">{saveError}</span>
           )}
           <button
-            onClick={handleSave}
-            disabled={saving || !hasChanges}
+            onClick={onSave}
+            disabled={saving || !hasUnsavedChanges}
             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors ${
-              hasChanges
+              hasUnsavedChanges
                 ? 'bg-jhr-gold text-jhr-black hover:bg-jhr-gold/90'
                 : 'bg-jhr-black-lighter text-jhr-white-dim cursor-not-allowed'
             }`}
@@ -223,11 +170,38 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
         </div>
       )}
 
-      {/* Featured Image Hero */}
-      {post.featuredImage && (
+      {/* Featured Image Hero - only render hero section if it exists */}
+      {heroSection ? (
+        <div className="relative">
+          {isEditing ? (
+            <SectionWrapper
+              sectionType={heroSection.type}
+              sectionId={heroSection.id}
+              index={0}
+              totalSections={sections.length}
+              onMoveUp={() => {}}
+              onMoveDown={() => moveSectionDown(0)}
+              onDelete={() => deleteSection(heroSection.id)}
+            >
+              <SectionRenderer
+                section={heroSection}
+                pageSlug={post.slug}
+                contentKeyPrefix={`${post.slug}:${heroSection.id}`}
+              />
+            </SectionWrapper>
+          ) : (
+            <SectionRenderer
+              section={heroSection}
+              pageSlug={post.slug}
+              contentKeyPrefix={`${post.slug}:${heroSection.id}`}
+            />
+          )}
+        </div>
+      ) : featuredImage ? (
+        // Fallback for legacy posts without hero section
         <section className="relative w-full h-[50vh] min-h-[400px] max-h-[600px]">
           <Image
-            src={post.featuredImage}
+            src={featuredImage}
             alt={post.title}
             fill
             className="object-cover"
@@ -236,141 +210,296 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-jhr-black via-jhr-black/50 to-transparent" />
         </section>
-      )}
+      ) : null}
 
-      {/* Post Header */}
-      <section className={`${post.featuredImage ? '-mt-32 relative z-10' : 'pt-32'} pb-8`}>
-        <div className="section-container max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            {/* Back link */}
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-1.5 text-jhr-gold hover:text-jhr-gold-light text-body-sm transition-colors mb-6"
+      {/* Post Header - only shown for legacy posts or when hero doesn't have title */}
+      {!heroSection && (
+        <section
+          className={`${
+            featuredImage ? '-mt-32 relative z-10' : 'pt-32'
+          } pb-8`}
+        >
+          <div className="section-container max-w-3xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Blog
-            </Link>
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-1.5 text-jhr-gold hover:text-jhr-gold-light text-body-sm transition-colors mb-6"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Blog
+              </Link>
 
-            {/* Category */}
-            {post.categories[0] && (
-              <span className="inline-block px-3 py-1 bg-jhr-gold/20 text-jhr-gold text-xs font-semibold rounded-full mb-4">
-                {post.categories[0]}
-              </span>
-            )}
+              {post.categories[0] && (
+                <span className="inline-block px-3 py-1 bg-jhr-gold/20 text-jhr-gold text-xs font-semibold rounded-full mb-4">
+                  {post.categories[0]}
+                </span>
+              )}
 
-            {/* Title - Editable when in edit mode */}
-            {canEdit && isEditMode ? (
-              <input
-                type="text"
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                placeholder="Post title..."
-                className="w-full text-display-md font-display font-bold text-jhr-white mb-6 bg-transparent border-none outline-none focus:ring-2 focus:ring-jhr-gold/50 rounded px-2 -mx-2"
-              />
-            ) : (
               <h1 className="text-display-md font-display font-bold text-jhr-white mb-6">
                 {post.title}
               </h1>
-            )}
 
-            {/* Meta */}
-            <div className="flex flex-wrap items-center gap-4 text-jhr-white-dim text-body-sm pb-6 border-b border-jhr-black-lighter">
-              <span className="flex items-center gap-1.5">
-                <User className="w-4 h-4" />
-                {post.author}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4" />
-                {formatBlogDate(post.publishedAt)}
-              </span>
-              {post.readingTime && (
+              <div className="flex flex-wrap items-center gap-4 text-jhr-white-dim text-body-sm pb-6 border-b border-jhr-black-lighter">
                 <span className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4" />
-                  {post.readingTime} min read
+                  <User className="w-4 h-4" />
+                  {post.author}
                 </span>
-              )}
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4" />
+                  {formatBlogDate(post.publishedAt)}
+                </span>
+                {post.readingTime && (
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" />
+                    {post.readingTime} min read
+                  </span>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* Meta bar for section-based posts (under hero) */}
+      {heroSection && (
+        <section className="py-4 border-b border-jhr-black-lighter">
+          <div className="section-container max-w-3xl mx-auto">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-1.5 text-jhr-gold hover:text-jhr-gold-light text-body-sm transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Blog
+              </Link>
+              <div className="flex flex-wrap items-center gap-4 text-jhr-white-dim text-body-sm">
+                {post.categories[0] && (
+                  <span className="px-3 py-1 bg-jhr-gold/20 text-jhr-gold text-xs font-semibold rounded-full">
+                    {post.categories[0]}
+                  </span>
+                )}
+                <span className="flex items-center gap-1.5">
+                  <User className="w-4 h-4" />
+                  {post.author}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4" />
+                  {formatBlogDate(post.publishedAt)}
+                </span>
+                {post.readingTime && (
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" />
+                    {post.readingTime} min read
+                  </span>
+                )}
+              </div>
             </div>
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
-      {/* Post Body */}
-      <section className="pb-16">
+      {/* Content Sections */}
+      <section className="py-8">
         <div className="section-container max-w-3xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            {/* Body - Editable when in edit mode */}
-            {canEdit && isEditMode ? (
-              <div className="relative">
-                {/* Floating Toolbar */}
-                <FloatingToolbar editor={editor} visible={editorFocused} />
+          {/* Add section button at top (edit mode only) */}
+          {isEditing && (
+            <button
+              onClick={() => handleOpenAddModal(heroSection ? 1 : 0)}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 mb-6 border-2 border-dashed border-jhr-black-lighter rounded-lg text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="text-body-sm font-medium">Add Section</span>
+            </button>
+          )}
 
-                {/* Editor Container */}
-                <div
-                  className={`
-                    min-h-[300px] rounded-lg transition-colors
-                    ${editorFocused ? 'ring-2 ring-jhr-gold/50' : ''}
-                  `}
-                >
-                  <EditorContent
-                    editor={editor}
-                    className={`
-                      ${EDITOR_CLASSES.prose}
-                      prose prose-invert prose-gold max-w-none
-                      prose-headings:font-display prose-headings:text-jhr-white
-                      prose-h2:text-heading-md prose-h2:mt-10 prose-h2:mb-4
-                      prose-h3:text-heading-sm prose-h3:mt-8 prose-h3:mb-3
-                      prose-p:text-jhr-white-dim prose-p:text-body prose-p:leading-relaxed prose-p:mb-4
-                      prose-li:text-jhr-white-dim prose-li:text-body
-                      prose-strong:text-jhr-white
-                      prose-a:text-jhr-gold prose-a:no-underline hover:prose-a:text-jhr-gold-light
-                      prose-ul:my-4 prose-ol:my-4
-                    `}
+          {/* Render content sections */}
+          {contentSections.map((section, index) => {
+            const actualIndex = heroSection ? index + 1 : index;
+
+            return (
+              <div key={section.id} className="mb-6">
+                {isEditing ? (
+                  <SectionWrapper
+                    sectionType={section.type}
+                    sectionId={section.id}
+                    index={actualIndex}
+                    totalSections={sections.length}
+                    onMoveUp={() => moveSectionUp(actualIndex)}
+                    onMoveDown={() => moveSectionDown(actualIndex)}
+                    onDelete={() => deleteSection(section.id)}
+                  >
+                    <SectionRenderer
+                      section={section}
+                      pageSlug={post.slug}
+                      contentKeyPrefix={`${post.slug}:${section.id}`}
+                    />
+                  </SectionWrapper>
+                ) : (
+                  <SectionRenderer
+                    section={section}
+                    pageSlug={post.slug}
+                    contentKeyPrefix={`${post.slug}:${section.id}`}
                   />
-                </div>
-              </div>
-            ) : (
-              <div
-                className="prose prose-invert prose-gold max-w-none
-                  prose-headings:font-display prose-headings:text-jhr-white
-                  prose-h2:text-heading-md prose-h2:mt-10 prose-h2:mb-4
-                  prose-h3:text-heading-sm prose-h3:mt-8 prose-h3:mb-3
-                  prose-p:text-jhr-white-dim prose-p:text-body prose-p:leading-relaxed prose-p:mb-4
-                  prose-li:text-jhr-white-dim prose-li:text-body
-                  prose-strong:text-jhr-white
-                  prose-a:text-jhr-gold prose-a:no-underline hover:prose-a:text-jhr-gold-light
-                  prose-ul:my-4 prose-ol:my-4"
-                dangerouslySetInnerHTML={{ __html: processContentForDisplay(post.body) }}
-              />
-            )}
+                )}
 
-            {/* Tags */}
-            {post.tags.length > 0 && (
-              <div className="mt-12 pt-6 border-t border-jhr-black-lighter">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Tag className="w-4 h-4 text-jhr-white-dim" />
-                  {post.tags.map((tag) => (
-                    <Link
-                      key={tag}
-                      href={`/blog?tag=${encodeURIComponent(tag)}`}
-                      className="px-3 py-1 bg-jhr-black-light border border-jhr-black-lighter text-jhr-white-dim text-xs rounded-full hover:text-jhr-gold hover:border-jhr-gold/30 transition-colors"
-                    >
-                      {tag}
-                    </Link>
-                  ))}
-                </div>
+                {/* Add section button between sections (edit mode only) */}
+                {isEditing && (
+                  <button
+                    onClick={() => handleOpenAddModal(actualIndex + 1)}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-4 mt-4 border-2 border-dashed border-jhr-black-lighter rounded-lg text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors opacity-50 hover:opacity-100"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="text-xs font-medium">Add Section</span>
+                  </button>
+                )}
               </div>
-            )}
-          </motion.div>
+            );
+          })}
+
+          {/* Tags */}
+          {post.tags.length > 0 && (
+            <div className="mt-12 pt-6 border-t border-jhr-black-lighter">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Tag className="w-4 h-4 text-jhr-white-dim" />
+                {post.tags.map((tag) => (
+                  <Link
+                    key={tag}
+                    href={`/blog?tag=${encodeURIComponent(tag)}`}
+                    className="px-3 py-1 bg-jhr-black-light border border-jhr-black-lighter text-jhr-white-dim text-xs rounded-full hover:text-jhr-gold hover:border-jhr-gold/30 transition-colors"
+                  >
+                    {tag}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
+
+      {/* Add Section Modal */}
+      {addModalOpen && (
+        <AddSectionModal
+          onAdd={handleAddSection}
+          onClose={() => setAddModalOpen(false)}
+          insertOrder={insertIndex}
+        />
+      )}
+    </main>
+  );
+}
+
+// ============================================================================
+// BlogPostClient Props
+// ============================================================================
+
+interface BlogPostClientProps {
+  initialPost: BlogPost;
+}
+
+// ============================================================================
+// BlogPostClient Component
+// ============================================================================
+
+export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
+  const [post, setPost] = useState<BlogPost>(initialPost);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const { canEdit, isEditMode } = useEditMode();
+  const isEditing = canEdit && isEditMode;
+
+  // Fetch related posts client-side (non-critical for SEO)
+  useEffect(() => {
+    async function fetchRelatedPosts() {
+      try {
+        const res = await fetch('/api/blog');
+        if (res.ok) {
+          const data = await res.json();
+          const related = (data.posts || [])
+            .filter(
+              (p: BlogPost) =>
+                p.slug !== post.slug && p.status === 'published'
+            )
+            .slice(0, 3);
+          setRelatedPosts(related);
+        }
+      } catch {
+        // Silently fail - related posts are not critical
+      }
+    }
+    fetchRelatedPosts();
+  }, [post.slug]);
+
+  // Keep post state in sync if initialPost changes
+  useEffect(() => {
+    setPost(initialPost);
+  }, [initialPost]);
+
+  // Save changes to API
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    setSaveError(null);
+    setSaveSuccess(false);
+
+    try {
+      // Get current sections from localStorage (ContentContext saves there)
+      const savedData = localStorage.getItem(`jhr-page-${post.slug}`);
+      let sections: PageSectionContent[] | undefined;
+      let seo: PageSEOMetadata | undefined;
+
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        sections = parsed.sections;
+        seo = parsed.seo;
+      }
+
+      const res = await fetch(`/api/admin/blog/${post.slug}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sections,
+          seo,
+          version: post.version,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save changes');
+      }
+
+      const data = await res.json();
+      setPost(data.post);
+      setSaveSuccess(true);
+
+      // Clear localStorage after successful save
+      localStorage.removeItem(`jhr-page-${post.slug}`);
+
+      // Clear success indicator after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }, [post.slug, post.version]);
+
+  return (
+    <ContentProvider>
+      <SectionBasedContent
+        post={post}
+        isEditing={isEditing}
+        onSave={handleSave}
+        saving={saving}
+        saveSuccess={saveSuccess}
+        saveError={saveError}
+      />
 
       {/* Related Posts */}
       {relatedPosts.length > 0 && (
@@ -395,16 +524,20 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
             Ready to Elevate Your Next Event?
           </h2>
           <p className="text-body-lg text-jhr-white-dim max-w-xl mx-auto mb-8">
-            Let&apos;s discuss how professional photography can transform your corporate events.
+            Let&apos;s discuss how professional photography can transform your
+            corporate events.
           </p>
-          <Link href="/schedule" className="btn-primary inline-flex items-center gap-2">
+          <Link
+            href="/schedule"
+            className="btn-primary inline-flex items-center gap-2"
+          >
             Schedule a Strategy Call
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
 
-      {/* JSON-LD Structured Data - rendered on client as backup (also in page head) */}
+      {/* JSON-LD Structured Data */}
       {post.structuredData && (
         <script
           type="application/ld+json"
@@ -413,7 +546,8 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
               '@context': 'https://schema.org',
               '@type': 'BlogPosting',
               headline: post.structuredData.headline || post.title,
-              datePublished: post.structuredData.datePublished || post.publishedAt,
+              datePublished:
+                post.structuredData.datePublished || post.publishedAt,
               author: {
                 '@type': 'Person',
                 name: post.structuredData.author || post.author,
@@ -432,6 +566,6 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
           }}
         />
       )}
-    </main>
+    </ContentProvider>
   );
 }

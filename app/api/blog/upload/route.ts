@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { putItem, getItem } from '@/lib/dynamodb';
-import { generateSlug, estimateReadingTime } from '@/types/blog';
+import { generateSlug, estimateReadingTime, bodyToSection } from '@/types/blog';
 import { generateBlogSEO } from '@/lib/blog-seo';
 import { getTemplate, applyTemplate } from '@/lib/blog-templates';
-import type { BlogPost } from '@/types/blog';
+import type { BlogPost, BlogPostSK } from '@/types/blog';
 
 interface BlogUploadBody {
   title: string;
@@ -21,7 +21,7 @@ interface BlogUploadBody {
 
 interface BlogRecord extends BlogPost {
   pk: string;
-  sk: string;
+  sk: BlogPostSK;
 }
 
 function sanitize(value: string, maxLength = 10000): string {
