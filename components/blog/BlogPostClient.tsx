@@ -67,7 +67,7 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
 interface SectionBasedContentProps {
   post: BlogPost;
   isEditing: boolean;
-  onSave: () => Promise<void>;
+  onSave: (sections?: PageSectionContent[], seo?: PageSEOMetadata) => Promise<void>;
   saving: boolean;
   saveSuccess: boolean;
   saveError: string | null;
@@ -88,22 +88,22 @@ function SectionBasedContent({
     moveSectionUp,
     moveSectionDown,
     loadSections,
+    loadSectionsForPage,
     hasUnsavedChanges,
+    pageSEO,
   } = useContent();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [insertIndex, setInsertIndex] = useState(0);
 
   // Load sections from post when component mounts or post changes
+  // Use loadSectionsForPage to set the correct page slug for localStorage
   useEffect(() => {
-    if (post.sections && post.sections.length > 0) {
-      loadSections(post.sections);
-    } else {
-      // Legacy post - migrate to sections
-      const migrated = migrateLegacyBlogPost(post);
-      loadSections(migrated.sections || []);
-    }
-  }, [post, loadSections]);
+    const sectionsToLoad = post.sections && post.sections.length > 0
+      ? post.sections
+      : migrateLegacyBlogPost(post).sections || [];
+    loadSectionsForPage(post.slug, sectionsToLoad);
+  }, [post, loadSectionsForPage]);
 
   const handleOpenAddModal = useCallback((index: number) => {
     setInsertIndex(index);
@@ -142,7 +142,7 @@ function SectionBasedContent({
             <span className="text-body-sm text-red-400">{saveError}</span>
           )}
           <button
-            onClick={onSave}
+            onClick={() => onSave(sections, pageSEO)}
             disabled={saving || !hasUnsavedChanges}
             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors ${
               hasUnsavedChanges
@@ -441,22 +441,31 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
     setPost(initialPost);
   }, [initialPost]);
 
-  // Save changes to API
-  const handleSave = useCallback(async () => {
+  // Save changes to API - sections are passed from SectionBasedContent which has ContentContext access
+  const handleSave = useCallback(async (sectionsToSave?: PageSectionContent[], seoToSave?: PageSEOMetadata) => {
     setSaving(true);
     setSaveError(null);
     setSaveSuccess(false);
 
     try {
-      // Get current sections from localStorage (ContentContext saves there)
-      const savedData = localStorage.getItem(`jhr-page-${post.slug}`);
-      let sections: PageSectionContent[] | undefined;
-      let seo: PageSEOMetadata | undefined;
+      // Try to get sections from localStorage if not passed directly
+      // ContentContext uses key format: jhr-content-{slug}-sections
+      let sections = sectionsToSave;
+      let seo = seoToSave;
 
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        sections = parsed.sections;
-        seo = parsed.seo;
+      if (!sections) {
+        const rawSections = localStorage.getItem(`jhr-content-${post.slug}-sections`);
+        if (rawSections) {
+          sections = JSON.parse(rawSections);
+        }
+        const rawSeo = localStorage.getItem(`jhr-content-${post.slug}-seo`);
+        if (rawSeo) {
+          seo = JSON.parse(rawSeo);
+        }
+      }
+
+      if (!sections || sections.length === 0) {
+        throw new Error('No sections to save. Please make some changes first.');
       }
 
       const res = await fetch(`/api/admin/blog/${post.slug}`, {
@@ -479,7 +488,8 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
       setSaveSuccess(true);
 
       // Clear localStorage after successful save
-      localStorage.removeItem(`jhr-page-${post.slug}`);
+      localStorage.removeItem(`jhr-content-${post.slug}-sections`);
+      localStorage.removeItem(`jhr-content-${post.slug}-seo`);
 
       // Clear success indicator after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
