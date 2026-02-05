@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getItem } from '@/lib/dynamodb';
+import { getBlogContent } from '@/lib/blog-content';
+import { sectionsToBody } from '@/types/blog';
 import type { BlogPost } from '@/types/blog';
 import BlogPostClient from '@/components/blog/BlogPostClient';
 
@@ -103,24 +104,14 @@ const SAMPLE_POSTS: Record<string, BlogPost> = {
 };
 
 // ============================================================================
-// Type for DynamoDB record
-// ============================================================================
-
-interface BlogRecord extends BlogPost {
-  pk: string;
-  sk: string;
-}
-
-// ============================================================================
 // Fetch blog post (server-side)
 // ============================================================================
 
 async function getBlogPost(slug: string): Promise<BlogPost | null> {
   try {
-    const record = await getItem<BlogRecord>(`BLOG#${slug}`, 'post');
-    if (record) {
-      // Strip DynamoDB keys
-      const { pk: _pk, sk: _sk, ...post } = record;
+    // Try to fetch published version first
+    const post = await getBlogContent(slug, 'published');
+    if (post) {
       return post;
     }
   } catch (error) {
@@ -242,7 +233,10 @@ function generateJsonLd(post: BlogPost, slug: string) {
     },
     keywords: post.tags.join(', '),
     articleSection: post.categories[0] || 'Photography',
-    wordCount: post.body.replace(/<[^>]*>/g, '').split(/\s+/).filter(Boolean).length,
+    wordCount: (post.body || (post.sections ? sectionsToBody(post.sections) : ''))
+      .replace(/<[^>]*>/g, '')
+      .split(/\s+/)
+      .filter(Boolean).length,
   };
 }
 

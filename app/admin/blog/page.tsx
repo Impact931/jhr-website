@@ -23,20 +23,24 @@ import {
   Plus,
   Code,
   X,
+  Pencil,
+  Layers,
 } from 'lucide-react';
 
 interface BlogPost {
   slug: string;
   title: string;
-  body: string;
+  body?: string;
+  sections?: Array<{ id: string; type: string }>;
   featuredImage?: string;
   excerpt?: string;
   author: string;
-  publishedAt: string;
+  publishedAt?: string;
   readingTime?: number;
   tags: string[];
   categories: string[];
-  status: 'draft' | 'published';
+  status: 'draft' | 'published' | 'scheduled';
+  scheduledPublishAt?: string;
   seoMetadata?: {
     metaTitle?: string;
     metaDescription?: string;
@@ -165,6 +169,7 @@ export default function AdminBlogPage() {
 
   const publishedCount = posts.filter((p) => p.status === 'published').length;
   const draftCount = posts.filter((p) => p.status === 'draft').length;
+  const scheduledCount = posts.filter((p) => p.status === 'scheduled').length;
 
   if (loading) {
     return (
@@ -198,6 +203,7 @@ export default function AdminBlogPage() {
           <p className="mt-1 text-body-md text-jhr-white-dim">
             {posts.length} post{posts.length !== 1 ? 's' : ''} &middot;{' '}
             {publishedCount} published &middot; {draftCount} draft{draftCount !== 1 ? 's' : ''}
+            {scheduledCount > 0 && ` · ${scheduledCount} scheduled`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -253,8 +259,9 @@ export default function AdminBlogPage() {
                 <tr className="border-b border-jhr-black-lighter">
                   <th className="text-left px-4 py-3 text-body-sm font-medium text-jhr-white-dim">Title</th>
                   <th className="text-left px-4 py-3 text-body-sm font-medium text-jhr-white-dim hidden md:table-cell">Status</th>
+                  <th className="text-left px-4 py-3 text-body-sm font-medium text-jhr-white-dim hidden lg:table-cell">Sections</th>
                   <th className="text-left px-4 py-3 text-body-sm font-medium text-jhr-white-dim hidden lg:table-cell">Date</th>
-                  <th className="text-left px-4 py-3 text-body-sm font-medium text-jhr-white-dim hidden lg:table-cell">SEO</th>
+                  <th className="text-left px-4 py-3 text-body-sm font-medium text-jhr-white-dim hidden xl:table-cell">SEO</th>
                   <th className="text-right px-4 py-3 text-body-sm font-medium text-jhr-white-dim">Actions</th>
                 </tr>
               </thead>
@@ -427,27 +434,46 @@ function PostRow({
             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
               post.status === 'published'
                 ? 'bg-green-500/10 text-green-400'
+                : post.status === 'scheduled'
+                ? 'bg-blue-500/10 text-blue-400'
                 : 'bg-yellow-500/10 text-yellow-400'
             }`}
           >
             {post.status === 'published' ? (
               <Eye className="w-3 h-3" />
+            ) : post.status === 'scheduled' ? (
+              <Clock className="w-3 h-3" />
             ) : (
               <EyeOff className="w-3 h-3" />
             )}
-            {post.status === 'published' ? 'Published' : 'Draft'}
+            {post.status === 'published' ? 'Published' : post.status === 'scheduled' ? 'Scheduled' : 'Draft'}
           </span>
+          {post.status === 'scheduled' && post.scheduledPublishAt && (
+            <p className="text-xs text-blue-400/70 mt-1">
+              {formatDate(post.scheduledPublishAt)}
+            </p>
+          )}
+        </td>
+
+        {/* Sections Count */}
+        <td className="px-4 py-3 hidden lg:table-cell">
+          <div className="flex items-center gap-1.5 text-jhr-white-dim">
+            <Layers className="w-4 h-4" />
+            <span className="text-body-sm">
+              {post.sections?.length || 0}
+            </span>
+          </div>
         </td>
 
         {/* Date */}
         <td className="px-4 py-3 hidden lg:table-cell">
           <span className="text-body-sm text-jhr-white-dim">
-            {formatDate(post.publishedAt)}
+            {post.publishedAt ? formatDate(post.publishedAt) : formatDate(post.updatedAt)}
           </span>
         </td>
 
         {/* SEO Quality */}
-        <td className="px-4 py-3 hidden lg:table-cell">
+        <td className="px-4 py-3 hidden xl:table-cell">
           <div className="flex items-center gap-1.5">
             <SEOIcon className={`w-4 h-4 ${seoQualityConfig[seoQuality].color}`} />
             <span className={`text-xs ${seoQualityConfig[seoQuality].color}`}>
@@ -458,7 +484,26 @@ function PostRow({
 
         {/* Actions */}
         <td className="px-4 py-3 text-right">
-          <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+            {/* Edit button - links to inline editing */}
+            <a
+              href={`/blog/${post.slug}?editMode=true`}
+              className="p-2 rounded-lg text-jhr-white-dim hover:text-jhr-gold hover:bg-jhr-gold/10 transition-colors"
+              title="Edit post"
+            >
+              <Pencil className="w-4 h-4" />
+            </a>
+            {/* View button */}
+            <a
+              href={`/blog/${post.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-lg text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter transition-colors"
+              title="View post"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+            {/* Publish/Unpublish button */}
             <button
               onClick={onToggleStatus}
               disabled={isLoading}
@@ -473,15 +518,6 @@ function PostRow({
                 <Eye className="w-4 h-4" />
               )}
             </button>
-            <a
-              href={`/blog/${post.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 rounded-lg text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter transition-colors"
-              title="View post"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </a>
             {isDeleting ? (
               <div className="flex items-center gap-1">
                 <button
@@ -514,7 +550,7 @@ function PostRow({
       {/* Expanded Detail Row */}
       {isExpanded && (
         <tr className="bg-jhr-black/50">
-          <td colSpan={5} className="px-4 py-4">
+          <td colSpan={6} className="px-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Post Details */}
               <div className="space-y-3">
@@ -526,7 +562,7 @@ function PostRow({
                   </div>
                   <div className="flex items-center gap-2 text-jhr-white-dim">
                     <Calendar className="w-4 h-4 flex-shrink-0" />
-                    <span>Published: {formatDate(post.publishedAt)}</span>
+                    <span>{post.publishedAt ? `Published: ${formatDate(post.publishedAt)}` : `Updated: ${formatDate(post.updatedAt)}`}</span>
                   </div>
                   {post.readingTime && (
                     <div className="flex items-center gap-2 text-jhr-white-dim">

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Calendar, Clock, Tag, ChevronRight, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { BlogPost } from '@/types/blog';
-import { formatBlogDate } from '@/types/blog';
+import { formatBlogDate, extractFeaturedImage, extractExcerpt } from '@/types/blog';
 
 // ============================================================================
 // Sample blog posts for static rendering (replaced by API data when available)
@@ -126,6 +126,10 @@ function getCategories(posts: BlogPost[]): string[] {
 // ============================================================================
 
 function PostCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {
+  // Support both old format (direct fields) and new format (sections)
+  const featuredImage = post.featuredImage || extractFeaturedImage(post.sections);
+  const excerpt = post.excerpt || extractExcerpt(post.sections);
+
   return (
     <Link href={`/blog/${post.slug}`} className="group block">
       <motion.article
@@ -139,9 +143,9 @@ function PostCard({ post, featured = false }: { post: BlogPost; featured?: boole
       >
         {/* Image */}
         <div className={`relative overflow-hidden ${featured ? 'aspect-[16/10] md:aspect-auto md:min-h-[360px]' : 'aspect-[4/3] sm:aspect-[16/9]'}`}>
-          {post.featuredImage ? (
+          {featuredImage ? (
             <Image
-              src={post.featuredImage}
+              src={featuredImage}
               alt={post.title}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -169,9 +173,9 @@ function PostCard({ post, featured = false }: { post: BlogPost; featured?: boole
           >
             {post.title}
           </h2>
-          {post.excerpt && (
+          {excerpt && (
             <p className={`text-jhr-white-dim mb-4 line-clamp-3 ${featured ? 'text-body-lg' : 'text-body-sm'}`}>
-              {post.excerpt}
+              {excerpt}
             </p>
           )}
           <div className="flex items-center gap-4 text-jhr-white-dim text-xs">

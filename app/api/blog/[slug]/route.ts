@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getItem } from '@/lib/dynamodb';
-import type { BlogPost } from '@/types/blog';
-
-interface BlogRecord extends BlogPost {
-  pk: string;
-  sk: string;
-}
+import { getBlogContent } from '@/lib/blog-content';
 
 /**
  * GET /api/blog/[slug]
  * Fetches a single blog post by slug.
+ *
+ * Query params:
+ * - status: 'published' | 'draft' (default: 'published')
+ *
+ * Response includes both old (body) and new (sections) format for backward compatibility.
  */
 export async function GET(
   request: NextRequest,
@@ -17,6 +16,8 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+    const { searchParams } = new URL(request.url);
+    const status = (searchParams.get('status') as 'draft' | 'published') || 'published';
 
     if (!slug) {
       return NextResponse.json(
@@ -25,17 +26,14 @@ export async function GET(
       );
     }
 
-    const record = await getItem<BlogRecord>(`BLOG#${slug}`, 'post');
+    const post = await getBlogContent(slug, status);
 
-    if (!record) {
+    if (!post) {
       return NextResponse.json(
         { error: 'Blog post not found.' },
         { status: 404 }
       );
     }
-
-    // Strip DynamoDB keys
-    const { pk: _pk, sk: _sk, ...post } = record;
 
     return NextResponse.json({ post });
   } catch (error) {
