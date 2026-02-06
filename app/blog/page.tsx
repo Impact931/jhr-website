@@ -156,12 +156,6 @@ function PostCard({ post, featured = false }: { post: BlogPost; featured?: boole
               <span className="text-jhr-white-dim text-body-sm">No image</span>
             </div>
           )}
-          {/* Category badge */}
-          {post.categories[0] && (
-            <span className="absolute top-4 left-4 px-3 py-1 bg-jhr-gold/90 text-jhr-black text-xs font-semibold rounded-full">
-              {post.categories[0]}
-            </span>
-          )}
         </div>
 
         {/* Content */}

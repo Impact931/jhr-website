@@ -82,7 +82,9 @@ function SectionBasedContent({
     loadBlogPost,
     hasUnsavedChanges,
     saveState,
+    publishState,
     save,
+    publish,
   } = useBlogContent();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -133,6 +135,9 @@ function SectionBasedContent({
           {saveState.error && (
             <span className="text-body-sm text-red-400">{saveState.error}</span>
           )}
+          {publishState.error && (
+            <span className="text-body-sm text-red-400">{publishState.error}</span>
+          )}
           <button
             onClick={() => save()}
             disabled={saveState.status === 'saving' || !hasUnsavedChanges}
@@ -155,7 +160,34 @@ function SectionBasedContent({
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes
+                Save Draft
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => publish()}
+            disabled={publishState.status === 'publishing' || hasUnsavedChanges}
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors ${
+              publishState.status === 'publishing' || hasUnsavedChanges
+                ? 'bg-jhr-black-lighter text-jhr-white-dim cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            }`}
+            title={hasUnsavedChanges ? 'Save changes first before publishing' : 'Publish changes to live site'}
+          >
+            {publishState.status === 'publishing' ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Publishing...
+              </>
+            ) : publishState.status === 'published' ? (
+              <>
+                <Check className="w-4 h-4" />
+                Published!
+              </>
+            ) : (
+              <>
+                <ChevronRight className="w-4 h-4" />
+                Publish
               </>
             )}
           </button>
@@ -399,9 +431,31 @@ interface BlogPostClientProps {
 export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   const [post, setPost] = useState<BlogPost>(initialPost);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
+  const [hasFetchedDraft, setHasFetchedDraft] = useState(false);
 
   const { canEdit, isEditMode } = useEditMode();
   const isEditing = canEdit && isEditMode;
+
+  // Fetch draft version when entering edit mode (edits are saved to draft)
+  useEffect(() => {
+    if (!isEditing || hasFetchedDraft) return;
+
+    async function fetchDraft() {
+      try {
+        const res = await fetch(`/api/admin/blog/${post.slug}?status=draft`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.post) {
+            setPost(data.post);
+            setHasFetchedDraft(true);
+          }
+        }
+      } catch {
+        // If draft fetch fails, continue with published version
+      }
+    }
+    fetchDraft();
+  }, [isEditing, hasFetchedDraft, post.slug]);
 
   // Fetch related posts client-side (non-critical for SEO)
   useEffect(() => {
@@ -425,10 +479,13 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
     fetchRelatedPosts();
   }, [post.slug]);
 
-  // Keep post state in sync if initialPost changes
+  // Keep post state in sync if initialPost changes (only when not editing)
   useEffect(() => {
-    setPost(initialPost);
-  }, [initialPost]);
+    if (!isEditing) {
+      setPost(initialPost);
+      setHasFetchedDraft(false);
+    }
+  }, [initialPost, isEditing]);
 
   return (
     <BlogContentProvider>

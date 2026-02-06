@@ -4,8 +4,35 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getPageContent } from '@/lib/content';
+import { getPageContent, getPageSections } from '@/lib/content';
 import { ContentStatus } from '@/types/content';
+
+// Pages that have schema files in /content/schemas/ are considered to have default content
+const PAGES_WITH_SCHEMAS = [
+  'home',
+  'about',
+  'contact',
+  'faqs',
+  'schedule',
+  'services',
+  'corporate-event-coverage',
+  'corporate-headshot-program',
+  'event-video-systems',
+  'headshot-activation',
+  'associations',
+  'dmcs-agencies',
+  'exhibitors-sponsors',
+  'venues-solution',
+  'venues',
+  'belmont-university',
+  'city-winery-nashville',
+  'embassy-suites-nashville',
+  'gaylord-opryland',
+  'jw-marriott-nashville',
+  'music-city-center',
+  'omni-hotel-nashville',
+  'renaissance-hotel-nashville',
+];
 
 // Static list of all site pages
 const sitePages = [
@@ -61,31 +88,56 @@ export async function GET(): Promise<NextResponse> {
     // Fetch content status for all pages in parallel
     const pagesWithStatus: PageWithStatus[] = await Promise.all(
       sitePages.map(async (page) => {
-        // Fetch both draft and published versions
-        const [draft, published] = await Promise.all([
+        // Fetch both draft and published versions (check both legacy and section-based content)
+        const [draft, published, sectionDraft, sectionPublished] = await Promise.all([
           getPageContent(page.slug, ContentStatus.DRAFT),
           getPageContent(page.slug, ContentStatus.PUBLISHED),
+          getPageSections(page.slug, ContentStatus.DRAFT),
+          getPageSections(page.slug, ContentStatus.PUBLISHED),
         ]);
 
-        const hasDraft = !!draft;
-        const hasPublished = !!published;
+        // Check if page has schema defaults (considered as having content)
+        const hasSchema = PAGES_WITH_SCHEMAS.includes(page.slug);
 
-        // Determine status priority: published > draft > no-content
+        // A page has a draft if either legacy or section-based draft exists
+        const hasDraft = !!draft || !!sectionDraft;
+        // A page is published if either legacy or section-based published exists
+        const hasPublished = !!published || !!sectionPublished;
+
+        // Determine status priority: published > draft > schema-defaults > no-content
         let status: 'published' | 'draft' | 'no-content';
         if (hasPublished) {
           status = 'published';
         } else if (hasDraft) {
           status = 'draft';
+        } else if (hasSchema) {
+          // Pages with schema defaults show as "published" since they have displayable content
+          status = 'published';
         } else {
           status = 'no-content';
         }
 
-        // Use the most recent update timestamp
-        const draftTime = draft?.updatedAt ? new Date(draft.updatedAt).getTime() : 0;
-        const publishedTime = published?.updatedAt ? new Date(published.updatedAt).getTime() : 0;
-        const lastModified = draftTime > publishedTime
-          ? draft?.updatedAt || null
-          : published?.updatedAt || null;
+        // Use the most recent update timestamp from any content type
+        const timestamps = [
+          draft?.updatedAt ? new Date(draft.updatedAt).getTime() : 0,
+          published?.updatedAt ? new Date(published.updatedAt).getTime() : 0,
+          sectionDraft?.updatedAt ? new Date(sectionDraft.updatedAt).getTime() : 0,
+          sectionPublished?.updatedAt ? new Date(sectionPublished.updatedAt).getTime() : 0,
+        ];
+        const maxTime = Math.max(...timestamps);
+        let lastModified: string | null = null;
+        if (maxTime > 0) {
+          // Find which content has this timestamp
+          if (draft?.updatedAt && new Date(draft.updatedAt).getTime() === maxTime) {
+            lastModified = draft.updatedAt;
+          } else if (published?.updatedAt && new Date(published.updatedAt).getTime() === maxTime) {
+            lastModified = published.updatedAt;
+          } else if (sectionDraft?.updatedAt && new Date(sectionDraft.updatedAt).getTime() === maxTime) {
+            lastModified = sectionDraft.updatedAt;
+          } else if (sectionPublished?.updatedAt && new Date(sectionPublished.updatedAt).getTime() === maxTime) {
+            lastModified = sectionPublished.updatedAt;
+          }
+        }
 
         return {
           name: page.name,
@@ -95,7 +147,7 @@ export async function GET(): Promise<NextResponse> {
           status,
           lastModified,
           hasDraft,
-          hasPublished,
+          hasPublished: hasPublished || hasSchema,
         };
       })
     );
