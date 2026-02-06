@@ -27,8 +27,6 @@ interface SiteSettings {
   defaultMetaDescription: string;
   robotsDirective: string;
   integrations: {
-    notionToken?: string;
-    notionLeadDbId?: string;
     ga4MeasurementId?: string;
     metaPixelId?: string;
   };
@@ -373,40 +371,6 @@ export default function AdminSettingsPage() {
           </div>
         </div>
         <div className="p-6 space-y-6">
-          <div>
-            <label htmlFor="notionToken" className="block text-body-sm font-medium text-jhr-white mb-2">
-              Notion API Token
-            </label>
-            <input
-              id="notionToken"
-              type="password"
-              value={settings.integrations.notionToken || ''}
-              onChange={(e) => updateIntegration('notionToken', e.target.value)}
-              placeholder="secret_..."
-              className="w-full px-4 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white placeholder:text-jhr-white-dim focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold"
-            />
-            <p className="mt-1 text-body-sm text-jhr-white-dim">
-              API token for syncing leads to Notion.
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="notionLeadDbId" className="block text-body-sm font-medium text-jhr-white mb-2">
-              Notion Lead Database ID
-            </label>
-            <input
-              id="notionLeadDbId"
-              type="text"
-              value={settings.integrations.notionLeadDbId || ''}
-              onChange={(e) => updateIntegration('notionLeadDbId', e.target.value)}
-              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              className="w-full px-4 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white placeholder:text-jhr-white-dim focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold"
-            />
-            <p className="mt-1 text-body-sm text-jhr-white-dim">
-              The ID of your Notion leads database.
-            </p>
-          </div>
-
           <div>
             <label htmlFor="ga4MeasurementId" className="block text-body-sm font-medium text-jhr-white mb-2">
               Google Analytics 4 Measurement ID

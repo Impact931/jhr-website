@@ -348,7 +348,10 @@ export function ContentProvider({ children }: ContentProviderProps) {
     setPageSlug(slug);
     const saved = loadPageContent(slug);
     // Sanitize localStorage data to strip stale HTML from plain text fields
-    const incoming = saved?.sections ? sanitizeSections(saved.sections) : defaults;
+    // IMPORTANT: Check for non-empty array, not just existence (empty array is truthy)
+    const incoming = saved?.sections && saved.sections.length > 0
+      ? sanitizeSections(saved.sections)
+      : defaults;
     const sorted = [...incoming].sort((a, b) => a.order - b.order);
     setSections(reindexSections(sorted));
     setChangedSectionIds(new Set());

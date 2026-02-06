@@ -116,8 +116,6 @@ export interface SiteSettings {
   defaultMetaDescription: string;
   robotsDirective: string;
   integrations: {
-    notionToken?: string;
-    notionLeadDbId?: string;
     ga4MeasurementId?: string;
     metaPixelId?: string;
   };

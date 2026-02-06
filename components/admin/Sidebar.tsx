@@ -18,6 +18,7 @@ import {
   Camera,
   ChevronRight,
   PenLine,
+  CheckCircle,
 } from 'lucide-react';
 
 interface NavItem {
@@ -41,9 +42,17 @@ export default function AdminSidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: '/admin/login' });
+    setIsLoggingOut(true);
+    // Clear edit mode from sessionStorage
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('jhr-edit-mode');
+    }
+    // Sign out and redirect to homepage (not admin login)
+    await signOut({ callbackUrl: '/', redirect: true });
   };
 
   const isActive = (href: string) => {
@@ -113,7 +122,7 @@ export default function AdminSidebar() {
           </div>
         </div>
         <button
-          onClick={handleLogout}
+          onClick={() => setShowLogoutModal(true)}
           className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-jhr-white-dim hover:bg-red-500/10 hover:text-red-400 transition-colors"
         >
           <LogOut className="w-5 h-5" />
@@ -162,6 +171,53 @@ export default function AdminSidebar() {
         </button>
         <SidebarContent />
       </aside>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => !isLoggingOut && setShowLogoutModal(false)}
+          />
+          {/* Modal */}
+          <div className="relative bg-jhr-black-light border border-jhr-black-lighter rounded-xl shadow-2xl w-full max-w-md mx-4 p-6">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-jhr-gold/10 flex items-center justify-center mb-4">
+                {isLoggingOut ? (
+                  <CheckCircle className="w-8 h-8 text-green-400" />
+                ) : (
+                  <LogOut className="w-8 h-8 text-jhr-gold" />
+                )}
+              </div>
+              <h3 className="text-xl font-display font-bold text-jhr-white mb-2">
+                {isLoggingOut ? 'Signed Out Successfully' : 'Sign Out'}
+              </h3>
+              <p className="text-jhr-white-dim mb-6">
+                {isLoggingOut
+                  ? 'You have been logged out. Redirecting to the homepage...'
+                  : 'Are you sure you want to sign out? You will be redirected to the homepage.'}
+              </p>
+              {!isLoggingOut && (
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setShowLogoutModal(false)}
+                    className="flex-1 px-4 py-3 rounded-lg border border-jhr-black-lighter text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex-1 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-500 text-white transition-colors font-medium"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -128,7 +128,8 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!seoData.metaDescription || typeof seoData.metaDescription !== 'string') {
+    // Allow empty metaDescription but ensure it's a string type
+    if (typeof seoData.metaDescription !== 'string') {
       return NextResponse.json(
         { error: 'SEO metadata must include a metaDescription string' },
         { status: 400 }
