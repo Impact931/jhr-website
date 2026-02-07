@@ -7,6 +7,7 @@ import { EditableCTA } from './EditableCTA';
 import { EditableFAQ } from './EditableFAQ';
 import { EditableTestimonials } from './EditableTestimonials';
 import { EditableTextBlock } from './EditableTextBlock';
+import { EditableColumns } from './EditableColumns';
 import type {
   PageSectionContent,
   HeroSectionContent,
@@ -16,6 +17,7 @@ import type {
   CTASectionContent,
   FAQSectionContent,
   TestimonialsSectionContent,
+  ColumnsSectionContent,
 } from '@/types/inline-editor';
 
 // ============================================================================
@@ -43,6 +45,11 @@ interface SectionRendererProps {
    * Optional children to pass to EditableHero (e.g., trust badges).
    */
   heroChildren?: React.ReactNode;
+  /**
+   * If true, this section is rendered inside a columns container.
+   * Prevents nesting columns-inside-columns and excludes hero sections.
+   */
+  isNested?: boolean;
 }
 
 // ============================================================================
@@ -55,6 +62,7 @@ const DEFAULT_SECTION_CLASSES: Record<string, string> = {
   'faq': 'section-padding bg-jhr-black',
   'testimonials': 'section-padding section-light',
   'text-block': 'section-padding bg-jhr-black',
+  'columns': 'section-padding bg-jhr-black',
 };
 
 // ============================================================================
@@ -89,6 +97,7 @@ export function SectionRenderer({
   contentKeyPrefix: prefixOverride,
   sectionClassMap,
   heroChildren,
+  isNested,
 }: SectionRendererProps) {
   const prefix = prefixOverride ?? `${pageSlug}:${section.id}`;
 
@@ -201,6 +210,20 @@ export function SectionRenderer({
             contentKeyPrefix={prefix}
             heading={textBlock.heading}
             content={textBlock.content}
+          />
+        </SectionShell>
+      );
+    }
+
+    case 'columns': {
+      // Prevent columns-inside-columns nesting
+      if (isNested) return null;
+      const columns = section as ColumnsSectionContent;
+      return (
+        <SectionShell className={sectionClass}>
+          <EditableColumns
+            section={columns}
+            pageSlug={pageSlug}
           />
         </SectionShell>
       );

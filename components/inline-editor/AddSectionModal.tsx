@@ -10,6 +10,7 @@ import {
   MousePointerClick,
   Quote,
   HelpCircle,
+  Columns,
   ChevronRight,
   ArrowLeft,
   Check,
@@ -30,6 +31,7 @@ const SECTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string 
   MousePointerClick,
   Quote,
   HelpCircle,
+  Columns,
 };
 
 function getSectionIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -301,6 +303,36 @@ const SECTION_VARIANTS: Record<InlineSectionType, LayoutVariant[]> = {
       ],
     },
   ],
+  columns: [
+    {
+      id: 'columns-equal-2',
+      label: '2 Columns Equal',
+      description: 'Two equal-width columns, 50/50 split',
+      previewBlocks: [
+        { type: 'icon-card', width: 0.44, height: 70, x: 0.04, y: 15 },
+        { type: 'icon-card', width: 0.44, height: 70, x: 0.52, y: 15 },
+      ],
+    },
+    {
+      id: 'columns-asymmetric',
+      label: '2 Columns Asymmetric',
+      description: 'Two columns with 1/3 + 2/3 split',
+      previewBlocks: [
+        { type: 'icon-card', width: 0.28, height: 70, x: 0.04, y: 15 },
+        { type: 'icon-card', width: 0.6, height: 70, x: 0.36, y: 15 },
+      ],
+    },
+    {
+      id: 'columns-equal-3',
+      label: '3 Columns Equal',
+      description: 'Three equal-width columns, 33/33/33 split',
+      previewBlocks: [
+        { type: 'icon-card', width: 0.28, height: 70, x: 0.04, y: 15 },
+        { type: 'icon-card', width: 0.28, height: 70, x: 0.36, y: 15 },
+        { type: 'icon-card', width: 0.28, height: 70, x: 0.68, y: 15 },
+      ],
+    },
+  ],
 };
 
 // ============================================================================
@@ -467,6 +499,12 @@ function applyVariantToSection(
       if (variantId === 'faq-with-heading') return { ...section, heading: 'Frequently Asked Questions' };
       return section;
     }
+    case 'columns': {
+      if (variantId === 'columns-equal-2') return { ...section, layout: 'equal-2', columns: [{ sections: [] }, { sections: [] }] };
+      if (variantId === 'columns-asymmetric') return { ...section, layout: '1/3-2/3', columns: [{ sections: [] }, { sections: [] }] };
+      if (variantId === 'columns-equal-3') return { ...section, layout: 'equal-3', columns: [{ sections: [] }, { sections: [] }, { sections: [] }] };
+      return section;
+    }
     default:
       return section;
   }
@@ -483,16 +521,18 @@ interface AddSectionModalProps {
   onClose: () => void;
   /** The order index for the new section. */
   insertOrder: number;
+  /** Section types to exclude from the picker (e.g., ['hero', 'columns'] inside column children). */
+  excludeTypes?: InlineSectionType[];
 }
 
-export function AddSectionModal({ onAdd, onClose, insertOrder }: AddSectionModalProps) {
+export function AddSectionModal({ onAdd, onClose, insertOrder, excludeTypes }: AddSectionModalProps) {
   const [selectedType, setSelectedType] = useState<InlineSectionType | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
 
-  const sectionTypes = Object.entries(SECTION_TYPE_META) as [
+  const sectionTypes = (Object.entries(SECTION_TYPE_META) as [
     InlineSectionType,
     { label: string; description: string; icon: string }
-  ][];
+  ][]).filter(([type]) => !excludeTypes?.includes(type));
 
   const handleSelectType = useCallback((type: InlineSectionType) => {
     setSelectedType(type);

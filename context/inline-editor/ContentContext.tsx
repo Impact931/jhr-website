@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
-import type { ContentContextValue, PendingChange, SaveState, PublishState, ContentKeyParts, PageSectionContent, PageSEOMetadata } from '@/types/inline-editor';
+import type { ContentContextValue, PendingChange, SaveState, PublishState, ContentKeyParts, PageSectionContent, PageSEOMetadata, ColumnsSectionContent } from '@/types/inline-editor';
 import { parseContentKey } from '@/types/inline-editor';
 import { usePathname } from 'next/navigation';
 import { loadPageContent, savePageContent } from '@/lib/local-content-store';
@@ -126,6 +126,15 @@ function sanitizeSections(sections: PageSectionContent[]): PageSectionContent[] 
         if (typeof t?.authorTitle === 'string' && t.authorTitle.includes('<')) t.authorTitle = stripAllHtml(t.authorTitle);
       }
     }
+
+    // Recurse into columns children
+    if (section.type === 'columns' && Array.isArray(s.columns)) {
+      for (const col of s.columns) {
+        if (Array.isArray(col.sections) && col.sections.length > 0) {
+          col.sections = sanitizeSections(col.sections);
+        }
+      }
+    }
   }
 
   return cloned;
@@ -235,6 +244,24 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
 }
 
 /**
+ * Recursively find a section by ID.
+ * Searches the flat array first, then recurses into columns[].sections[].
+ */
+function findSectionRecursive(sections: PageSectionContent[], sectionId: string): PageSectionContent | undefined {
+  for (const s of sections) {
+    if (s.id === sectionId) return s;
+    if (s.type === 'columns') {
+      const col = s as ColumnsSectionContent;
+      for (const column of col.columns) {
+        const found = findSectionRecursive(column.sections, sectionId);
+        if (found) return found;
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
  * Deep-clone sections and apply all pendingChanges into them.
  * Returns a new array with edits baked in.
  */
@@ -249,7 +276,7 @@ function mergePendingIntoSections(
 
   pendingChanges.forEach((change) => {
     const { sectionId, elementId } = parseContentKey(change.contentKey);
-    const section = cloned.find((s) => s.id === sectionId);
+    const section = findSectionRecursive(cloned, sectionId);
     if (section && elementId) {
       applyFieldToSection(section, elementId, change.newValue);
     }
@@ -449,10 +476,79 @@ export function ContentProvider({ children }: ContentProviderProps) {
     setSectionStructureChanged(true);
   }, [canEdit]);
 
-  /** Get a section by ID. */
+  /** Get a section by ID (searches recursively into columns). */
   const getSection = useCallback((sectionId: string): PageSectionContent | undefined => {
-    return sections.find((s) => s.id === sectionId);
+    return findSectionRecursive(sections, sectionId);
   }, [sections]);
+
+  /** Add a child section to a specific column within a columns section. */
+  const addSectionToColumn = useCallback((parentId: string, colIndex: number, section: PageSectionContent) => {
+    if (!canEdit) return;
+
+    setSections((prev) =>
+      prev.map((s) => {
+        if (s.id !== parentId || s.type !== 'columns') return s;
+        const col = s as ColumnsSectionContent;
+        const newColumns = [...col.columns];
+        if (colIndex < 0 || colIndex >= newColumns.length) return s;
+        newColumns[colIndex] = {
+          ...newColumns[colIndex],
+          sections: [...newColumns[colIndex].sections, section],
+        };
+        return { ...col, columns: newColumns } as PageSectionContent;
+      })
+    );
+    setChangedSectionIds((prev) => new Set(prev).add(parentId));
+    setSectionStructureChanged(true);
+  }, [canEdit]);
+
+  /** Remove a child section from a specific column within a columns section. */
+  const removeSectionFromColumn = useCallback((parentId: string, colIndex: number, sectionId: string) => {
+    if (!canEdit) return;
+
+    setSections((prev) =>
+      prev.map((s) => {
+        if (s.id !== parentId || s.type !== 'columns') return s;
+        const col = s as ColumnsSectionContent;
+        const newColumns = [...col.columns];
+        if (colIndex < 0 || colIndex >= newColumns.length) return s;
+        newColumns[colIndex] = {
+          ...newColumns[colIndex],
+          sections: newColumns[colIndex].sections.filter((cs) => cs.id !== sectionId),
+        };
+        return { ...col, columns: newColumns } as PageSectionContent;
+      })
+    );
+    setChangedSectionIds((prev) => new Set(prev).add(parentId));
+    setSectionStructureChanged(true);
+  }, [canEdit]);
+
+  /** Move a child section between columns (or reorder within the same column). */
+  const moveSectionBetweenColumns = useCallback((parentId: string, fromCol: number, toCol: number, sectionId: string, targetIndex: number) => {
+    if (!canEdit) return;
+
+    setSections((prev) =>
+      prev.map((s) => {
+        if (s.id !== parentId || s.type !== 'columns') return s;
+        const col = s as ColumnsSectionContent;
+        const newColumns = col.columns.map((c) => ({ ...c, sections: [...c.sections] }));
+        if (fromCol < 0 || fromCol >= newColumns.length || toCol < 0 || toCol >= newColumns.length) return s;
+
+        // Find and remove the section from the source column
+        const sourceIdx = newColumns[fromCol].sections.findIndex((cs) => cs.id === sectionId);
+        if (sourceIdx === -1) return s;
+        const [moved] = newColumns[fromCol].sections.splice(sourceIdx, 1);
+
+        // Insert into the target column at the specified index
+        const clampedIdx = Math.min(Math.max(0, targetIndex), newColumns[toCol].sections.length);
+        newColumns[toCol].sections.splice(clampedIdx, 0, moved);
+
+        return { ...col, columns: newColumns } as PageSectionContent;
+      })
+    );
+    setChangedSectionIds((prev) => new Set(prev).add(parentId));
+    setSectionStructureChanged(true);
+  }, [canEdit]);
 
   // ============================================================================
   // Save (draft) - handles both field-level and section-level changes
@@ -685,6 +781,11 @@ export function ContentProvider({ children }: ContentProviderProps) {
     moveSectionUp,
     moveSectionDown,
     getSection,
+
+    // Column child section management
+    addSectionToColumn,
+    removeSectionFromColumn,
+    moveSectionBetweenColumns,
   };
 
   return (

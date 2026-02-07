@@ -26,7 +26,8 @@ export type InlineSectionType =
   | 'image-gallery'
   | 'cta'
   | 'testimonials'
-  | 'faq';
+  | 'faq'
+  | 'columns';
 
 /**
  * Variant options for hero sections.
@@ -65,6 +66,27 @@ export type TestimonialLayout = 'single' | 'carousel' | 'grid';
  * - image: Background image with overlay
  */
 export type CTABackground = 'solid' | 'gradient' | 'image';
+
+/**
+ * Layout options for columns sections.
+ * Defines how columns are sized relative to each other.
+ */
+export type ColumnsLayout =
+  | 'equal-2'   // 50/50
+  | '1/3-2/3'   // 33/67
+  | '2/3-1/3'   // 67/33
+  | '1/4-3/4'   // 25/75
+  | '3/4-1/4'   // 75/25
+  | 'equal-3';  // 33/33/33
+
+/**
+ * A single column within a columns section.
+ * Contains an ordered array of child sections.
+ */
+export interface ColumnData {
+  /** Ordered child sections within this column. */
+  sections: PageSectionContent[];
+}
 
 // ============================================================================
 // SEO Attributes (per-section)
@@ -311,6 +333,22 @@ export interface FAQSectionContent extends BaseSectionContent {
 }
 
 /**
+ * Columns section content.
+ * A multi-column layout container that holds child sections side-by-side.
+ * Columns collapse to single column on mobile.
+ *
+ * AI hint: This is a layout container — it does not have its own text content.
+ * Child sections are regular section types (except hero and columns, which are excluded).
+ */
+export interface ColumnsSectionContent extends BaseSectionContent {
+  type: 'columns';
+  /** Column layout preset. */
+  layout: ColumnsLayout;
+  /** Array of columns, each containing child sections. */
+  columns: ColumnData[];
+}
+
+/**
  * Union of all section content types.
  * Use the `type` field as discriminator for type narrowing.
  */
@@ -321,7 +359,8 @@ export type PageSectionContent =
   | ImageGallerySectionContent
   | CTASectionContent
   | TestimonialsSectionContent
-  | FAQSectionContent;
+  | FAQSectionContent
+  | ColumnsSectionContent;
 
 // ============================================================================
 // Page Schema
@@ -490,6 +529,18 @@ export function createDefaultSection(
           },
         ],
       };
+    case 'columns':
+      return {
+        id,
+        type: 'columns',
+        order,
+        seo: baseSeo,
+        layout: 'equal-2',
+        columns: [
+          { sections: [] },
+          { sections: [] },
+        ],
+      };
   }
 }
 
@@ -535,6 +586,7 @@ export const SECTION_TYPE_META: Record<InlineSectionType, { label: string; descr
   'cta': { label: 'Call to Action', description: 'Prominent section with headline and action buttons', icon: 'MousePointerClick' },
   'testimonials': { label: 'Testimonials', description: 'Customer testimonials in various layouts', icon: 'Quote' },
   'faq': { label: 'FAQ', description: 'Frequently asked questions with accordion layout', icon: 'HelpCircle' },
+  'columns': { label: 'Columns', description: 'Multi-column layout with side-by-side content sections', icon: 'Columns' },
 };
 
 // ============================================================================
@@ -620,6 +672,14 @@ export interface ContentContextValue {
   moveSectionDown: (index: number) => void;
   /** Get a section by ID. */
   getSection: (sectionId: string) => PageSectionContent | undefined;
+
+  // --- Column child section management ---
+  /** Add a child section to a specific column within a columns section. */
+  addSectionToColumn: (parentId: string, colIndex: number, section: PageSectionContent) => void;
+  /** Remove a child section from a specific column within a columns section. */
+  removeSectionFromColumn: (parentId: string, colIndex: number, sectionId: string) => void;
+  /** Move a child section between columns (or reorder within the same column). */
+  moveSectionBetweenColumns: (parentId: string, fromCol: number, toCol: number, sectionId: string, targetIndex: number) => void;
 }
 
 export interface EditModeContextValue {

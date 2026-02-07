@@ -19,6 +19,7 @@ import {
   Hash,
   Tag,
   Sparkles,
+  Columns,
 } from 'lucide-react';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import type { InlineSectionType, SectionSEOAttributes } from '@/types/inline-editor';
@@ -38,6 +39,7 @@ const SECTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string 
   MousePointerClick,
   Quote,
   HelpCircle,
+  Columns,
 };
 
 function getSectionIcon(iconName: string): React.ComponentType<{ className?: string }> {
