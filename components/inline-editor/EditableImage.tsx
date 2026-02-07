@@ -102,16 +102,21 @@ export function EditableImage({
   }
 
   // In edit mode, add overlay
+  // For fill images, the wrapper must also be absolute to maintain layout
+  const wrapperClass = fill
+    ? 'absolute inset-0 group'
+    : 'relative group';
+
   return (
     <>
-      <div className="relative group">
+      <div className={wrapperClass}>
         {renderImage()}
 
         {/* Edit overlay */}
         {canEdit && (
           <div
             onClick={handleClick}
-            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center"
+            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex items-center justify-center z-10"
           >
             <div className="flex flex-col items-center gap-2 text-white">
               <Camera className="w-8 h-8" />
