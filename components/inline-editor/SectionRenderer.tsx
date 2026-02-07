@@ -186,6 +186,7 @@ export function SectionRenderer({
             contentKeyPrefix={prefix}
             heading={testimonials.heading}
             layout={testimonials.layout}
+            cardVariant={testimonials.cardVariant}
             testimonials={testimonials.testimonials}
           />
         </SectionShell>

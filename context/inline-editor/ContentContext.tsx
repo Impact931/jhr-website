@@ -155,6 +155,7 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
   // --- Scalar config fields ---
   if (elementId === 'columns') { s.columns = Number(value) || s.columns; return; }
   if (elementId === 'layout') { s.layout = value; return; }
+  if (elementId === 'cardVariant') { s.cardVariant = value; return; }
   if (elementId === 'backgroundType') { s.backgroundType = value; return; }
   if (elementId === 'backgroundValue') { s.backgroundValue = value; return; }
 

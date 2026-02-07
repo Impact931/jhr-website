@@ -25,8 +25,27 @@ import type { MediaPickerResult } from '@/types/media';
 import type { Testimonial, TestimonialLayout } from '@/types/inline-editor';
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/** Render a string that may contain inline HTML (spans, strong, em) safely. */
+function renderInlineHtml(
+  html: string | undefined,
+  Tag: 'h1' | 'h2' | 'h3' | 'p' | 'span',
+  className: string,
+) {
+  if (!html) return null;
+  if (/<[^>]+>/.test(html)) {
+    return <Tag className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+  }
+  return <Tag className={className}>{html}</Tag>;
+}
+
+// ============================================================================
 // Types
 // ============================================================================
+
+type CardVariant = 'dark' | 'light';
 
 interface EditableTestimonialsProps {
   /** Content key prefix for all testimonial fields (format: pageSlug:sectionId). */
@@ -35,6 +54,8 @@ interface EditableTestimonialsProps {
   heading?: string;
   /** Display layout. */
   layout?: TestimonialLayout;
+  /** Card color variant. */
+  cardVariant?: CardVariant;
   /** Testimonial entries. */
   testimonials: Testimonial[];
   /** Callback when testimonials array changes. */
@@ -261,16 +282,32 @@ function FieldLabel({ label, icon }: { label: string; icon: ReactNode }) {
 // Testimonial Card (view mode rendering)
 // ============================================================================
 
-function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
+const CARD_CLASSES: Record<CardVariant, { card: string; quote: string; name: string; title: string }> = {
+  dark: {
+    card: 'bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl p-6 hover:border-jhr-gold/20 transition-colors duration-300',
+    quote: 'text-body-md text-gray-400 italic',
+    name: 'text-sm font-semibold text-white',
+    title: 'text-xs text-gray-400',
+  },
+  light: {
+    card: 'bg-white border border-gray-200 rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300',
+    quote: 'text-body-md text-gray-600 italic',
+    name: 'text-sm font-semibold text-gray-900',
+    title: 'text-xs text-gray-500',
+  },
+};
+
+function TestimonialCard({ testimonial, variant = 'dark' }: { testimonial: Testimonial; variant?: CardVariant }) {
+  const styles = CARD_CLASSES[variant];
   return (
-    <div className="card h-full flex flex-col">
+    <div className={`${styles.card} h-full flex flex-col`}>
       {/* Quote icon */}
       <div className="w-10 h-10 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4">
         <Quote className="w-5 h-5 text-jhr-gold" />
       </div>
 
       {/* Quote text */}
-      <blockquote className="text-body-md text-jhr-white-dim italic flex-1 mb-6">
+      <blockquote className={`${styles.quote} flex-1 mb-6`}>
         &ldquo;{testimonial.quote}&rdquo;
       </blockquote>
 
@@ -291,10 +328,10 @@ function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
           </div>
         )}
         <div>
-          <p className="text-sm font-semibold text-jhr-white">
+          <p className={styles.name}>
             {testimonial.authorName}
           </p>
-          <p className="text-xs text-jhr-white-muted">
+          <p className={styles.title}>
             {testimonial.authorTitle}
           </p>
         </div>
@@ -311,6 +348,7 @@ export function EditableTestimonials({
   contentKeyPrefix,
   heading,
   layout = 'carousel',
+  cardVariant: initialCardVariant = 'dark',
   testimonials: initialTestimonials,
   onTestimonialsChange,
   onLayoutChange,
@@ -322,6 +360,7 @@ export function EditableTestimonials({
   // Local state
   const [testimonials, setTestimonials] = useState<Testimonial[]>(initialTestimonials);
   const [currentLayout, setCurrentLayout] = useState<TestimonialLayout>(layout);
+  const [currentCardVariant, setCurrentCardVariant] = useState<CardVariant>(initialCardVariant);
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   // Modal states
@@ -353,6 +392,19 @@ export function EditableTestimonials({
       );
     },
     [contentKeyPrefix, onLayoutChange, updateContent]
+  );
+
+  // Handle card variant change
+  const handleCardVariantChange = useCallback(
+    (v: CardVariant) => {
+      setCurrentCardVariant(v);
+      updateContent(
+        `${contentKeyPrefix}:cardVariant`,
+        v,
+        'text'
+      );
+    },
+    [contentKeyPrefix, updateContent]
   );
 
   // Add a new testimonial
@@ -417,9 +469,13 @@ export function EditableTestimonials({
     setCarouselIndex((prev) => (prev < testimonials.length - 1 ? prev + 1 : 0));
   }, [testimonials.length]);
 
-  // Resolve pending heading
+  // Resolve pending heading & card variant
   const headingKey = `${contentKeyPrefix}:heading`;
   const displayHeading = pendingChanges.get(headingKey)?.newValue ?? heading;
+
+  const cardVariantKey = `${contentKeyPrefix}:cardVariant`;
+  const displayCardVariant: CardVariant =
+    (pendingChanges.get(cardVariantKey)?.newValue as CardVariant) ?? currentCardVariant;
 
   // Get testimonial being edited
   const editingTestimonial = editorTestimonialId
@@ -433,16 +489,14 @@ export function EditableTestimonials({
         {/* Heading */}
         {displayHeading && (
           <div className="text-center mb-12">
-            <h2 className="text-display-sm font-display font-bold text-jhr-white">
-              {displayHeading}
-            </h2>
+            {renderInlineHtml(displayHeading, 'h2', 'text-display-sm font-display font-bold text-jhr-white')}
           </div>
         )}
 
         {/* Single Layout */}
         {currentLayout === 'single' && testimonials.length > 0 && (
           <div className="max-w-2xl mx-auto">
-            <TestimonialCard testimonial={testimonials[0]} />
+            <TestimonialCard testimonial={testimonials[0]} variant={displayCardVariant} />
           </div>
         )}
 
@@ -450,7 +504,7 @@ export function EditableTestimonials({
         {currentLayout === 'carousel' && testimonials.length > 0 && (
           <div className="relative">
             <div className="max-w-2xl mx-auto">
-              <TestimonialCard testimonial={testimonials[carouselIndex]} />
+              <TestimonialCard testimonial={testimonials[carouselIndex]} variant={displayCardVariant} />
             </div>
 
             {/* Navigation Arrows */}
@@ -494,7 +548,7 @@ export function EditableTestimonials({
         {currentLayout === 'grid' && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {testimonials.map((t) => (
-              <TestimonialCard key={t.id} testimonial={t} />
+              <TestimonialCard key={t.id} testimonial={t} variant={displayCardVariant} />
             ))}
           </div>
         )}
@@ -547,10 +601,31 @@ export function EditableTestimonials({
           )}
         </div>
 
-        {/* Layout selector */}
+        {/* Layout + Card Style selectors */}
         {canEdit && (
-          <div className="flex items-center justify-between mb-6">
-            <LayoutSelector layout={currentLayout} onChange={handleLayoutChange} />
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-4">
+              <LayoutSelector layout={currentLayout} onChange={handleLayoutChange} />
+              {/* Card variant selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Card:</span>
+                {(['dark', 'light'] as CardVariant[]).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => handleCardVariantChange(v)}
+                    className={`
+                      px-3 py-1.5 rounded-lg text-xs font-medium transition-colors
+                      ${displayCardVariant === v
+                        ? 'bg-[#C9A227] text-black'
+                        : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#333]'
+                      }
+                    `}
+                  >
+                    {v === 'dark' ? 'Dark' : 'Light'}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <FieldLabel label="Testimonials" icon={<Quote className="w-3 h-3" />} />
             </div>
@@ -565,6 +640,7 @@ export function EditableTestimonials({
               index={0}
               total={testimonials.length}
               canEdit={canEdit}
+              variant={displayCardVariant}
               onEdit={() => setEditorTestimonialId(testimonials[0].id)}
               onRemove={() => handleRemoveTestimonial(testimonials[0].id)}
               onMoveUp={() => handleMoveTestimonial(testimonials[0].id, 'up')}
@@ -582,6 +658,7 @@ export function EditableTestimonials({
                 index={carouselIndex}
                 total={testimonials.length}
                 canEdit={canEdit}
+                variant={displayCardVariant}
                 onEdit={() => setEditorTestimonialId(testimonials[carouselIndex].id)}
                 onRemove={() => handleRemoveTestimonial(testimonials[carouselIndex].id)}
                 onMoveUp={() => handleMoveTestimonial(testimonials[carouselIndex].id, 'up')}
@@ -641,6 +718,7 @@ export function EditableTestimonials({
                 index={index}
                 total={testimonials.length}
                 canEdit={canEdit}
+                variant={displayCardVariant}
                 onEdit={() => setEditorTestimonialId(t.id)}
                 onRemove={() => handleRemoveTestimonial(t.id)}
                 onMoveUp={() => handleMoveTestimonial(t.id, 'up')}
@@ -709,6 +787,7 @@ function EditableTestimonialCard({
   index,
   total,
   canEdit,
+  variant = 'dark',
   onEdit,
   onRemove,
   onMoveUp,
@@ -718,13 +797,15 @@ function EditableTestimonialCard({
   index: number;
   total: number;
   canEdit: boolean;
+  variant?: CardVariant;
   onEdit: () => void;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
 }) {
+  const styles = CARD_CLASSES[variant];
   return (
-    <div className="card h-full flex flex-col relative group/card">
+    <div className={`${styles.card} h-full flex flex-col relative group/card`}>
       {/* Card Controls */}
       {canEdit && (
         <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1">
@@ -774,7 +855,7 @@ function EditableTestimonialCard({
       </div>
 
       {/* Quote text */}
-      <blockquote className="text-body-md text-jhr-white-dim italic flex-1 mb-6">
+      <blockquote className={`${styles.quote} flex-1 mb-6`}>
         &ldquo;{testimonial.quote}&rdquo;
       </blockquote>
 
@@ -795,10 +876,10 @@ function EditableTestimonialCard({
           </div>
         )}
         <div>
-          <p className="text-sm font-semibold text-jhr-white">
+          <p className={styles.name}>
             {testimonial.authorName}
           </p>
-          <p className="text-xs text-jhr-white-muted">
+          <p className={styles.title}>
             {testimonial.authorTitle}
           </p>
         </div>

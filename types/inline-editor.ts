@@ -289,6 +289,8 @@ export interface TestimonialsSectionContent extends BaseSectionContent {
   heading?: string;
   /** Display layout. */
   layout: TestimonialLayout;
+  /** Card color variant. 'dark' = dark card (default), 'light' = white card with shadow. */
+  cardVariant?: 'dark' | 'light';
   /** Testimonial entries. */
   testimonials: Testimonial[];
 }
