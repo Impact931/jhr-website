@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
-import type { ContentContextValue, PendingChange, SaveState, PublishState, ContentKeyParts, PageSectionContent, PageSEOMetadata, ColumnsSectionContent } from '@/types/inline-editor';
+import type { ContentContextValue, ContentLoadState, PendingChange, SaveState, PublishState, ContentKeyParts, PageSectionContent, PageSEOMetadata, ColumnsSectionContent } from '@/types/inline-editor';
 import { parseContentKey } from '@/types/inline-editor';
 import { usePathname } from 'next/navigation';
 import { loadPageContent, savePageContent } from '@/lib/local-content-store';
@@ -314,6 +314,9 @@ export function ContentProvider({ children }: ContentProviderProps) {
   // --- Page slug state ---
   const [pageSlug, setPageSlug] = useState<string>('');
 
+  // --- Content loading state ---
+  const [contentLoadState, setContentLoadState] = useState<ContentLoadState>('idle');
+
   // --- Section-level state ---
   const [sections, setSections] = useState<PageSectionContent[]>([]);
   const [changedSectionIds, setChangedSectionIds] = useState<Set<string>>(new Set());
@@ -381,12 +384,17 @@ export function ContentProvider({ children }: ContentProviderProps) {
     setSectionStructureChanged(false);
   }, []);
 
-  /** Load sections for a specific page, restoring from localStorage if available. */
+  /**
+   * Load sections for a specific page with a 3-tier strategy:
+   * 1. Immediate (sync): Render from localStorage cache or hardcoded defaults (no blank flash)
+   * 2. Background (async): Fetch from API — draft endpoint for editors, published endpoint for visitors
+   * 3. Update: Replace sections with API data, update localStorage as cache
+   */
   const loadSectionsForPage = useCallback((slug: string, defaults: PageSectionContent[]) => {
     setPageSlug(slug);
+
+    // --- Tier 1: Immediate render from localStorage or defaults ---
     const saved = loadPageContent(slug);
-    // Sanitize localStorage data to strip stale HTML from plain text fields
-    // IMPORTANT: Check for non-empty array, not just existence (empty array is truthy)
     const incoming = saved?.sections && saved.sections.length > 0
       ? sanitizeSections(saved.sections)
       : defaults;
@@ -398,7 +406,52 @@ export function ContentProvider({ children }: ContentProviderProps) {
       setPageSEO(saved.seo);
       setPageSEOChanged(false);
     }
-  }, []);
+
+    // --- Tier 2: Background API fetch ---
+    setContentLoadState('loading');
+    const apiUrl = canEdit
+      ? `/api/admin/content/sections?slug=${encodeURIComponent(slug)}&status=draft`
+      : `/api/content/sections?slug=${encodeURIComponent(slug)}`;
+
+    fetch(apiUrl)
+      .then((res) => {
+        if (!res.ok) {
+          // 404 is expected if no content has been published/saved yet
+          if (res.status === 404) {
+            setContentLoadState('loaded');
+            return null;
+          }
+          throw new Error(`API returned ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (!data || !data.sections || !Array.isArray(data.sections) || data.sections.length === 0) {
+          setContentLoadState('loaded');
+          return;
+        }
+
+        // --- Tier 3: Update sections with API data ---
+        const apiSections = sanitizeSections(data.sections as PageSectionContent[]);
+        const apiSorted = [...apiSections].sort((a, b) => a.order - b.order);
+        setSections(reindexSections(apiSorted));
+        setChangedSectionIds(new Set());
+        setSectionStructureChanged(false);
+
+        if (data.seo) {
+          setPageSEO(data.seo);
+          setPageSEOChanged(false);
+        }
+
+        // Update localStorage cache with API data
+        savePageContent(slug, apiSorted, data.seo ?? undefined);
+        setContentLoadState('loaded');
+      })
+      .catch((err) => {
+        console.warn(`[ContentContext] API fetch failed for "${slug}", using localStorage/defaults:`, err);
+        setContentLoadState('error');
+      });
+  }, [canEdit]);
 
   /** Add a new section at a given index. */
   const addSection = useCallback((section: PageSectionContent, atIndex: number) => {
@@ -589,26 +642,31 @@ export function ContentProvider({ children }: ContentProviderProps) {
         setSaveState((prev) => ({ ...prev, status: 'idle' }));
       }, 3000);
 
-      // --- Optional: attempt API save (non-blocking) ---
-      if (mergedSections.length > 0) {
-        fetch('/api/admin/content/sections', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            slug,
-            sections: mergedSections,
-            seo: {
-              pageTitle: pageSEO.pageTitle || slug,
-              metaDescription: pageSEO.metaDescription || '',
-              ogImage: pageSEO.ogImage || '',
-              ogTitle: pageSEO.ogTitle || '',
-              ogDescription: pageSEO.ogDescription || '',
-            },
-            status: 'draft',
-          }),
-        }).catch(() => {
-          // API not available — localStorage already succeeded
-        });
+      // --- Persist to DynamoDB via admin API (editors only) ---
+      if (canEdit && mergedSections.length > 0) {
+        try {
+          const res = await fetch('/api/admin/content/sections', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              slug,
+              sections: mergedSections,
+              seo: {
+                pageTitle: pageSEO.pageTitle || slug,
+                metaDescription: pageSEO.metaDescription || '',
+                ogImage: pageSEO.ogImage || '',
+                ogTitle: pageSEO.ogTitle || '',
+                ogDescription: pageSEO.ogDescription || '',
+              },
+              status: 'draft',
+            }),
+          });
+          if (!res.ok) {
+            console.warn(`[ContentContext] API save returned ${res.status} — localStorage succeeded`);
+          }
+        } catch (apiErr) {
+          console.warn('[ContentContext] API save failed — localStorage succeeded:', apiErr);
+        }
       }
     } catch (error) {
       console.error('Save error:', error);
@@ -624,7 +682,7 @@ export function ContentProvider({ children }: ContentProviderProps) {
       }, 5000);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingChanges, hasSectionChanges, pageSEO, pageSlug, sections]);
+  }, [pendingChanges, hasSectionChanges, pageSEO, pageSlug, sections, canEdit]);
 
   // ============================================================================
   // Auto-save with debounce
@@ -663,7 +721,18 @@ export function ContentProvider({ children }: ContentProviderProps) {
     setPublishState({ status: 'publishing', error: null });
 
     try {
-      // For demo, we'll just set success
+      const slug = pageSlug || 'home';
+      const res = await fetch('/api/admin/content/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(data.error || `Publish failed (${res.status})`);
+      }
+
       setPublishState({ status: 'published', error: null });
 
       // Reset to idle after 3 seconds
@@ -683,7 +752,7 @@ export function ContentProvider({ children }: ContentProviderProps) {
         setPublishState({ status: 'idle', error: null });
       }, 5000);
     }
-  }, [pendingChanges, hasSectionChanges, saveChanges]);
+  }, [pendingChanges, hasSectionChanges, saveChanges, pageSlug]);
 
   // ============================================================================
   // Warn before leaving with unsaved changes
@@ -766,6 +835,9 @@ export function ContentProvider({ children }: ContentProviderProps) {
     // Page SEO
     pageSEO,
     updatePageSEO,
+
+    // Content loading state
+    contentLoadState,
 
     // Section-level
     pageSlug,

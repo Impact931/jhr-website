@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { publishPage } from '@/lib/content';
+import { publishPageSections } from '@/lib/content';
 
 /**
  * POST /api/admin/content/publish
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Publish the content (copies draft to published)
     // TODO: Get userId from session when auth is integrated
-    const published = await publishPage(slug);
+    const published = await publishPageSections(slug);
 
     if (!published) {
       return NextResponse.json(

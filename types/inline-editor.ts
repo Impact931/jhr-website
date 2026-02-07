@@ -624,6 +624,15 @@ export interface PublishState {
   error: string | null;
 }
 
+/**
+ * Loading state for content fetched from the API.
+ * - 'idle': No load attempted yet
+ * - 'loading': Fetching from API in background
+ * - 'loaded': API data received and applied
+ * - 'error': API fetch failed (localStorage/defaults are still in use)
+ */
+export type ContentLoadState = 'idle' | 'loading' | 'loaded' | 'error';
+
 export interface ContentContextValue {
   // --- Existing field-level change tracking (EditableText / EditableImage) ---
   pendingChanges: Map<string, PendingChange>;
@@ -643,6 +652,10 @@ export interface ContentContextValue {
   pageSEO: PageSEOMetadata;
   /** Update page SEO metadata (partial merge). */
   updatePageSEO: (updates: Partial<PageSEOMetadata>) => void;
+
+  // --- Content loading state ---
+  /** Whether content has been loaded from the API. */
+  contentLoadState: ContentLoadState;
 
   // --- Section-based content management ---
   /** Current page sections array. Empty until loadSections is called. */

@@ -259,6 +259,17 @@ export function validateSection(section: PageSectionContent): string | null {
         return `FAQ section "${section.id}" must have an items array`;
       }
       break;
+    case 'columns': {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const col = section as any;
+      if (!col.layout || typeof col.layout !== 'string') {
+        return `Columns section "${col.id}" must have a layout`;
+      }
+      if (!Array.isArray(col.columns)) {
+        return `Columns section "${col.id}" must have a columns array`;
+      }
+      break;
+    }
   }
 
   return null;
