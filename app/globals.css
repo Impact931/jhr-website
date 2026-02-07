@@ -143,13 +143,68 @@ body {
     @apply text-jhr-gold hover:text-jhr-gold-light transition-colors duration-200 underline-offset-4 hover:underline;
   }
 
-  /* Light section variants */
+  /* Light section variants — override dark-theme text colors */
   .section-light {
     background-color: #F9FAFB;
+    color: #374151; /* jhr-light-text */
+  }
+
+  .section-light .text-jhr-white {
+    color: #111827; /* near-black for headings */
+  }
+
+  .section-light .text-jhr-white-muted {
+    color: #374151; /* dark gray for body text */
+  }
+
+  .section-light .text-jhr-white-dim {
+    color: #6B7280; /* medium gray for secondary text */
+  }
+
+  .section-light .card {
+    background-color: #FFFFFF;
+    border-color: #E5E7EB;
+  }
+
+  .section-light .card:hover {
+    border-color: rgba(201, 162, 39, 0.3);
+  }
+
+  /* Override Tiptap editor prose colors inside light sections */
+  .section-light .prose-invert {
+    color: #374151;
+  }
+
+  .section-light .prose-headings\:text-white :is(h1, h2, h3, h4, h5, h6) {
+    color: #111827;
+  }
+
+  .section-light .tiptap p {
+    color: #374151;
+  }
+
+  .section-light .tiptap h1,
+  .section-light .tiptap h2,
+  .section-light .tiptap h3,
+  .section-light .tiptap h4 {
+    color: #111827;
   }
 
   .section-white {
     background-color: #FFFFFF;
+    color: #374151;
+  }
+
+  .section-white .text-jhr-white {
+    color: #111827;
+  }
+
+  .section-white .text-jhr-white-muted {
+    color: #374151;
+  }
+
+  .section-white .text-jhr-white-dim {
+    color: #6B7280;
   }
 
   .card-light {
