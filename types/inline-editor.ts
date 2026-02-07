@@ -269,6 +269,8 @@ export interface CTASectionContent extends BaseSectionContent {
   backgroundType: CTABackground;
   /** Background value: hex color, CSS gradient, or image URL. */
   backgroundValue: string;
+  /** Vertical position for background image (0-100, 0=top, 50=center, 100=bottom). */
+  imagePositionY?: number;
   /** Primary CTA button. */
   primaryButton: CTAButton;
   /** Optional secondary button. */

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, ReactNode } from 'react';
+import { useState, useCallback, useEffect, ReactNode } from 'react';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import Link from 'next/link';
@@ -14,6 +14,7 @@ import {
   Palette,
   ImageIcon,
   Check,
+  Move,
 } from 'lucide-react';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
@@ -42,6 +43,8 @@ interface EditableCTAProps {
   backgroundType?: CTABackground;
   /** Background value: hex color, CSS gradient string, or image URL. */
   backgroundValue?: string;
+  /** Vertical position for background image (0-100, 0=top, 50=center, 100=bottom). */
+  imagePositionY?: number;
   /** Text alignment. */
   alignment?: 'left' | 'center' | 'right';
   /** Additional children rendered after buttons. */
@@ -452,6 +455,7 @@ export function EditableCTA({
   secondaryButton,
   backgroundType = 'solid',
   backgroundValue = '#0A0A0A',
+  imagePositionY = 50,
   alignment = 'center',
   children,
 }: EditableCTAProps) {
@@ -461,6 +465,14 @@ export function EditableCTA({
   // Modal states
   const [editingButton, setEditingButton] = useState<'primary' | 'secondary' | null>(null);
   const [isBackgroundEditorOpen, setIsBackgroundEditorOpen] = useState(false);
+
+  // Image position state (for live preview during drag)
+  const [localPositionY, setLocalPositionY] = useState(imagePositionY);
+
+  // Sync local position state when prop changes
+  useEffect(() => {
+    setLocalPositionY(imagePositionY);
+  }, [imagePositionY]);
 
   // Content keys
   const primaryTextKey = `${contentKeyPrefix}:primaryButton-text`;
@@ -484,6 +496,17 @@ export function EditableCTA({
 
   const currentBgType = (pendingChanges.get(bgTypeKey)?.newValue ?? backgroundType) as CTABackground;
   const currentBgValue = pendingChanges.get(bgValueKey)?.newValue ?? backgroundValue;
+
+  // Image position handling
+  const positionKey = `${contentKeyPrefix}:imagePositionY`;
+  const pendingPosition = pendingChanges.get(positionKey)?.newValue;
+  const displayPositionY = pendingPosition !== undefined ? Number(pendingPosition) : localPositionY;
+  const objectPosition = `center ${displayPositionY}%`;
+
+  const handlePositionChange = useCallback((value: number) => {
+    setLocalPositionY(value);
+    updateContent(positionKey, String(value), 'text');
+  }, [positionKey, updateContent]);
 
   // Alignment classes
   const alignmentClasses: Record<string, string> = {
@@ -533,6 +556,7 @@ export function EditableCTA({
               alt="CTA background"
               fill
               className="object-cover"
+              objectPosition={objectPosition}
             />
             <div className="absolute inset-0 bg-black/70" />
           </div>
@@ -581,6 +605,7 @@ export function EditableCTA({
               alt="CTA background"
               fill
               className="object-cover"
+              objectPosition={objectPosition}
             />
             <div className="absolute inset-0 bg-black/70 pointer-events-none" />
           </div>
@@ -596,9 +621,9 @@ export function EditableCTA({
           </div>
         )}
 
-        {/* Background Editor Button */}
+        {/* Background Controls — right side */}
         {canEdit && (
-          <div className="absolute top-4 right-4 z-20">
+          <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
             <button
               onClick={() => setIsBackgroundEditorOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#C9A227]/20 border border-[#C9A227]/40 rounded-full text-[10px] font-medium text-[#C9A227] uppercase tracking-wider hover:bg-[#C9A227]/30 transition-colors cursor-pointer"
@@ -606,6 +631,33 @@ export function EditableCTA({
               <Palette className="w-3 h-3" />
               Edit Background
             </button>
+
+            {/* Image position control — only show for image backgrounds */}
+            {currentBgType === 'image' && currentBgValue && (
+              <div className="bg-[#1A1A1A]/90 border border-[#C9A227]/40 rounded p-2 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Move className="w-3 h-3 text-[#C9A227]" />
+                  <span className="text-[10px] font-medium text-[#C9A227] uppercase tracking-wider">
+                    Vertical Position
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] text-gray-400 w-6">Top</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={displayPositionY}
+                    onChange={(e) => handlePositionChange(Number(e.target.value))}
+                    className="flex-1 h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer accent-[#C9A227] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#C9A227] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md"
+                  />
+                  <span className="text-[9px] text-gray-400 w-8">Bottom</span>
+                </div>
+                <div className="text-center mt-1">
+                  <span className="text-[9px] text-gray-500">{displayPositionY}%</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

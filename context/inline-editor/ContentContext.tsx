@@ -176,6 +176,8 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
   if (elementId === 'imagePositionY') {
     if (section.type === 'hero') {
       s.backgroundImage = { ...(s.backgroundImage || { src: '', alt: '' }), positionY: Number(value) };
+    } else if (section.type === 'cta') {
+      s.imagePositionY = Number(value);
     }
     return;
   }

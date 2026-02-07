@@ -159,6 +159,7 @@ export function SectionRenderer({
           secondaryButton={cta.secondaryButton}
           backgroundType={cta.backgroundType}
           backgroundValue={cta.backgroundValue}
+          imagePositionY={cta.imagePositionY}
           alignment="center"
         />
       );
