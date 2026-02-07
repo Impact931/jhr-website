@@ -172,6 +172,14 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
     return;
   }
 
+  // --- Background image vertical position ---
+  if (elementId === 'imagePositionY') {
+    if (section.type === 'hero') {
+      s.backgroundImage = { ...(s.backgroundImage || { src: '', alt: '' }), positionY: Number(value) };
+    }
+    return;
+  }
+
   // --- Hero CTA buttons: primaryCta-text, primaryCta-href, secondaryCta-text, secondaryCta-href ---
   const heroCta = elementId.match(/^(primaryCta|secondaryCta)-(text|href)$/);
   if (heroCta && section.type === 'hero') {

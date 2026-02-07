@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback, ReactNode } from 'react';
+import { useState, useCallback, useEffect, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import Link from 'next/link';
-import { ArrowRight, Pencil, X, Type, AlignLeft, ImageIcon, MousePointerClick } from 'lucide-react';
+import { ArrowRight, Pencil, X, Type, AlignLeft, ImageIcon, MousePointerClick, Move } from 'lucide-react';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import { EditableText } from './EditableText';
@@ -31,6 +31,8 @@ interface EditableHeroProps {
   image: string;
   /** Background image alt text. */
   imageAlt: string;
+  /** Background image vertical position (0-100, 0=top, 50=center, 100=bottom). */
+  imagePositionY?: number;
   /** Primary CTA button config. */
   primaryCta?: CTAButton | { text: string; href: string };
   /** Secondary CTA button config. */
@@ -183,6 +185,7 @@ export function EditableHero({
   description,
   image,
   imageAlt,
+  imagePositionY = 50,
   primaryCta,
   secondaryCta,
   badge,
@@ -198,6 +201,13 @@ export function EditableHero({
   const [editingCta, setEditingCta] = useState<'primary' | 'secondary' | null>(null);
   // Background image picker state
   const [isBgPickerOpen, setIsBgPickerOpen] = useState(false);
+  // Image position state (for live preview during drag)
+  const [localPositionY, setLocalPositionY] = useState(imagePositionY);
+
+  // Sync local position state when prop changes (e.g., draft loaded)
+  useEffect(() => {
+    setLocalPositionY(imagePositionY);
+  }, [imagePositionY]);
 
   // Resolve display values from pending changes
   const primaryTextKey = `${contentKeyPrefix}:primaryCta-text`;
@@ -229,6 +239,17 @@ export function EditableHero({
     setIsBgPickerOpen(false);
   }, [contentKeyPrefix, updateContent]);
 
+  // Image position handling
+  const positionKey = `${contentKeyPrefix}:imagePositionY`;
+  const pendingPosition = pendingChanges.get(positionKey)?.newValue;
+  const displayPositionY = pendingPosition !== undefined ? Number(pendingPosition) : localPositionY;
+  const objectPosition = `center ${displayPositionY}%`;
+
+  const handlePositionChange = useCallback((value: number) => {
+    setLocalPositionY(value);
+    updateContent(positionKey, String(value), 'text');
+  }, [positionKey, updateContent]);
+
   const heightClass = getHeightClass(variant, height);
   const overlayClass = getOverlayClass(overlay);
   const imageContentKey = `${contentKeyPrefix}:backgroundImage`;
@@ -244,6 +265,7 @@ export function EditableHero({
             alt={imageAlt}
             fill
             className="object-cover"
+            objectPosition={objectPosition}
             priority
             quality={90}
           />
@@ -363,6 +385,7 @@ export function EditableHero({
             alt={imageAlt}
             fill
             className="object-cover"
+            objectPosition={objectPosition}
             priority
           />
           <div className={`absolute inset-0 ${overlayClass} pointer-events-none`} />
@@ -378,9 +401,10 @@ export function EditableHero({
           </div>
         )}
 
-        {/* Background Image Field Label — clickable to open picker */}
+        {/* Background Image Controls — right side */}
         {canEdit && (
-          <div className="absolute top-20 right-4 z-20">
+          <div className="absolute top-20 right-4 z-20 flex flex-col gap-2">
+            {/* Image picker button */}
             <button
               onClick={() => setIsBgPickerOpen(true)}
               className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#C9A227]/30 hover:bg-[#C9A227]/60 border border-[#C9A227]/60 hover:border-[#C9A227] rounded text-[11px] font-medium text-[#C9A227] uppercase tracking-wider cursor-pointer transition-colors"
@@ -388,6 +412,31 @@ export function EditableHero({
               <ImageIcon className="w-3 h-3" />
               Background Image
             </button>
+
+            {/* Image position control */}
+            <div className="bg-[#1A1A1A]/90 border border-[#C9A227]/40 rounded p-2 backdrop-blur-sm">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Move className="w-3 h-3 text-[#C9A227]" />
+                <span className="text-[10px] font-medium text-[#C9A227] uppercase tracking-wider">
+                  Vertical Position
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] text-gray-400 w-6">Top</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={displayPositionY}
+                  onChange={(e) => handlePositionChange(Number(e.target.value))}
+                  className="flex-1 h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer accent-[#C9A227] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#C9A227] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md"
+                />
+                <span className="text-[9px] text-gray-400 w-8">Bottom</span>
+              </div>
+              <div className="text-center mt-1">
+                <span className="text-[9px] text-gray-500">{displayPositionY}%</span>
+              </div>
+            </div>
           </div>
         )}
 

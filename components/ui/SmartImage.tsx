@@ -11,6 +11,8 @@ interface SmartImageProps {
   className?: string;
   priority?: boolean;
   quality?: number;
+  /** Object position for fill mode (e.g., "center 30%", "center top"). */
+  objectPosition?: string;
 }
 
 /**
@@ -27,6 +29,7 @@ export default function SmartImage({
   className = '',
   priority,
   quality,
+  objectPosition,
 }: SmartImageProps) {
   const isExternal = src.startsWith('http://') || src.startsWith('https://');
 
@@ -37,6 +40,7 @@ export default function SmartImage({
           src={src}
           alt={alt}
           className={`${className} absolute inset-0 w-full h-full`}
+          style={objectPosition ? { objectPosition } : undefined}
           loading={priority ? 'eager' : 'lazy'}
         />
       );
@@ -61,6 +65,7 @@ export default function SmartImage({
       width={!fill ? width : undefined}
       height={!fill ? height : undefined}
       className={className}
+      style={objectPosition ? { objectPosition } : undefined}
       priority={priority}
       quality={quality}
     />

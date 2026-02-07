@@ -109,6 +109,7 @@ export function SectionRenderer({
           description={hero.description}
           image={hero.backgroundImage?.src || '/images/generated/hero-homepage.jpg'}
           imageAlt={hero.backgroundImage?.alt || 'Hero background'}
+          imagePositionY={hero.backgroundImage?.positionY ?? 50}
           primaryCta={hero.buttons?.[0]}
           secondaryCta={hero.buttons?.[1]}
           variant={hero.variant}

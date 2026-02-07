@@ -114,6 +114,8 @@ export interface EditableImageField {
   caption?: string;
   width?: number;
   height?: number;
+  /** Vertical position for object-fit: cover (0-100, where 0=top, 50=center, 100=bottom). */
+  positionY?: number;
 }
 
 /**

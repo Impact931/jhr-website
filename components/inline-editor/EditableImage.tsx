@@ -17,6 +17,8 @@ interface EditableImageProps {
   height?: number;
   className?: string;
   priority?: boolean;
+  /** Object position for fill mode (e.g., "center 30%", "center top"). */
+  objectPosition?: string;
 }
 
 export function EditableImage({
@@ -28,6 +30,7 @@ export function EditableImage({
   height,
   className = '',
   priority,
+  objectPosition,
 }: EditableImageProps) {
   const { canEdit, isEditMode } = useEditMode();
   const { updateContent, pendingChanges } = useContent();
@@ -66,6 +69,7 @@ export function EditableImage({
             src={displaySrc}
             alt={alt}
             className={`${className} absolute inset-0 w-full h-full`}
+            style={objectPosition ? { objectPosition } : undefined}
             loading={priority ? 'eager' : 'lazy'}
           />
         );
@@ -86,6 +90,7 @@ export function EditableImage({
       alt,
       className,
       priority,
+      style: objectPosition ? { objectPosition } : undefined,
       ...(fill ? { fill: true as const } : { width, height }),
     };
     return <Image {...imageProps} />;
