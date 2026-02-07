@@ -460,5 +460,4 @@ body {
 .blog-content [style*="text-align: right"] { text-align: right; }
 .blog-content [style*="text-align: left"] { text-align: left; }
 
-/* Color support from Tiptap color extension */
-.blog-content [style*="color:"] { color: inherit; }
+/* Inline color styles from Tiptap should override prose defaults */

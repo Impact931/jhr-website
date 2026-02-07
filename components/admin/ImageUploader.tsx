@@ -31,8 +31,8 @@ const WEBP_QUALITY = 0.82;
 async function optimizeImage(file: File): Promise<File> {
   // Only optimize supported image types
   if (!file.type.match(/^image\/(jpeg|png|tiff|webp)$/)) return file;
-  // Skip very large files — canvas struggles with files over ~15MB
-  if (file.size > 15 * 1024 * 1024) return file;
+  // Skip extremely large files — canvas can handle up to ~50MB on modern browsers
+  if (file.size > 50 * 1024 * 1024) return file;
 
   const blobUrl = URL.createObjectURL(file);
 

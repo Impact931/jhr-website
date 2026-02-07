@@ -69,8 +69,9 @@ async function computeSHA256(file: File): Promise<string> {
  */
 async function optimizeImage(file: File): Promise<File> {
   if (!file.type.match(/^image\/(jpeg|png|tiff|webp)$/)) return file;
-  // Skip very large files — canvas struggles with files over ~15MB
-  if (file.size > 15 * 1024 * 1024) return file;
+  // Skip extremely large files — canvas can handle up to ~50MB on modern browsers
+  // but we set a reasonable limit to avoid memory issues
+  if (file.size > 50 * 1024 * 1024) return file;
 
   const blobUrl = URL.createObjectURL(file);
 
@@ -180,10 +181,14 @@ export default function MediaUploadZone({
           }
         }
 
-        // Step 2.5: Optimize image
-        updateFile(id, { status: 'uploading', progress: 12 });
+        // Step 2.5: Optimize image (resize & convert to WebP)
+        updateFile(id, { status: 'hashing', progress: 12 }); // Shows "Hashing..." during optimization
         await new Promise((r) => setTimeout(r, 0));
         const optimizedFile = await optimizeImage(file);
+        // Log optimization result for debugging
+        if (optimizedFile !== file) {
+          console.log(`Image optimized: ${(file.size / 1024 / 1024).toFixed(1)}MB → ${(optimizedFile.size / 1024 / 1024).toFixed(1)}MB`);
+        }
 
         // Step 3: Get presigned URL
         updateFile(id, { progress: 15 });
