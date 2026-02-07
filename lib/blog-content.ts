@@ -161,11 +161,21 @@ export async function getBlogContent(
     return undefined;
   }
 
+  // Helper to decode URL-encoded image paths
+  const decodeImageUrl = (url: string | undefined): string | undefined => {
+    if (!url) return url;
+    try {
+      return url.includes('%') ? decodeURIComponent(url) : url;
+    } catch {
+      return url;
+    }
+  };
+
   // Ensure backward compatibility: compute body from sections if not present
   const post: BlogPost = {
     ...record,
     body: record.body || (record.sections ? sectionsToBody(record.sections) : ''),
-    featuredImage: record.featuredImage || extractFeaturedImage(record.sections),
+    featuredImage: decodeImageUrl(record.featuredImage) || extractFeaturedImage(record.sections),
     excerpt: record.excerpt || extractExcerpt(record.sections),
   };
 

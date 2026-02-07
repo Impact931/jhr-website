@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Pencil, Eye, Send, Check, Loader2, X, Search, Save, Download, Upload, LayoutDashboard, Image as ImageIcon } from 'lucide-react';
+import { Pencil, Eye, Send, Check, Loader2, X, Search, Save, Download, Upload, LayoutDashboard, Image as ImageIcon, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 import { exportAllContent, importAllContent } from '@/lib/local-content-store';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
@@ -230,17 +231,20 @@ export function EditModeToggle() {
           </div>
         )}
 
-        {/* Exit Edit Mode button — at the top of the stack */}
+        {/* Logout button — at the top of the stack */}
         {isExpanded && isEditMode && (
           <button
             onClick={() => {
-              setEditMode(false);
-              setIsExpanded(false);
+              if (window.confirm('Are you sure you want to logout? Any unsaved changes will be lost.')) {
+                setEditMode(false);
+                setIsExpanded(false);
+                signOut({ callbackUrl: '/' });
+              }
             }}
             className="flex items-center gap-2 px-4 py-2.5 sm:py-2 bg-red-900/60 border border-red-500/40 hover:border-red-400 text-red-300 hover:text-white font-medium rounded-lg shadow-lg transition-all touch-manipulation min-h-[44px]"
           >
-            <Eye className="w-4 h-4" />
-            Exit Edit Mode
+            <LogOut className="w-4 h-4" />
+            Logout
           </button>
         )}
 

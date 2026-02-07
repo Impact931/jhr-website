@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, ReactNode, useRef } from 'react';
+import { useState, useCallback, useEffect, ReactNode, useRef } from 'react';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import {
@@ -219,6 +219,11 @@ export function EditableImageGallery({
   // Local image state for add/remove/reorder
   const [images, setImages] = useState<EditableImageField[]>(initialImages);
   const [currentLayout, setCurrentLayout] = useState<GalleryLayout>(layout);
+
+  // Sync local state when initialImages prop changes (e.g., when draft is loaded)
+  useEffect(() => {
+    setImages(initialImages);
+  }, [initialImages]);
 
   // Modal states
   const [altTextEditorIndex, setAltTextEditorIndex] = useState<number | null>(null);

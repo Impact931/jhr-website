@@ -166,6 +166,7 @@ export const FONT_SIZES = [
 export const TEXT_COLORS = [
   { label: 'Default', value: '', description: 'Reset to default' },
   { label: 'White', value: '#FFFFFF', description: 'Primary text color' },
+  { label: 'Black', value: '#000000', description: 'Black text' },
   { label: 'Gold', value: '#C9A227', description: 'JHR brand accent' },
   { label: 'Light Gold', value: '#D4B548', description: 'JHR secondary accent' },
   { label: 'Gray', value: '#9CA3AF', description: 'Muted text' },

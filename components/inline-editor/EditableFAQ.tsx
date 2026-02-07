@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, ReactNode } from 'react';
+import { useState, useCallback, useEffect, ReactNode } from 'react';
 import {
   Pencil,
   Plus,
@@ -140,6 +140,11 @@ export function EditableFAQ({
 
   // Local FAQ state for add/remove/reorder
   const [items, setItems] = useState<FAQItem[]>(initialItems);
+
+  // Sync local state when initialItems prop changes (e.g., when draft is loaded)
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   // Accordion open state (for view mode)
   const [openItemId, setOpenItemId] = useState<string | null>(null);

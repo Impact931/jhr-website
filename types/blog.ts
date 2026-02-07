@@ -279,6 +279,23 @@ export function bodyToSection(body: string, id?: string): PageSectionContent {
 }
 
 /**
+ * Decodes URL if it contains URL-encoded characters.
+ * Handles edge cases like double-encoding.
+ */
+function decodeImageUrl(url: string): string {
+  try {
+    // Check if URL contains encoded characters
+    if (url.includes('%')) {
+      return decodeURIComponent(url);
+    }
+    return url;
+  } catch {
+    // If decode fails, return original
+    return url;
+  }
+}
+
+/**
  * Extracts featured image from sections (hero background or first image-gallery).
  *
  * @param sections - Array of page sections
@@ -292,13 +309,13 @@ export function extractFeaturedImage(sections?: PageSectionContent[]): string | 
   // First, look for hero section with background image
   const heroSection = sections.find(s => s.type === 'hero');
   if (heroSection && heroSection.type === 'hero' && heroSection.backgroundImage?.src) {
-    return heroSection.backgroundImage.src;
+    return decodeImageUrl(heroSection.backgroundImage.src);
   }
 
   // Fall back to first image in any image-gallery
   const gallerySection = sections.find(s => s.type === 'image-gallery');
   if (gallerySection && gallerySection.type === 'image-gallery' && gallerySection.images[0]?.src) {
-    return gallerySection.images[0].src;
+    return decodeImageUrl(gallerySection.images[0].src);
   }
 
   return undefined;

@@ -44,8 +44,8 @@ export default function AdminAnalyticsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           integrations: {
-            ga4MeasurementId: config.ga4MeasurementId || undefined,
-            metaPixelId: config.metaPixelId || undefined,
+            ga4MeasurementId: config.ga4MeasurementId ?? '',
+            metaPixelId: config.metaPixelId ?? '',
           },
         }),
       });
