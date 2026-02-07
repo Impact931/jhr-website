@@ -162,6 +162,16 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 const ICON_NAMES = Object.keys(ICON_MAP);
 
+/**
+ * Render text that may contain inline HTML (color spans, bold, italic).
+ */
+function renderInlineHtml(text: string): { dangerouslySetInnerHTML: { __html: string } } | { children: string } {
+  if (text.includes('<')) {
+    return { dangerouslySetInnerHTML: { __html: text } };
+  }
+  return { children: text };
+}
+
 function getIconComponent(name: string): LucideIcon {
   return ICON_MAP[name] || Star;
 }
@@ -595,14 +605,14 @@ export function EditableFeatureGrid({
         {(displayHeading || displaySubheading) && (
           <div className="text-center mb-12">
             {displayHeading && (
-              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4">
-                {displayHeading}
-              </h2>
+              <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4"
+                {...renderInlineHtml(displayHeading)}
+              />
             )}
             {displaySubheading && (
-              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto">
-                {displaySubheading}
-              </p>
+              <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+                {...renderInlineHtml(displaySubheading)}
+              />
             )}
           </div>
         )}
@@ -616,12 +626,12 @@ export function EditableFeatureGrid({
                 <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4 group-hover:bg-jhr-gold/20 transition-colors">
                   <IconComp className="w-6 h-6 text-jhr-gold" />
                 </div>
-                <h3 className="text-heading-lg font-semibold text-jhr-white mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-body-md text-jhr-white-dim mb-4">
-                  {feature.description}
-                </p>
+                <h3 className="text-heading-lg font-semibold text-jhr-white mb-2"
+                  {...renderInlineHtml(feature.title)}
+                />
+                <p className="text-body-md text-jhr-white-dim mb-4"
+                  {...renderInlineHtml(feature.description)}
+                />
                 {feature.link && (
                   <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium group-hover:gap-3 transition-all">
                     {feature.link.text} <ArrowRight className="w-4 h-4" />

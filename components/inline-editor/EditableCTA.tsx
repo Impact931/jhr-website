@@ -423,6 +423,16 @@ function getBackgroundStyle(type: CTABackground, value: string): React.CSSProper
   }
 }
 
+/**
+ * Render text that may contain inline HTML (color spans, bold, italic).
+ */
+function renderInlineHtml(text: string): { dangerouslySetInnerHTML: { __html: string } } | { children: string } {
+  if (text.includes('<')) {
+    return { dangerouslySetInnerHTML: { __html: text } };
+  }
+  return { children: text };
+}
+
 function getButtonClasses(variant: 'primary' | 'secondary'): string {
   if (variant === 'primary') {
     return 'btn-primary';
@@ -529,12 +539,12 @@ export function EditableCTA({
         )}
 
         <div className={`section-container relative z-10 ${textAlignClass}`}>
-          <h2 className="text-display-sm lg:text-display-md font-display font-bold text-jhr-white mb-6">
-            {headline}
-          </h2>
-          <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8">
-            {subtext}
-          </p>
+          <h2 className="text-display-sm lg:text-display-md font-display font-bold text-jhr-white mb-6"
+            {...renderInlineHtml(headline)}
+          />
+          <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+            {...renderInlineHtml(subtext)}
+          />
 
           <div className={`flex flex-col sm:flex-row gap-4 ${alignment === 'center' ? 'justify-center' : alignment === 'right' ? 'justify-end' : 'justify-start'}`}>
             <Link href={primaryBtnHref} className={getButtonClasses(primaryBtnVariant)}>

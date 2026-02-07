@@ -75,6 +75,17 @@ function getHeightClass(variant?: HeroVariant, height?: 'full' | 'large' | 'medi
   return 'min-h-[85vh]';
 }
 
+/**
+ * Render text that may contain inline HTML (color spans, bold, italic).
+ * Returns dangerouslySetInnerHTML props if HTML is present, otherwise plain text.
+ */
+function renderInlineHtml(text: string): { dangerouslySetInnerHTML: { __html: string } } | { children: string } {
+  if (text.includes('<')) {
+    return { dangerouslySetInnerHTML: { __html: text } };
+  }
+  return { children: text };
+}
+
 function getOverlayClass(overlay: 'dark' | 'darker' | 'gradient'): string {
   const overlayClasses = {
     dark: 'bg-black/60',
@@ -292,9 +303,8 @@ export function EditableHero({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
                 className="text-jhr-gold font-medium text-body-lg mb-4"
-              >
-                {subtitle}
-              </motion.p>
+                {...renderInlineHtml(subtitle)}
+              />
             )}
 
             <motion.h1
@@ -302,9 +312,8 @@ export function EditableHero({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-display-sm sm:text-display-md lg:text-display-lg font-display font-bold text-jhr-white mb-6"
-            >
-              {title}
-            </motion.h1>
+              {...renderInlineHtml(title)}
+            />
 
             {description && (
               <motion.p
@@ -312,9 +321,8 @@ export function EditableHero({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
                 className="text-body-lg text-jhr-white-muted mb-8"
-              >
-                {description}
-              </motion.p>
+                {...renderInlineHtml(description)}
+              />
             )}
 
             {(primaryCta || secondaryCta) && (

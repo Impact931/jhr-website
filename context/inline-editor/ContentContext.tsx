@@ -72,16 +72,16 @@ function cleanInlineHtml(html: string): string {
  */
 function sanitizeSections(sections: PageSectionContent[]): PageSectionContent[] {
   const cloned: PageSectionContent[] = JSON.parse(JSON.stringify(sections));
-  const plainTextFields = ['title', 'subtitle', 'description', 'heading', 'subheading', 'headline', 'subtext'];
+  const inlineFormattedFields = ['title', 'subtitle', 'description', 'heading', 'subheading', 'headline', 'subtext'];
 
   for (const section of cloned) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const s = section as any;
 
-    // Strip ALL HTML from top-level plain text fields
-    for (const field of plainTextFields) {
+    // Strip block-level HTML but preserve inline formatting (color, bold, italic spans)
+    for (const field of inlineFormattedFields) {
       if (typeof s[field] === 'string' && s[field].includes('<')) {
-        s[field] = stripAllHtml(s[field]);
+        s[field] = cleanInlineHtml(s[field]);
       }
     }
 
@@ -103,11 +103,11 @@ function sanitizeSections(sections: PageSectionContent[]): PageSectionContent[] 
       }
     }
 
-    // Strip from feature-grid cards
+    // Clean feature-grid cards — preserve inline formatting
     if (section.type === 'feature-grid' && Array.isArray(s.features)) {
       for (const f of s.features) {
-        if (typeof f?.title === 'string' && f.title.includes('<')) f.title = stripAllHtml(f.title);
-        if (typeof f?.description === 'string' && f.description.includes('<')) f.description = stripAllHtml(f.description);
+        if (typeof f?.title === 'string' && f.title.includes('<')) f.title = cleanInlineHtml(f.title);
+        if (typeof f?.description === 'string' && f.description.includes('<')) f.description = cleanInlineHtml(f.description);
       }
     }
 
@@ -140,10 +140,10 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
   const s = section as any;
 
   // --- Direct top-level fields (shared across types) ---
-  // Fields rendered as plain text — strip ALL HTML from Tiptap output
-  const plainTextFields = ['title', 'subtitle', 'description', 'heading', 'subheading', 'headline', 'subtext'];
-  if (plainTextFields.includes(elementId)) {
-    s[elementId] = stripAllHtml(value);
+  // Fields that support inline formatting (bold, italic, color spans) — strip block tags but keep inline HTML
+  const inlineFormattedFields = ['title', 'subtitle', 'description', 'heading', 'subheading', 'headline', 'subtext'];
+  if (inlineFormattedFields.includes(elementId)) {
+    s[elementId] = cleanInlineHtml(value);
     return;
   }
   // Fields rendered as rich HTML — keep as-is
@@ -205,7 +205,7 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
     const cardId = cardMatch[1];
     const field = cardMatch[2];
     const card = s.features?.find((f: { id: string }) => f.id === cardId);
-    if (card) { card[field] = stripAllHtml(value); }
+    if (card) { card[field] = field === 'icon' ? stripAllHtml(value) : cleanInlineHtml(value); }
     return;
   }
 
