@@ -644,6 +644,7 @@ export function ContentProvider({ children }: ContentProviderProps) {
       }, 3000);
 
       // --- Persist to DynamoDB via admin API (editors only) ---
+      // Save as draft, then immediately publish so public pages update
       if (canEdit && mergedSections.length > 0) {
         try {
           const res = await fetch('/api/admin/content/sections', {
@@ -652,18 +653,23 @@ export function ContentProvider({ children }: ContentProviderProps) {
             body: JSON.stringify({
               slug,
               sections: mergedSections,
-              seo: {
-                pageTitle: pageSEO.pageTitle || slug,
-                metaDescription: pageSEO.metaDescription || '',
-                ogImage: pageSEO.ogImage || '',
-                ogTitle: pageSEO.ogTitle || '',
-                ogDescription: pageSEO.ogDescription || '',
-              },
+              seo: pageSEO,
               status: 'draft',
             }),
           });
           if (!res.ok) {
             console.warn(`[ContentContext] API save returned ${res.status} — localStorage succeeded`);
+          } else {
+            // Auto-publish: copy draft → published so public pages update immediately
+            try {
+              await fetch('/api/admin/content/publish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ slug }),
+              });
+            } catch (pubErr) {
+              console.warn('[ContentContext] Auto-publish failed — draft saved:', pubErr);
+            }
           }
         } catch (apiErr) {
           console.warn('[ContentContext] API save failed — localStorage succeeded:', apiErr);
