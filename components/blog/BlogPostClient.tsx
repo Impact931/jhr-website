@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   Tag,
   ChevronRight,
-  Save,
   Loader2,
   Check,
   Plus,
@@ -80,11 +79,7 @@ function SectionBasedContent({
     moveSectionUp,
     moveSectionDown,
     loadBlogPost,
-    hasUnsavedChanges,
     saveState,
-    publishState,
-    save,
-    publish,
   } = useBlogContent();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -124,7 +119,7 @@ function SectionBasedContent({
 
   return (
     <main className="min-h-screen bg-jhr-black">
-      {/* Edit Mode Save Bar */}
+      {/* Edit Mode Status Bar */}
       {isEditing && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-jhr-black-light border border-jhr-black-lighter rounded-lg shadow-xl px-4 py-2 flex items-center gap-3">
           <span className="text-body-sm text-jhr-white-dim">
@@ -132,65 +127,21 @@ function SectionBasedContent({
             Editing: {post.title.slice(0, 30)}
             {post.title.length > 30 ? '...' : ''}
           </span>
+          {saveState.status === 'saving' && (
+            <span className="inline-flex items-center gap-1.5 text-body-sm text-jhr-white-dim">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Saving...
+            </span>
+          )}
+          {saveState.status === 'saved' && (
+            <span className="inline-flex items-center gap-1.5 text-body-sm text-green-400">
+              <Check className="w-3.5 h-3.5" />
+              Saved
+            </span>
+          )}
           {saveState.error && (
             <span className="text-body-sm text-red-400">{saveState.error}</span>
           )}
-          {publishState.error && (
-            <span className="text-body-sm text-red-400">{publishState.error}</span>
-          )}
-          <button
-            onClick={() => save()}
-            disabled={saveState.status === 'saving' || !hasUnsavedChanges}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors ${
-              hasUnsavedChanges
-                ? 'bg-jhr-gold text-jhr-black hover:bg-jhr-gold/90'
-                : 'bg-jhr-black-lighter text-jhr-white-dim cursor-not-allowed'
-            }`}
-          >
-            {saveState.status === 'saving' ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : saveState.status === 'saved' ? (
-              <>
-                <Check className="w-4 h-4" />
-                Saved!
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save Draft
-              </>
-            )}
-          </button>
-          <button
-            onClick={() => publish()}
-            disabled={publishState.status === 'publishing' || hasUnsavedChanges}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-body-sm font-medium transition-colors ${
-              publishState.status === 'publishing' || hasUnsavedChanges
-                ? 'bg-jhr-black-lighter text-jhr-white-dim cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700'
-            }`}
-            title={hasUnsavedChanges ? 'Save changes first before publishing' : 'Publish changes to live site'}
-          >
-            {publishState.status === 'publishing' ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Publishing...
-              </>
-            ) : publishState.status === 'published' ? (
-              <>
-                <Check className="w-4 h-4" />
-                Published!
-              </>
-            ) : (
-              <>
-                <ChevronRight className="w-4 h-4" />
-                Publish
-              </>
-            )}
-          </button>
         </div>
       )}
 
