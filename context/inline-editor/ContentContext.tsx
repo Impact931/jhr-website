@@ -414,7 +414,7 @@ export function ContentProvider({ children }: ContentProviderProps) {
       ? `/api/admin/content/sections?slug=${encodeURIComponent(slug)}&status=draft`
       : `/api/content/sections?slug=${encodeURIComponent(slug)}`;
 
-    fetch(apiUrl)
+    fetch(apiUrl, { cache: 'no-store' })
       .then((res) => {
         if (!res.ok) {
           // 404 is expected if no content has been published/saved yet
