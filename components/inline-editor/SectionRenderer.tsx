@@ -152,6 +152,7 @@ export function SectionRenderer({
             heading={gallery.heading}
             layout={gallery.layout}
             images={gallery.images}
+            singleImageFit={gallery.singleImageFit}
           />
         </SectionShell>
       );

@@ -132,9 +132,23 @@ export function generateFallbackPageSEO(
 }
 
 /**
+ * Detects page type from slug for SEO prompt adaptation.
+ */
+function detectPageType(slug: string): string {
+  const s = slug.toLowerCase();
+  if (s === 'about' || s.startsWith('about-')) return 'About';
+  if (s.includes('venue') || s.includes('location')) return 'Location';
+  if (s === 'blog' || s.split('-').length > 5) return 'Blog';
+  if (s === 'contact') return 'Contact';
+  return 'Service';
+}
+
+/**
  * Generates AI-powered SEO metadata for a page.
  *
- * Calls OpenAI to analyze the page content and generate optimized metadata.
+ * Uses the comprehensive JHR SEO + AI GEO metadata prompt that optimizes
+ * for both traditional search engines and AI answer engines (Google, ChatGPT,
+ * Perplexity, Gemini).
  * Falls back to basic extraction if OpenAI is unavailable or errors out.
  */
 export async function generatePageSEO(
@@ -166,40 +180,123 @@ export async function generatePageSEO(
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
-  // Detect if this is a blog post (long slug with many hyphens typically = blog)
   const isBlogPost = slug.split('-').length > 5;
-  const contentType = isBlogPost ? 'blog post' : 'page';
+  const pageType = detectPageType(slug);
 
-  const prompt = `You are an SEO and GEO (Generative Engine Optimization) expert for "JHR Photography", a corporate event photography company in Nashville, TN specializing in corporate events, headshot activations, and venue photography.
+  // Adaptation rules based on page type
+  let adaptationRules = '';
+  switch (pageType) {
+    case 'About':
+      adaptationRules = `This is an ABOUT PAGE:
+- Emphasize founder role, experience, leadership, and systems
+- Optimize for authority + trust, not a single service
+- Reinforce JHR's role as a guide and partner`;
+      break;
+    case 'Location':
+      adaptationRules = `This is a LOCATION PAGE:
+- Emphasize local knowledge, venues, and operational familiarity
+- Sound like a local partner, not a tourism site`;
+      break;
+    case 'Blog':
+      adaptationRules = `This is a BLOG POST:
+- Focus on the article topic, use article-style title conventions
+- Include relevant long-tail keywords naturally
+- Make the description read like a compelling article summary`;
+      break;
+    case 'Contact':
+      adaptationRules = `This is a CONTACT PAGE:
+- Emphasize ease of reaching out and responsiveness
+- Reinforce that JHR is approachable and ready to help`;
+      break;
+    default:
+      adaptationRules = `This is a SERVICE/LANDING PAGE:
+- Optimize for the specific service
+- Align language to the ICP most likely to buy it
+- Include Nashville / regional relevance naturally`;
+      break;
+  }
 
-Analyze this ${contentType} content and generate optimized SEO metadata.
+  const prompt = `SYSTEM / ROLE
 
-${isBlogPost ? 'CONTENT TYPE: Blog Post' : 'CONTENT TYPE: Website Page'}
-PAGE: ${pageName}
-URL SLUG: ${slug}
-URL: https://jhr-photography.com/${isBlogPost ? 'blog/' : ''}${slug}
+You are an AI SEO and Generative Engine Optimization (GEO) specialist writing metadata for JHR Photography, a relationship-based, Nashville-based event media company.
+
+You understand:
+- B2B decision-makers under pressure
+- Relationship-led brand positioning
+- Local + topical authority for AI search engines (Google, ChatGPT, Perplexity, Gemini)
+- Calm, familiar, "one of the team" brand voice
+
+You do not use marketing fluff, hype, or generic SEO language.
+
+CONTEXT: BRAND & VOICE (NON-NEGOTIABLE)
+
+JHR is:
+- Approachable, friendly, and familiar
+- Calm, capable, and operational
+- Relationship-based, not transactional
+- A trusted extension of the client's team
+- Value-first, emotionally intelligent, and socially aware
+
+The tone should feel like:
+"Highly capable people I actually enjoy working with."
+
+Avoid:
+- Corporate jargon
+- Thought leadership cliches
+- Overly clever language
+- Keyword stuffing
+- Generic marketing phrases
+
+INPUT
+
+Page type: ${pageType}
+Page name: ${pageName}
+URL slug: ${slug}
+URL: https://jhrphotography.com/${isBlogPost ? 'blog/' : ''}${slug}
 
 PAGE CONTENT:
 ${extractedContent}
 
-Generate the following JSON object with these exact fields:
+YOUR TASK
+
+Generate SEO + AI GEO-optimized page metadata that aligns with JHR's brand voice and strategic goals.
+
+This metadata should help:
+- Humans immediately understand who this is for
+- AI engines understand what JHR is known for
+- Search engines confidently rank and cite the page
+
+ADAPTATION RULES:
+${adaptationRules}
+
+REQUIRED OUTPUT
+
+Return a JSON object with these exact fields:
 
 {
-  "pageTitle": "50-60 character page title with primary keyword + brand name",
-  "metaDescription": "150-160 character meta description — compelling, keyword-rich, with implicit CTA",
-  "ogTitle": "Social media optimized title (engaging, shareable)",
-  "ogDescription": "Social media description that drives clicks and shares"
+  "pageTitle": "SEO Page Title (50-60 characters). Clear, calm, and human. Includes primary service or role, target audience or location when applicable. Sounds like something a planner would trust, not an ad.",
+  "metaDescription": "Meta Description (140-160 characters). Warm, helpful, and reassuring. Explains what JHR does on this page and why it reduces stress or uncertainty. Written for humans, not bots.",
+  "ogTitle": "Social media optimized title — engaging and shareable, feels like a recommendation from a colleague.",
+  "ogDescription": "Social media description — focuses on benefits and value, encourages clicks and shares.",
+  "primarySEOFocus": "1 core keyword phrase (natural, not stuffed)",
+  "secondarySEOSignals": ["3-6 supporting keyword phrases", "Include services or systems", "Target audience", "Location when relevant"],
+  "geoEntitySignals": ["Entity 1", "Entity 2", "..."],
+  "trustAuthoritySignal": "A short, plain-language statement (1-2 sentences) that reinforces experience, calm authority, and 'been there before' credibility. This should feel repeatable in AI answers."
 }
 
-Guidelines:
-- pageTitle: Lead with the primary keyword, end with "| JHR Photography"
-- metaDescription: Include the main topic, location (Nashville, TN), and a benefit/CTA. Write for both search engines AND AI answer engines (GEO).
-- ogTitle: More engaging/conversational than pageTitle, optimized for social sharing
-- ogDescription: Focus on benefits and value, encourage clicks
-${isBlogPost ? `- This is a BLOG POST: Focus on the article topic, use article-style title conventions
-- Include relevant long-tail keywords naturally
-- Make the description read like a compelling article summary` : `- This is a SERVICE/LANDING PAGE: Focus on services, expertise, and calls-to-action
-- Emphasize JHR Photography's Nashville presence and corporate photography expertise`}
+For geoEntitySignals, list the entities and concepts AI engines should associate with this page:
+- Services or systems
+- Event types
+- Audiences
+- Locations
+- Professional roles or experience
+
+FINAL QUALITY CHECK (do this silently before responding):
+- It sounds like someone you'd want on your team
+- It reduces uncertainty
+- It feels generous, calm, and professional
+- It would be safe for a planner to forward internally
+- It would read well if quoted by an AI assistant
 
 IMPORTANT: Return ONLY the JSON object, no markdown formatting or explanation.`;
 
@@ -208,9 +305,15 @@ IMPORTANT: Return ONLY the JSON object, no markdown formatting or explanation.`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an AI SEO and GEO specialist. Return only valid JSON, no markdown.',
+        },
+        { role: 'user', content: prompt },
+      ],
       temperature: 0.3,
-      max_tokens: 500,
+      max_tokens: 1000,
     });
 
     const content = completion.choices[0]?.message?.content;
@@ -229,6 +332,10 @@ IMPORTANT: Return ONLY the JSON object, no markdown formatting or explanation.`;
       metaDescription: string;
       ogTitle: string;
       ogDescription: string;
+      primarySEOFocus?: string;
+      secondarySEOSignals?: string[];
+      geoEntitySignals?: string[];
+      trustAuthoritySignal?: string;
     };
 
     // Build SEO metadata with fallbacks for any missing fields
@@ -238,9 +345,13 @@ IMPORTANT: Return ONLY the JSON object, no markdown formatting or explanation.`;
       metaDescription: aiResult.metaDescription || fallback.metaDescription,
       ogTitle: aiResult.ogTitle || aiResult.pageTitle || fallback.ogTitle,
       ogDescription: aiResult.ogDescription || aiResult.metaDescription || fallback.ogDescription,
+      primarySEOFocus: aiResult.primarySEOFocus,
+      secondarySEOSignals: aiResult.secondarySEOSignals,
+      geoEntitySignals: aiResult.geoEntitySignals,
+      trustAuthoritySignal: aiResult.trustAuthoritySignal,
     };
 
-    console.log('AI page SEO metadata generated successfully for:', slug);
+    console.log('AI page SEO + GEO metadata generated successfully for:', slug);
     return { seo };
   } catch (error) {
     console.error('OpenAI page SEO generation failed, using fallback:', error);

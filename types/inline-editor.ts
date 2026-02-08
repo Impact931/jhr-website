@@ -265,6 +265,14 @@ export interface FeatureGridSectionContent extends BaseSectionContent {
  *
  * AI hint: heading max 100 characters. Provide descriptive alt text for accessibility.
  */
+/**
+ * Display options for the single-image gallery layout.
+ * - cover: Image fills container, cropped to fit (default)
+ * - contain: Full image visible, letterboxed if needed
+ * - full-height: Image at natural aspect ratio, full width
+ */
+export type SingleImageFit = 'cover' | 'contain' | 'full-height';
+
 export interface ImageGallerySectionContent extends BaseSectionContent {
   type: 'image-gallery';
   /** Section heading. Rendered as h2. Max 100 characters. */
@@ -273,6 +281,8 @@ export interface ImageGallerySectionContent extends BaseSectionContent {
   layout: GalleryLayout;
   /** Gallery images. */
   images: EditableImageField[];
+  /** How the single-image layout fits its container. Defaults to 'cover'. */
+  singleImageFit?: SingleImageFit;
 }
 
 /**
@@ -383,6 +393,14 @@ export interface PageSEOMetadata {
   ogDescription?: string;
   /** Canonical URL. */
   canonicalUrl?: string;
+  /** Primary SEO keyword/phrase (AI-generated). */
+  primarySEOFocus?: string;
+  /** Secondary SEO/GEO keyword phrases (AI-generated). */
+  secondarySEOSignals?: string[];
+  /** Entity signals for AI search engines (AI-generated). */
+  geoEntitySignals?: string[];
+  /** Trust & authority statement for AI citations (AI-generated). */
+  trustAuthoritySignal?: string;
 }
 
 /**

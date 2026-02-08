@@ -17,13 +17,16 @@ import {
   LayoutGrid,
   Type,
   ImageIcon,
+  Maximize,
+  Minimize,
+  RectangleHorizontal,
 } from 'lucide-react';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import { EditableText } from './EditableText';
 import MediaPicker from '@/components/admin/media/MediaPicker';
 import type { MediaPickerResult } from '@/types/media';
-import type { GalleryLayout, EditableImageField } from '@/types/inline-editor';
+import type { GalleryLayout, EditableImageField, SingleImageFit } from '@/types/inline-editor';
 
 // ============================================================================
 // Types
@@ -38,10 +41,14 @@ interface EditableImageGalleryProps {
   layout?: GalleryLayout;
   /** Gallery images. */
   images: EditableImageField[];
+  /** How the single-image layout fits its container. */
+  singleImageFit?: SingleImageFit;
   /** Callback when images array changes (for parent state management). */
   onImagesChange?: (images: EditableImageField[]) => void;
   /** Callback when layout changes. */
   onLayoutChange?: (layout: GalleryLayout) => void;
+  /** Callback when singleImageFit changes. */
+  onSingleImageFitChange?: (fit: SingleImageFit) => void;
   /** Additional children rendered below the gallery. */
   children?: ReactNode;
 }
@@ -74,6 +81,46 @@ function LayoutSelector({
           className={`
             flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
             ${layout === opt.value
+              ? 'bg-[#C9A227] text-black'
+              : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#333]'
+            }
+          `}
+        >
+          {opt.icon}
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================================
+// Single Image Fit Selector
+// ============================================================================
+
+function FitSelector({
+  fit,
+  onChange,
+}: {
+  fit: SingleImageFit;
+  onChange: (fit: SingleImageFit) => void;
+}) {
+  const options: { value: SingleImageFit; label: string; icon: ReactNode }[] = [
+    { value: 'cover', label: 'Fill', icon: <Maximize className="w-4 h-4" /> },
+    { value: 'contain', label: 'Fit', icon: <Minimize className="w-4 h-4" /> },
+    { value: 'full-height', label: 'Natural', icon: <RectangleHorizontal className="w-4 h-4" /> },
+  ];
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-400 uppercase tracking-wider">Size:</span>
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`
+            flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+            ${fit === opt.value
               ? 'bg-[#C9A227] text-black'
               : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#333]'
             }
@@ -210,8 +257,10 @@ export function EditableImageGallery({
   heading,
   layout = 'grid',
   images: initialImages,
+  singleImageFit: initialFit = 'cover',
   onImagesChange,
   onLayoutChange,
+  onSingleImageFitChange,
   children,
 }: EditableImageGalleryProps) {
   const { canEdit, isEditMode } = useEditMode();
@@ -220,6 +269,7 @@ export function EditableImageGallery({
   // Local image state for add/remove/reorder
   const [images, setImages] = useState<EditableImageField[]>(initialImages);
   const [currentLayout, setCurrentLayout] = useState<GalleryLayout>(layout);
+  const [currentFit, setCurrentFit] = useState<SingleImageFit>(initialFit);
 
   // Sync local state when initialImages prop changes (e.g., when draft is loaded)
   useEffect(() => {
@@ -262,6 +312,20 @@ export function EditableImageGallery({
       );
     },
     [contentKeyPrefix, onLayoutChange, updateContent]
+  );
+
+  // Handle single image fit change
+  const handleFitChange = useCallback(
+    (newFit: SingleImageFit) => {
+      setCurrentFit(newFit);
+      onSingleImageFitChange?.(newFit);
+      updateContent(
+        `${contentKeyPrefix}:singleImageFit`,
+        newFit,
+        'text'
+      );
+    },
+    [contentKeyPrefix, onSingleImageFitChange, updateContent]
   );
 
   // Add a new image
@@ -619,17 +683,37 @@ export function EditableImageGallery({
     const image = imageList[0];
     if (!image) return null;
 
+    // 'cover' = fixed 16:9 with object-cover (fills, crops)
+    // 'contain' = fixed 16:9 with object-contain (fits, letterboxed)
+    // 'full-height' = natural aspect ratio, full width (no crop)
+    const isNatural = currentFit === 'full-height';
+    const objectClass = currentFit === 'contain' ? 'object-contain' : 'object-cover';
+
     return (
-      <div className="relative group/image rounded-lg overflow-hidden bg-[#1A1A1A]" style={{ aspectRatio: '16/9' }}>
+      <div
+        className={`relative group/image rounded-lg overflow-hidden bg-[#1A1A1A] w-full ${isNatural ? '' : 'aspect-[16/9]'}`}
+      >
         {image.src ? (
-          <SmartImage
-            src={image.src}
-            alt={image.alt || 'Gallery image'}
-            fill
-            className="object-cover"
-          />
+          isNatural ? (
+            // Natural: full-width image at its own aspect ratio
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={image.src}
+              alt={image.alt || 'Gallery image'}
+              className="w-full h-auto block"
+              loading="lazy"
+            />
+          ) : (
+            // Cover / Contain: fill the 16:9 container
+            <SmartImage
+              src={image.src}
+              alt={image.alt || 'Gallery image'}
+              fill
+              className={objectClass}
+            />
+          )
         ) : (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-full min-h-[200px]">
             <ImageIcon className="w-16 h-16 text-gray-600" />
           </div>
         )}
@@ -755,11 +839,16 @@ export function EditableImageGallery({
 
         {/* Layout selector */}
         {canEdit && (
-          <div className="flex items-center justify-between mb-6">
-            <LayoutSelector layout={currentLayout} onChange={handleLayoutChange} />
-            <div className="flex items-center gap-2">
-              <FieldLabel label={`${images.length} Images`} icon={<ImageIcon className="w-3 h-3" />} />
+          <div className="flex flex-col gap-3 mb-6">
+            <div className="flex items-center justify-between">
+              <LayoutSelector layout={currentLayout} onChange={handleLayoutChange} />
+              <div className="flex items-center gap-2">
+                <FieldLabel label={`${images.length} Images`} icon={<ImageIcon className="w-3 h-3" />} />
+              </div>
             </div>
+            {currentLayout === 'single' && (
+              <FitSelector fit={currentFit} onChange={handleFitChange} />
+            )}
           </div>
         )}
 
