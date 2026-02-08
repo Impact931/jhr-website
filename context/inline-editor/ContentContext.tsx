@@ -647,13 +647,19 @@ export function ContentProvider({ children }: ContentProviderProps) {
       // Save as draft, then immediately publish so public pages update
       if (canEdit && mergedSections.length > 0) {
         try {
+          // Ensure pageTitle has a value — API requires a non-empty string
+          const seoPayload = {
+            ...pageSEO,
+            pageTitle: pageSEO.pageTitle || slug,
+            metaDescription: pageSEO.metaDescription || '',
+          };
           const res = await fetch('/api/admin/content/sections', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               slug,
               sections: mergedSections,
-              seo: pageSEO,
+              seo: seoPayload,
               status: 'draft',
             }),
           });
