@@ -166,10 +166,18 @@ export async function generatePageSEO(
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
-  const prompt = `You are an SEO expert for a corporate photography company called "JHR Photography" based in Nashville, TN. Analyze this page content and generate optimized SEO metadata.
+  // Detect if this is a blog post (long slug with many hyphens typically = blog)
+  const isBlogPost = slug.split('-').length > 5;
+  const contentType = isBlogPost ? 'blog post' : 'page';
 
+  const prompt = `You are an SEO and GEO (Generative Engine Optimization) expert for "JHR Photography", a corporate event photography company in Nashville, TN specializing in corporate events, headshot activations, and venue photography.
+
+Analyze this ${contentType} content and generate optimized SEO metadata.
+
+${isBlogPost ? 'CONTENT TYPE: Blog Post' : 'CONTENT TYPE: Website Page'}
 PAGE: ${pageName}
 URL SLUG: ${slug}
+URL: https://jhr-photography.com/${isBlogPost ? 'blog/' : ''}${slug}
 
 PAGE CONTENT:
 ${extractedContent}
@@ -177,17 +185,21 @@ ${extractedContent}
 Generate the following JSON object with these exact fields:
 
 {
-  "pageTitle": "50-60 character page title that includes the primary keyword and brand name (JHR Photography)",
-  "metaDescription": "150-160 character meta description with compelling value proposition and call-to-action",
-  "ogTitle": "Social media optimized title (can be slightly different from pageTitle)",
-  "ogDescription": "Social media optimized description that encourages engagement"
+  "pageTitle": "50-60 character page title with primary keyword + brand name",
+  "metaDescription": "150-160 character meta description — compelling, keyword-rich, with implicit CTA",
+  "ogTitle": "Social media optimized title (engaging, shareable)",
+  "ogDescription": "Social media description that drives clicks and shares"
 }
 
 Guidelines:
-- pageTitle: Include primary keyword early, end with "| JHR Photography" or similar brand suffix
-- metaDescription: Include value prop, location (Nashville), and implicit CTA
-- ogTitle: Can be more engaging/casual than pageTitle
-- ogDescription: Focus on benefits, make it shareable
+- pageTitle: Lead with the primary keyword, end with "| JHR Photography"
+- metaDescription: Include the main topic, location (Nashville, TN), and a benefit/CTA. Write for both search engines AND AI answer engines (GEO).
+- ogTitle: More engaging/conversational than pageTitle, optimized for social sharing
+- ogDescription: Focus on benefits and value, encourage clicks
+${isBlogPost ? `- This is a BLOG POST: Focus on the article topic, use article-style title conventions
+- Include relevant long-tail keywords naturally
+- Make the description read like a compelling article summary` : `- This is a SERVICE/LANDING PAGE: Focus on services, expertise, and calls-to-action
+- Emphasize JHR Photography's Nashville presence and corporate photography expertise`}
 
 IMPORTANT: Return ONLY the JSON object, no markdown formatting or explanation.`;
 

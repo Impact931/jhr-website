@@ -14,6 +14,7 @@ import {
   Check,
   Plus,
   Edit3,
+  Search,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { BlogPost } from '@/types/blog';
@@ -24,6 +25,7 @@ import { BlogContentProvider, useBlogContent } from '@/context/blog/BlogContentC
 import { SectionRenderer } from '@/components/inline-editor/SectionRenderer';
 import { SectionWrapper } from '@/components/inline-editor/SectionWrapper';
 import { AddSectionModal } from '@/components/inline-editor/AddSectionModal';
+import { PageSEOPanel } from '@/components/inline-editor/PageSEOPanel';
 
 // ============================================================================
 // Related Post Card
@@ -84,6 +86,7 @@ function SectionBasedContent({
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [insertIndex, setInsertIndex] = useState(0);
+  const [showSEOPanel, setShowSEOPanel] = useState(false);
 
   // Load blog post into context when component mounts or post changes
   useEffect(() => {
@@ -142,7 +145,19 @@ function SectionBasedContent({
           {saveState.error && (
             <span className="text-body-sm text-red-400">{saveState.error}</span>
           )}
+          <button
+            onClick={() => setShowSEOPanel(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-body-sm font-medium bg-jhr-black-lighter text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors border border-transparent"
+          >
+            <Search className="w-3.5 h-3.5" />
+            SEO
+          </button>
         </div>
+      )}
+
+      {/* Blog SEO Panel (rendered inside BlogContentProvider for bridge access) */}
+      {showSEOPanel && (
+        <PageSEOPanel onClose={() => setShowSEOPanel(false)} />
       )}
 
       {/* Featured Image Hero - only render hero section if it exists */}

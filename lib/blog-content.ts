@@ -284,7 +284,8 @@ export async function saveBlogPost(
 
   // Compute derived fields
   const body = sections ? sectionsToBody(sections) : (input.body || '');
-  const featuredImage = input.featuredImage || extractFeaturedImage(sections);
+  // Prefer extracting featured image from hero section (most up-to-date)
+  const featuredImage = (sections ? extractFeaturedImage(sections) : null) || input.featuredImage;
   const excerpt = input.excerpt || extractExcerpt(sections);
   const readingTime = estimateReadingTime(body);
 
