@@ -177,6 +177,14 @@ const SECTION_VARIANTS: Record<InlineSectionType, LayoutVariant[]> = {
   ],
   'image-gallery': [
     {
+      id: 'gallery-single',
+      label: 'Single',
+      description: 'One full-width image with 16:9 aspect ratio',
+      previewBlocks: [
+        { type: 'image', width: 0.9, height: 70, x: 0.05, y: 15 },
+      ],
+    },
+    {
       id: 'gallery-grid',
       label: 'Grid',
       description: 'Responsive image grid with uniform sizing',
@@ -478,6 +486,7 @@ function applyVariantToSection(
       return section;
     }
     case 'image-gallery': {
+      if (variantId === 'gallery-single') return { ...section, layout: 'single' };
       if (variantId === 'gallery-grid') return { ...section, layout: 'grid' };
       if (variantId === 'gallery-slider') return { ...section, layout: 'slider' };
       if (variantId === 'gallery-masonry') return { ...section, layout: 'masonry' };

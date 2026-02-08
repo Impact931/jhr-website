@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Calendar, Clock, Tag, ChevronRight, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { BlogPost } from '@/types/blog';
-import { formatBlogDate, extractFeaturedImage, extractExcerpt } from '@/types/blog';
+import { formatBlogDate } from '@/types/blog';
 
 // ============================================================================
 // Sample blog posts for static rendering (replaced by API data when available)
@@ -127,8 +127,8 @@ function getCategories(posts: BlogPost[]): string[] {
 
 function PostCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {
   // Support both old format (direct fields) and new format (sections)
-  const featuredImage = post.featuredImage || extractFeaturedImage(post.sections);
-  const excerpt = post.excerpt || extractExcerpt(post.sections);
+  const featuredImage = post.featuredImage;
+  const excerpt = post.excerpt;
 
   return (
     <Link href={`/blog/${post.slug}`} className="group block">

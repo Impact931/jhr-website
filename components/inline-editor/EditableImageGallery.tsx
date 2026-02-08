@@ -58,6 +58,7 @@ function LayoutSelector({
   onChange: (layout: GalleryLayout) => void;
 }) {
   const options: { value: GalleryLayout; label: string; icon: ReactNode }[] = [
+    { value: 'single', label: 'Single', icon: <ImageIcon className="w-4 h-4" /> },
     { value: 'grid', label: 'Grid', icon: <Grid3X3 className="w-4 h-4" /> },
     { value: 'slider', label: 'Slider', icon: <GalleryHorizontal className="w-4 h-4" /> },
     { value: 'masonry', label: 'Masonry', icon: <LayoutGrid className="w-4 h-4" /> },
@@ -613,9 +614,72 @@ export function EditableImageGallery({
     </div>
   );
 
+  // ---- Single Layout Renderer ----
+  const renderSingleLayout = (imageList: EditableImageField[], editable: boolean) => {
+    const image = imageList[0];
+    if (!image) return null;
+
+    return (
+      <div className="relative group/image rounded-lg overflow-hidden bg-[#1A1A1A]" style={{ aspectRatio: '16/9' }}>
+        {image.src ? (
+          <SmartImage
+            src={image.src}
+            alt={image.alt || 'Gallery image'}
+            fill
+            className="object-cover"
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <ImageIcon className="w-16 h-16 text-gray-600" />
+          </div>
+        )}
+
+        {/* Caption overlay */}
+        {image.caption && !editable && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <p className="text-white">{image.caption}</p>
+          </div>
+        )}
+
+        {/* Edit controls overlay */}
+        {editable && canEdit && (
+          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center gap-3">
+            <button
+              onClick={() => setReplaceModalIndex(0)}
+              className="px-4 py-2 bg-[#C9A227] text-black text-sm font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
+            >
+              Replace
+            </button>
+            <button
+              onClick={() => setAltTextEditorIndex(0)}
+              className="px-4 py-2 bg-[#2A2A2A] text-white text-sm font-medium rounded-lg hover:bg-[#333] transition-colors"
+            >
+              Alt Text / Caption
+            </button>
+            <button
+              onClick={() => handleRemoveImage(0)}
+              className="px-4 py-2 bg-red-900/70 text-red-300 text-sm font-medium rounded-lg hover:bg-red-900 transition-colors"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+
+        {/* Missing alt text warning */}
+        {editable && canEdit && !image.alt && (
+          <div className="absolute top-3 left-3 px-2 py-0.5 bg-amber-500/90 text-black text-[10px] font-bold rounded uppercase">
+            No alt text
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ---- Render the appropriate layout ----
   const renderLayout = (imageList: EditableImageField[], editable: boolean) => {
     switch (currentLayout) {
+      case 'single':
+        return renderSingleLayout(imageList, editable);
       case 'slider':
         return renderSliderLayout(imageList, editable);
       case 'masonry':

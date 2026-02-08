@@ -43,7 +43,7 @@ export type HeroVariant = 'full-height' | 'half-height' | 'banner';
  * - slider: Horizontal scrolling carousel
  * - masonry: Pinterest-style masonry layout
  */
-export type GalleryLayout = 'grid' | 'slider' | 'masonry';
+export type GalleryLayout = 'grid' | 'slider' | 'masonry' | 'single';
 
 /**
  * Layout options for feature grids.

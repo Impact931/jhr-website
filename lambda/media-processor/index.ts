@@ -23,8 +23,8 @@ import type { S3Event, S3Handler } from 'aws-lambda';
 const s3 = new S3Client({});
 const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
-const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'jhr-content';
-const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'jhr-photography-assets';
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'jhr-website-content';
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || 'jhr-website-images';
 
 interface VariantConfig {
   name: string;

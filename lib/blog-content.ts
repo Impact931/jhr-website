@@ -458,7 +458,10 @@ export async function listBlogs(status?: BlogPostStatus): Promise<BlogSummary[]>
     const legacy = versions.find(v => v.sk === 'post');
 
     // Use the most relevant version for display
-    const displayRecord = draft || published || legacy;
+    // When filtering for published, prefer the published record to get correct featured images
+    const displayRecord = (status === 'published')
+      ? (published || draft || legacy)
+      : (draft || published || legacy);
     if (!displayRecord) continue;
 
     // Handle legacy records - migrate on read

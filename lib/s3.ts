@@ -8,7 +8,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Environment configuration
 const region = process.env.AWS_REGION || process.env.CUSTOM_AWS_REGION || 'us-east-1';
-const bucketName = process.env.S3_BUCKET_NAME || 'jhr-photography-assets';
+const bucketName = process.env.S3_BUCKET_NAME || 'jhr-website-images';
 const cloudFrontDomain = process.env.CLOUDFRONT_DOMAIN || '';
 
 // Build explicit credentials if CUSTOM_AWS env vars are set (Amplify reserves AWS_ prefix)

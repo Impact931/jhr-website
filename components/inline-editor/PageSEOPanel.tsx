@@ -176,6 +176,11 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
   };
 
   const handleGenerateSEO = async () => {
+    if (!pageSlug) {
+      setGenerateError('Page not loaded yet');
+      return;
+    }
+
     setIsGenerating(true);
     setGenerateError(null);
     setGeneratedSEO(null);
@@ -187,9 +192,18 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
         body: JSON.stringify({ sections }),
       });
 
+      const contentType = response.headers.get('content-type') || '';
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to generate SEO');
+        if (contentType.includes('application/json')) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to generate SEO');
+        }
+        throw new Error('SEO generation endpoint not available — the site may need to be redeployed');
+      }
+
+      if (!contentType.includes('application/json')) {
+        throw new Error('SEO generation endpoint returned an unexpected response — the site may need to be redeployed');
       }
 
       const data = await response.json();

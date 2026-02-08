@@ -21,7 +21,7 @@ import {
 
 // Environment configuration
 const region = process.env.AWS_REGION || process.env.CUSTOM_AWS_REGION || 'us-east-1';
-const tableName = process.env.DYNAMODB_TABLE_NAME || 'jhr-content';
+const tableName = process.env.DYNAMODB_TABLE_NAME || 'jhr-website-content';
 
 // Build explicit credentials if CUSTOM_AWS env vars are set (Amplify reserves AWS_ prefix)
 const customCredentials =
