@@ -10,6 +10,7 @@ import {
   ReactNode,
 } from 'react';
 import type {
+  ContentContextValue,
   PageSectionContent,
   PageSEOMetadata,
   PendingChange,
@@ -19,6 +20,7 @@ import type {
 import type { BlogPost, BlogPostStatus } from '@/types/blog';
 import { parseContentKey } from '@/types/inline-editor';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
+import { ContentContext } from '@/context/inline-editor/ContentContext';
 
 // ============================================================================
 // Types
@@ -756,9 +758,47 @@ export function BlogContentProvider({
     loadBlogPost,
   };
 
+  // Bridge: provide ContentContext so all Editable* components (which call
+  // useContent()) read/write from the blog context instead of the outer
+  // layout-level ContentProvider. This prevents edits going to the wrong
+  // context and being lost on auto-save.
+  const contentBridge: ContentContextValue = {
+    pendingChanges,
+    updateContent,
+    discardChange,
+    discardAllChanges,
+    saveState,
+    publishState,
+    publish,
+    save,
+    hasUnsavedChanges,
+    pendingCount,
+    pageSEO: seo,
+    updatePageSEO: updateSEO,
+    contentLoadState: 'loaded',
+    pageSlug: slug,
+    sections,
+    changedSectionIds,
+    hasSectionChanges,
+    loadSections,
+    loadSectionsForPage: () => {},
+    addSection,
+    updateSection,
+    replaceSection,
+    deleteSection,
+    moveSectionUp,
+    moveSectionDown,
+    getSection,
+    addSectionToColumn: () => {},
+    removeSectionFromColumn: () => {},
+    moveSectionBetweenColumns: () => {},
+  };
+
   return (
     <BlogContentContext.Provider value={value}>
-      {children}
+      <ContentContext.Provider value={contentBridge}>
+        {children}
+      </ContentContext.Provider>
     </BlogContentContext.Provider>
   );
 }
