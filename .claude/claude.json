@@ -30,6 +30,19 @@
         "AWS_SECRET_ACCESS_KEY": "${env:AWS_SECRET_ACCESS_KEY}"
       },
       "timeoutMs": 120000
+    },
+    "aws-amplify-mcp-server": {
+      "command": "uvx",
+      "args": ["fastmcp", "run", "https://amplify-mcp.global.api.aws"],
+      "timeoutMs": 120000
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "timeoutMs": 120000
     }
   },
   "agents": {
