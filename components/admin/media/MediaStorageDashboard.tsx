@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { HardDrive, Image as ImageIcon, Video, RefreshCw, Loader2 } from 'lucide-react';
+import { HardDrive, Image as ImageIcon, Video, FileText, RefreshCw, Loader2 } from 'lucide-react';
 import type { MediaStats } from '@/types/media';
 
 function formatBytes(bytes: number): string {
@@ -85,7 +85,7 @@ export default function MediaStorageDashboard({ refreshKey = 0 }: MediaStorageDa
       </div>
 
       {/* Breakdown */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         <div className="text-center p-2 rounded-lg bg-jhr-black">
           <p className="text-lg font-bold text-jhr-white">{stats.totalCount}</p>
           <p className="text-xs text-jhr-white-dim">Total Files</p>
@@ -103,6 +103,13 @@ export default function MediaStorageDashboard({ refreshKey = 0 }: MediaStorageDa
             <span className="text-lg font-bold">{stats.videoCount}</span>
           </div>
           <p className="text-xs text-jhr-white-dim">{formatBytes(stats.videoSize)}</p>
+        </div>
+        <div className="text-center p-2 rounded-lg bg-jhr-black">
+          <div className="flex items-center justify-center gap-1 text-jhr-white">
+            <FileText className="w-3.5 h-3.5" />
+            <span className="text-lg font-bold">{stats.documentCount}</span>
+          </div>
+          <p className="text-xs text-jhr-white-dim">{formatBytes(stats.documentSize)}</p>
         </div>
       </div>
     </div>

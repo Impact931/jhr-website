@@ -45,6 +45,7 @@ export default function MediaToolbar({
         <option value="">All Types</option>
         <option value="image">Images</option>
         <option value="video">Videos</option>
+        <option value="document">Documents</option>
       </select>
 
       {/* Sort */}

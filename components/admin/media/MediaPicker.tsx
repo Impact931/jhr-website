@@ -6,7 +6,7 @@ import { ModalPortal } from '@/components/ui/ModalPortal';
 import MediaGrid from './MediaGrid';
 import MediaToolbar from './MediaToolbar';
 import MediaUploadZone from './MediaUploadZone';
-import type { MediaItem, MediaFilterState, MediaPickerOptions, MediaPickerResult } from '@/types/media';
+import type { MediaItem, MediaFilterState, MediaPickerOptions, MediaPickerResult, MediaType } from '@/types/media';
 
 interface MediaPickerProps {
   isOpen: boolean;
@@ -14,6 +14,12 @@ interface MediaPickerProps {
   onSelect: (result: MediaPickerResult[]) => void;
   options?: MediaPickerOptions;
 }
+
+const ACCEPT_BY_TYPE: Record<MediaType, string> = {
+  image: 'image/jpeg,image/png,image/gif,image/webp,image/tiff',
+  video: 'video/mp4,video/webm',
+  document: 'application/pdf',
+};
 
 export default function MediaPicker({
   isOpen,
@@ -187,7 +193,12 @@ export default function MediaPicker({
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4">
           {showUpload ? (
-            <MediaUploadZone onUploadComplete={handleUploadComplete} />
+            <MediaUploadZone
+              onUploadComplete={handleUploadComplete}
+              accept={options.allowedTypes?.length
+                ? options.allowedTypes.map(t => ACCEPT_BY_TYPE[t]).join(',')
+                : undefined}
+            />
           ) : (
             <div className="space-y-4">
               <MediaToolbar

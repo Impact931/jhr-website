@@ -357,6 +357,8 @@ export async function getMediaStats(): Promise<MediaStats> {
     videoCount: 0,
     imageSize: 0,
     videoSize: 0,
+    documentCount: 0,
+    documentSize: 0,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -371,9 +373,12 @@ async function incrementMediaStats(
   if (mediaType === 'image') {
     stats.imageCount += 1;
     stats.imageSize += fileSize;
-  } else {
+  } else if (mediaType === 'video') {
     stats.videoCount += 1;
     stats.videoSize += fileSize;
+  } else if (mediaType === 'document') {
+    stats.documentCount = (stats.documentCount || 0) + 1;
+    stats.documentSize = (stats.documentSize || 0) + fileSize;
   }
   stats.updatedAt = new Date().toISOString();
   await putItem(stats);
@@ -389,9 +394,12 @@ async function decrementMediaStats(
   if (mediaType === 'image') {
     stats.imageCount = Math.max(0, stats.imageCount - 1);
     stats.imageSize = Math.max(0, stats.imageSize - fileSize);
-  } else {
+  } else if (mediaType === 'video') {
     stats.videoCount = Math.max(0, stats.videoCount - 1);
     stats.videoSize = Math.max(0, stats.videoSize - fileSize);
+  } else if (mediaType === 'document') {
+    stats.documentCount = Math.max(0, (stats.documentCount || 0) - 1);
+    stats.documentSize = Math.max(0, (stats.documentSize || 0) - fileSize);
   }
   stats.updatedAt = new Date().toISOString();
   await putItem(stats);
@@ -413,6 +421,10 @@ export async function recalculateStats(): Promise<MediaStats> {
       .reduce((sum, i) => sum + (i.fileSize || 0), 0),
     videoSize: mediaItems
       .filter((i) => i.mediaType === 'video')
+      .reduce((sum, i) => sum + (i.fileSize || 0), 0),
+    documentCount: mediaItems.filter((i) => i.mediaType === 'document').length,
+    documentSize: mediaItems
+      .filter((i) => i.mediaType === 'document')
       .reduce((sum, i) => sum + (i.fileSize || 0), 0),
     updatedAt: new Date().toISOString(),
   };

@@ -1,6 +1,6 @@
 'use client';
 
-import { Image as ImageIcon, Video, Calendar } from 'lucide-react';
+import { Image as ImageIcon, Video, FileText, Calendar } from 'lucide-react';
 import MediaCard from './MediaCard';
 import type { MediaItem } from '@/types/media';
 
@@ -104,6 +104,8 @@ export default function MediaGrid({
                 <div className="w-8 h-8 rounded bg-jhr-black-lighter flex items-center justify-center flex-shrink-0">
                   {item.mediaType === 'video' ? (
                     <Video className="w-4 h-4 text-jhr-white-dim" />
+                  ) : item.mediaType === 'document' ? (
+                    <FileText className="w-4 h-4 text-jhr-white-dim" />
                   ) : (
                     <ImageIcon className="w-4 h-4 text-jhr-white-dim" />
                   )}

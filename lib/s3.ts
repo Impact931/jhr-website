@@ -125,5 +125,16 @@ export function generateVideoKey(mediaId: string, filename: string): string {
   return `media/videos/${mediaId}/${sanitized}`;
 }
 
+/**
+ * Generate S3 key for uploaded document (PDF, etc.)
+ * @param mediaId - Unique media identifier
+ * @param filename - Original document filename
+ * @returns S3 key path
+ */
+export function generateDocumentKey(mediaId: string, filename: string): string {
+  const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+  return `media/documents/${mediaId}/${sanitized}`;
+}
+
 // Export configuration for use in other modules
 export { bucketName, region, cloudFrontDomain };

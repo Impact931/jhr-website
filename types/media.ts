@@ -5,7 +5,7 @@
 
 // ─── Enums & Constants ───────────────────────────────────────────────
 
-export type MediaType = 'image' | 'video';
+export type MediaType = 'image' | 'video' | 'document';
 export type MediaStatus = 'uploading' | 'processing' | 'ready' | 'error';
 export type MediaSource = 'upload' | 'embed';
 export type VideoProvider = 'youtube' | 'vimeo' | 'self-hosted';
@@ -31,8 +31,13 @@ export const ALLOWED_VIDEO_TYPES = [
   'video/quicktime',
 ] as const;
 
+export const ALLOWED_DOCUMENT_TYPES = [
+  'application/pdf',
+] as const;
+
 export const MAX_IMAGE_SIZE_MB = 50;
 export const MAX_VIDEO_SIZE_MB = 500;
+export const MAX_DOCUMENT_SIZE_MB = 100;
 
 // ─── Core Media Item ─────────────────────────────────────────────────
 
@@ -185,6 +190,8 @@ export interface MediaStats {
   videoCount: number;
   imageSize: number;
   videoSize: number;
+  documentCount: number;
+  documentSize: number;
 
   updatedAt: string;
 }

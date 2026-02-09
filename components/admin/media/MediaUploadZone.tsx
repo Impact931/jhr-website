@@ -118,7 +118,7 @@ async function optimizeImage(file: File): Promise<File> {
 
 export default function MediaUploadZone({
   onUploadComplete,
-  accept = 'image/jpeg,image/png,image/gif,image/webp,image/tiff,video/mp4,video/webm',
+  accept = 'image/jpeg,image/png,image/gif,image/webp,image/tiff,video/mp4,video/webm,application/pdf',
   maxSizeMB = 50,
   compact = false,
 }: MediaUploadZoneProps) {

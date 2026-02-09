@@ -1,9 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { Video, X } from 'lucide-react';
 import { EditableHero } from './EditableHero';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
+import { useContent } from '@/context/inline-editor/ContentContext';
 import { FadeUp, FadeIn } from '@/components/ui/ScrollAnimation';
+
+const MediaPicker = dynamic(() => import('@/components/admin/media/MediaPicker'));
 
 // Lazy-load below-fold section components for faster initial page load
 const EditableFeatureGrid = dynamic(() => import('./EditableFeatureGrid').then(m => ({ default: m.EditableFeatureGrid })));
@@ -81,13 +86,21 @@ function SectionShell({
   className,
   children,
   videoSrc,
+  sectionId,
 }: {
   className: string;
   children: React.ReactNode;
   videoSrc?: string;
+  sectionId?: string;
 }) {
+  const { isEditMode, canEdit } = useEditMode();
+  const { updateSection } = useContent();
+  const [showPicker, setShowPicker] = useState(false);
+
+  const showEditControls = canEdit && isEditMode && sectionId;
+
   return (
-    <section className={`${className}${videoSrc ? ' relative overflow-hidden' : ''}`}>
+    <section className={`${className}${videoSrc ? ' relative overflow-hidden' : ''}${showEditControls ? ' group/shell' : ''}`}>
       {videoSrc && (
         <>
           <video
@@ -95,13 +108,50 @@ function SectionShell({
             loop
             muted
             playsInline
+            preload="metadata"
+            src={videoSrc}
             className="absolute inset-0 w-full h-full object-cover"
-          >
-            <source src={videoSrc} type="video/mp4" />
-          </video>
+          />
           <div className="absolute inset-0 bg-black/60" />
         </>
       )}
+
+      {/* Edit-mode video BG controls */}
+      {showEditControls && (
+        <div className="absolute top-2 right-2 z-20 flex items-center gap-1 opacity-0 group-hover/shell:opacity-100 transition-opacity">
+          <button
+            onClick={() => setShowPicker(true)}
+            className="flex items-center gap-1 px-2 py-1 rounded-md bg-black/70 text-white text-xs font-medium hover:bg-black/90 backdrop-blur-sm"
+          >
+            <Video className="w-3 h-3" />
+            {videoSrc ? 'Change Video BG' : 'Add Video BG'}
+          </button>
+          {videoSrc && (
+            <button
+              onClick={() => updateSection(sectionId, { backgroundVideo: undefined })}
+              className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-900/70 text-white text-xs font-medium hover:bg-red-900/90 backdrop-blur-sm"
+            >
+              <X className="w-3 h-3" />
+              Remove
+            </button>
+          )}
+        </div>
+      )}
+
+      {showPicker && (
+        <MediaPicker
+          isOpen={showPicker}
+          onClose={() => setShowPicker(false)}
+          onSelect={(results) => {
+            if (results.length > 0 && sectionId) {
+              updateSection(sectionId, { backgroundVideo: results[0].publicUrl });
+            }
+            setShowPicker(false);
+          }}
+          options={{ allowedTypes: ['video'] }}
+        />
+      )}
+
       <div className={`section-container${videoSrc ? ' relative z-10' : ''}`}>
         {children}
       </div>
@@ -199,7 +249,7 @@ export function SectionRenderer({
       const grid = section as FeatureGridSectionContent;
       return (
         <AnimatedSection type="feature-grid" isEditMode={isEditMode}>
-          <SectionShell className={sectionClass} videoSrc={section.backgroundVideo}>
+          <SectionShell className={sectionClass} videoSrc={section.backgroundVideo} sectionId={section.id}>
             <EditableFeatureGrid
               contentKeyPrefix={prefix}
               heading={grid.heading}
@@ -217,7 +267,7 @@ export function SectionRenderer({
       const gallery = section as ImageGallerySectionContent;
       return (
         <AnimatedSection type="image-gallery" isEditMode={isEditMode}>
-          <SectionShell className={sectionClass}>
+          <SectionShell className={sectionClass} sectionId={section.id}>
             <EditableImageGallery
               contentKeyPrefix={prefix}
               heading={gallery.heading}
@@ -253,7 +303,7 @@ export function SectionRenderer({
       const faq = section as FAQSectionContent;
       return (
         <AnimatedSection type="faq" isEditMode={isEditMode}>
-          <SectionShell className={sectionClass}>
+          <SectionShell className={sectionClass} sectionId={section.id}>
             <EditableFAQ
               contentKeyPrefix={prefix}
               heading={faq.heading}
@@ -268,7 +318,7 @@ export function SectionRenderer({
       const testimonials = section as TestimonialsSectionContent;
       return (
         <AnimatedSection type="testimonials" isEditMode={isEditMode}>
-          <SectionShell className={sectionClass}>
+          <SectionShell className={sectionClass} sectionId={section.id}>
             <EditableTestimonials
               contentKeyPrefix={prefix}
               heading={testimonials.heading}
@@ -285,7 +335,7 @@ export function SectionRenderer({
       const textBlock = section as TextBlockSectionContent;
       return (
         <AnimatedSection type="text-block" isEditMode={isEditMode}>
-          <SectionShell className={sectionClass} videoSrc={section.backgroundVideo}>
+          <SectionShell className={sectionClass} videoSrc={section.backgroundVideo} sectionId={section.id}>
             <EditableTextBlock
               contentKeyPrefix={prefix}
               heading={textBlock.heading}
@@ -302,7 +352,7 @@ export function SectionRenderer({
       const columns = section as ColumnsSectionContent;
       return (
         <AnimatedSection type="columns" isEditMode={isEditMode}>
-          <SectionShell className={sectionClass}>
+          <SectionShell className={sectionClass} sectionId={section.id}>
             <EditableColumns
               section={columns}
               pageSlug={pageSlug}
@@ -316,7 +366,7 @@ export function SectionRenderer({
       const statsSection = section as StatsSectionContent;
       return (
         <AnimatedSection type="stats" isEditMode={isEditMode}>
-          <SectionShell className={sectionClass}>
+          <SectionShell className={sectionClass} sectionId={section.id}>
             <EditableStats
               contentKeyPrefix={prefix}
               heading={statsSection.heading}

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   Image as ImageIcon,
   Video,
+  FileText,
   Check,
   MoreVertical,
   Calendar,
@@ -27,7 +28,8 @@ function formatFileSize(bytes: number): string {
 }
 
 export default function MediaCard({ item, isSelected, onSelect, onClick }: MediaCardProps) {
-  const thumbnailSrc = item.thumbnailUrl || item.publicUrl;
+  const isDocument = item.mediaType === 'document';
+  const thumbnailSrc = isDocument ? undefined : (item.thumbnailUrl || item.publicUrl);
   const isVideo = item.mediaType === 'video';
   const hasAI = !!item.aiMetadata?.altText;
 
@@ -67,6 +69,8 @@ export default function MediaCard({ item, isSelected, onSelect, onClick }: Media
           <div className="w-full h-full flex items-center justify-center">
             {isVideo ? (
               <Video className="w-12 h-12 text-jhr-white-dim/50" />
+            ) : isDocument ? (
+              <FileText className="w-12 h-12 text-jhr-white-dim/50" />
             ) : (
               <ImageIcon className="w-12 h-12 text-jhr-white-dim/50" />
             )}
@@ -85,6 +89,14 @@ export default function MediaCard({ item, isSelected, onSelect, onClick }: Media
           <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 flex items-center gap-1">
             <Video className="w-3 h-3" />
             Video
+          </div>
+        )}
+
+        {/* Document badge */}
+        {isDocument && item.status === 'ready' && (
+          <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500/20 text-orange-400 flex items-center gap-1">
+            <FileText className="w-3 h-3" />
+            PDF
           </div>
         )}
 

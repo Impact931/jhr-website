@@ -4,8 +4,10 @@ import { generateMediaId, createMediaItem } from '@/lib/media';
 import {
   ALLOWED_IMAGE_TYPES,
   ALLOWED_VIDEO_TYPES,
+  ALLOWED_DOCUMENT_TYPES,
   MAX_IMAGE_SIZE_MB,
   MAX_VIDEO_SIZE_MB,
+  MAX_DOCUMENT_SIZE_MB,
 } from '@/types/media';
 import type { MediaUploadRequest, MediaUploadResponse, MediaType } from '@/types/media';
 
@@ -27,15 +29,16 @@ export async function POST(request: NextRequest) {
     // Determine media type
     const isImage = (ALLOWED_IMAGE_TYPES as readonly string[]).includes(contentType);
     const isVideo = (ALLOWED_VIDEO_TYPES as readonly string[]).includes(contentType);
-    if (!isImage && !isVideo) {
+    const isDocument = (ALLOWED_DOCUMENT_TYPES as readonly string[]).includes(contentType);
+    if (!isImage && !isVideo && !isDocument) {
       return NextResponse.json(
         { error: `Unsupported file type: ${contentType}` },
         { status: 400 }
       );
     }
 
-    const mediaType: MediaType = isImage ? 'image' : 'video';
-    const maxSize = isImage ? MAX_IMAGE_SIZE_MB : MAX_VIDEO_SIZE_MB;
+    const mediaType: MediaType = isImage ? 'image' : isVideo ? 'video' : 'document';
+    const maxSize = isImage ? MAX_IMAGE_SIZE_MB : isVideo ? MAX_VIDEO_SIZE_MB : MAX_DOCUMENT_SIZE_MB;
     if (fileSize && fileSize > maxSize * 1024 * 1024) {
       return NextResponse.json(
         { error: `File exceeds maximum size of ${maxSize}MB` },
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     const mediaId = generateMediaId();
     const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const folder = mediaType === 'image' ? 'media/originals' : 'media/videos';
+    const folder = mediaType === 'image' ? 'media/originals' : mediaType === 'video' ? 'media/videos' : 'media/documents';
     const s3Key = `${folder}/${mediaId}/${sanitizedFilename}`;
 
     // Generate presigned URL — this is the critical path
