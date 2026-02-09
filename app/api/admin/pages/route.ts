@@ -6,36 +6,7 @@
 import { NextResponse } from 'next/server';
 import { getPageContent, getPageSections } from '@/lib/content';
 import { ContentStatus } from '@/types/content';
-
-// Pages that have schema files in /content/schemas/ are considered to have default content
-const PAGES_WITH_SCHEMAS = [
-  'home',
-  'about',
-  'contact',
-  'faqs',
-  'schedule',
-  'services',
-  'corporate-event-coverage',
-  'convention-media',
-  'trade-show-media',
-  'headshot-activation',
-  'executive-imaging',
-  'social-networking-media',
-  'event-video-systems',
-  'associations',
-  'dmcs-agencies',
-  'exhibitors-sponsors',
-  'venues-solution',
-  'venues',
-  'belmont-university',
-  'city-winery-nashville',
-  'embassy-suites-nashville',
-  'gaylord-opryland',
-  'jw-marriott-nashville',
-  'music-city-center',
-  'omni-hotel-nashville',
-  'renaissance-hotel-nashville',
-];
+import { ALL_SCHEMA_SLUGS } from '@/content/schema-registry';
 
 // Static list of all site pages
 const sitePages = [
@@ -103,7 +74,7 @@ export async function GET(): Promise<NextResponse> {
         ]);
 
         // Check if page has schema defaults (considered as having content)
-        const hasSchema = PAGES_WITH_SCHEMAS.includes(page.slug);
+        const hasSchema = ALL_SCHEMA_SLUGS.includes(page.slug);
 
         // A page has a draft if either legacy or section-based draft exists
         const hasDraft = !!draft || !!sectionDraft;
