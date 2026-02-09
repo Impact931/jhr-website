@@ -786,7 +786,7 @@ export function EditableImageGallery({
           {imageList.map((image, index) => (
             <div
               key={`filmstrip-${index}`}
-              className="relative flex-shrink-0 w-[260px] h-[340px] md:w-[300px] md:h-[420px] rounded-xl overflow-hidden bg-[#1A1A1A] group/card"
+              className="relative flex-shrink-0 w-[220px] h-[280px] md:w-[260px] md:h-[340px] rounded-xl overflow-hidden bg-[#1A1A1A] group/card"
             >
               {image.src ? (
                 <SmartImage
@@ -801,17 +801,12 @@ export function EditableImageGallery({
                 </div>
               )}
 
-              {/* Caption overlay (view mode) */}
-              {!editable && (image.caption || image.alt) && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-12">
-                  {image.caption && (
-                    <p className="text-white font-display font-semibold text-sm md:text-base leading-tight">
-                      {image.caption}
-                    </p>
-                  )}
-                  {image.alt && image.caption && (
-                    <p className="text-gray-300 text-xs mt-1">{image.alt}</p>
-                  )}
+              {/* Caption overlay (view mode — only when caption is set) */}
+              {!editable && image.caption && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4 pt-10">
+                  <p className="text-white font-display font-semibold text-sm leading-tight">
+                    {image.caption}
+                  </p>
                 </div>
               )}
 
@@ -876,7 +871,7 @@ export function EditableImageGallery({
           {editable && canEdit && (
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex-shrink-0 w-[260px] h-[340px] md:w-[300px] md:h-[420px] rounded-xl border-2 border-dashed border-[#333] hover:border-[#C9A227]/60 flex flex-col items-center justify-center gap-3 text-gray-500 hover:text-[#C9A227] transition-colors"
+              className="flex-shrink-0 w-[220px] h-[280px] md:w-[260px] md:h-[340px] rounded-xl border-2 border-dashed border-[#333] hover:border-[#C9A227]/60 flex flex-col items-center justify-center gap-3 text-gray-500 hover:text-[#C9A227] transition-colors"
             >
               <Plus className="w-8 h-8" />
               <span className="text-sm font-medium">Add Image</span>
@@ -884,11 +879,11 @@ export function EditableImageGallery({
           )}
         </div>
 
-        {/* Fade edges (view mode only) */}
+        {/* Fade edges (view mode only — adapted to light sections via CSS) */}
         {!editable && imageList.length > 2 && (
           <>
-            <div className="absolute left-0 top-0 bottom-2 w-12 bg-gradient-to-r from-[#0A0A0A] to-transparent pointer-events-none z-10" />
-            <div className="absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-[#0A0A0A] to-transparent pointer-events-none z-10" />
+            <div className="filmstrip-fade-left absolute left-0 top-0 bottom-2 w-12 bg-gradient-to-r from-[#0A0A0A] to-transparent pointer-events-none z-10" />
+            <div className="filmstrip-fade-right absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-[#0A0A0A] to-transparent pointer-events-none z-10" />
           </>
         )}
 

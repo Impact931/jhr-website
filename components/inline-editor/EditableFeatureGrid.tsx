@@ -699,12 +699,16 @@ function DefaultCardView({
   return (
     <motion.div
       key={feature.id}
-      className={`card group h-full ${isCheckCircle ? 'hover:border-green-500/30' : ''}`}
+      className={`group h-full ${
+        isCheckCircle
+          ? 'bg-transparent border border-[#1A1A1A] rounded-lg p-4 hover:border-green-500/20 transition-colors duration-300'
+          : 'card'
+      }`}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.5, delay: staggerDelay, ease: 'easeOut' }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      whileHover={{ y: isCheckCircle ? -2 : -4, transition: { duration: 0.2 } }}
     >
       {/* Image or Icon */}
       {feature.image?.src ? (
@@ -718,7 +722,7 @@ function DefaultCardView({
         </div>
       ) : isCheckCircle ? (
         <motion.div
-          className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center mb-4 group-hover:bg-green-500/20 transition-all duration-300"
+          className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center mb-3 group-hover:bg-green-500/20 transition-all duration-300"
           initial={{ scale: 0 }}
           whileInView={{ scale: 1 }}
           viewport={{ once: true }}
@@ -729,7 +733,7 @@ function DefaultCardView({
             delay: staggerDelay + 0.15,
           }}
         >
-          <CheckCircle className="w-6 h-6 text-green-400" />
+          <CheckCircle className="w-4 h-4 text-green-400" />
         </motion.div>
       ) : (
         <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4 group-hover:bg-jhr-gold/20 group-hover:scale-110 transition-all duration-300">

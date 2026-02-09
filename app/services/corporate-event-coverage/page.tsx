@@ -18,7 +18,11 @@ import type {
 // ============================================================================
 
 const SECTION_CLASS_MAP: Record<string, string> = {
-  "coverage-areas": "section-padding bg-jhr-black-light",
+  "gallery": "section-padding section-light",
+  "filmstrip": "section-padding section-light",
+  "faqs": "section-padding section-light",
+  "multi-day": "section-padding bg-jhr-black-light callout-gold-border",
+  "after-hours": "section-padding bg-jhr-black gold-bullets",
 };
 
 export default function CorporateEventCoveragePage() {

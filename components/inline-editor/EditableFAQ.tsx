@@ -93,26 +93,26 @@ function FAQAccordionItem({
   onToggle: () => void;
 }) {
   return (
-    <div className="card">
+    <div className="faq-item border-b border-[#2A2A2A]">
       <button
         onClick={onToggle}
-        className="w-full flex items-start justify-between text-left gap-4"
+        className="w-full flex items-center justify-between text-left gap-4 py-6"
         aria-expanded={isOpen}
       >
         <h3 className="text-heading-md font-semibold text-jhr-white">
           {item.question}
         </h3>
         <span
-          className={`mt-1 flex-shrink-0 text-jhr-gold transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
+          className={`faq-icon-btn flex-shrink-0 w-8 h-8 rounded-full border border-[#333] flex items-center justify-center text-jhr-gold transition-all duration-300 ${
+            isOpen ? 'rotate-45 bg-jhr-gold/10 border-jhr-gold/40' : ''
           }`}
         >
-          <ChevronDown className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
         </span>
       </button>
       <div
         className={`overflow-hidden transition-all duration-300 ${
-          isOpen ? 'max-h-[2000px] opacity-100 mt-3' : 'max-h-0 opacity-0'
+          isOpen ? 'max-h-[2000px] opacity-100 pb-6' : 'max-h-0 opacity-0'
         }`}
       >
         <div
@@ -246,7 +246,7 @@ export function EditableFAQ({
         )}
 
         {/* FAQ Accordion */}
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="max-w-4xl mx-auto">
           {items.map((item) => (
             <FAQAccordionItem
               key={item.id}
@@ -311,11 +311,11 @@ export function EditableFAQ({
         )}
 
         {/* FAQ Items - Editable */}
-        <div className="max-w-4xl mx-auto space-y-4">
+        <div className="max-w-4xl mx-auto">
           {items.map((item, index) => (
             <div
               key={item.id}
-              className="card relative group/item"
+              className="faq-item border-b border-[#2A2A2A] relative group/item py-5"
             >
               {/* Item Controls */}
               {canEdit && (

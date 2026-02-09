@@ -236,6 +236,36 @@ body {
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
+
+  /* Gold left-border callout for text blocks */
+  .callout-gold-border .max-w-4xl {
+    border-left: 3px solid var(--gold);
+    padding-left: 1.5rem;
+  }
+
+  /* Gold bullet markers for lists inside gold-bullets sections */
+  .gold-bullets .blog-content ul li::marker {
+    color: var(--gold);
+  }
+  .gold-bullets ul li::marker {
+    color: var(--gold);
+  }
+
+  /* FAQ item light-mode overrides */
+  .section-light .faq-item {
+    border-color: #E5E7EB;
+  }
+  .section-light .faq-icon-btn {
+    border-color: #D1D5DB;
+  }
+
+  /* Filmstrip fade edges adapt to light sections */
+  .section-light .filmstrip-fade-left {
+    background: linear-gradient(to right, #F9FAFB, transparent) !important;
+  }
+  .section-light .filmstrip-fade-right {
+    background: linear-gradient(to left, #F9FAFB, transparent) !important;
+  }
 }
 
 @layer utilities {
