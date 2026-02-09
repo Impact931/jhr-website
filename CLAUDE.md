@@ -4,27 +4,30 @@
 
 After editing schema files in `/content/schemas/`, content must be pushed to DynamoDB before changes appear on the live site. DynamoDB published content always takes precedence over schema defaults.
 
-### Deploy all pages
+### Staging (Amplify)
 ```bash
-curl -X POST https://jhr-photography.com/api/admin/content/seed \
-  -H "Content-Type: application/json" \
-  -d '{"slugs": ["all"]}'
+# Deploy all pages (merge mode — preserves user-uploaded images)
+curl -s -X POST "https://main.danki5kmggsn7.amplifyapp.com/api/admin/content/seed" \
+  -H "Content-Type: application/json" -d '{"slugs":["all"]}'
+
+# Deploy specific pages (merge mode)
+curl -s -X POST "https://main.danki5kmggsn7.amplifyapp.com/api/admin/content/seed" \
+  -H "Content-Type: application/json" -d '{"slugs":["home","services"]}'
+
+# Force overwrite — DESTRUCTIVE, resets user edits including uploaded images
+curl -s -X POST "https://main.danki5kmggsn7.amplifyapp.com/api/admin/content/seed" \
+  -H "Content-Type: application/json" -d '{"slugs":["home"], "force": true}'
+
+# List available pages
+curl -s "https://main.danki5kmggsn7.amplifyapp.com/api/admin/content/seed"
 ```
 
-### Deploy specific pages
-```bash
-curl -X POST https://jhr-photography.com/api/admin/content/seed \
-  -H "Content-Type: application/json" \
-  -d '{"slugs": ["home", "services", "corporate-event-coverage"]}'
-```
-
-### List available pages
-```bash
-curl https://jhr-photography.com/api/admin/content/seed
-```
+### Seed Modes
+- **Default (merge)**: Pushes schema text/structure to DynamoDB but preserves user-uploaded images (hero backgrounds, CTA backgrounds, feature card images, gallery images, OG images)
+- **Force overwrite** (`"force": true`): Full reset to schema defaults — destroys all user edits including uploaded images. Use only when intentionally resetting a page.
 
 ### Local development
-Replace `https://jhr-photography.com` with `http://localhost:3000`.
+Replace the Amplify URL with `http://localhost:3000`.
 
 ## Schema Registry
 
