@@ -20,6 +20,7 @@ import {
   Maximize,
   Minimize,
   RectangleHorizontal,
+  Film,
 } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
@@ -70,6 +71,7 @@ function LayoutSelector({
     { value: 'grid', label: 'Grid', icon: <Grid3X3 className="w-4 h-4" /> },
     { value: 'slider', label: 'Slider', icon: <GalleryHorizontal className="w-4 h-4" /> },
     { value: 'masonry', label: 'Masonry', icon: <LayoutGrid className="w-4 h-4" /> },
+    { value: 'filmstrip', label: 'Filmstrip', icon: <Film className="w-4 h-4" /> },
   ];
 
   return (
@@ -285,6 +287,9 @@ export function EditableImageGallery({
   // Slider state
   const [sliderIndex, setSliderIndex] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
+
+  // Filmstrip scroll ref
+  const filmstripRef = useRef<HTMLDivElement>(null);
 
   // Update images helper
   const updateImages = useCallback(
@@ -760,6 +765,154 @@ export function EditableImageGallery({
     );
   };
 
+  // ---- Filmstrip Layout Renderer ----
+  const renderFilmstripLayout = (imageList: EditableImageField[], editable: boolean) => {
+    const scrollBy = (direction: 'left' | 'right') => {
+      if (!filmstripRef.current) return;
+      const amount = direction === 'left' ? -340 : 340;
+      filmstripRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+    };
+
+    return (
+      <div className="relative group/filmstrip">
+        {/* Scroll container */}
+        <div
+          ref={filmstripRef}
+          className="flex gap-4 overflow-x-auto scroll-smooth pb-2"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
+
+          {imageList.map((image, index) => (
+            <div
+              key={`filmstrip-${index}`}
+              className="relative flex-shrink-0 w-[260px] h-[340px] md:w-[300px] md:h-[420px] rounded-xl overflow-hidden bg-[#1A1A1A] group/card"
+            >
+              {image.src ? (
+                <SmartImage
+                  src={image.src}
+                  alt={image.alt || `Gallery image ${index + 1}`}
+                  fill
+                  className="object-cover brightness-90 transition-all duration-500 group-hover/card:scale-[1.04] group-hover/card:brightness-100"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <ImageIcon className="w-12 h-12 text-gray-600" />
+                </div>
+              )}
+
+              {/* Caption overlay (view mode) */}
+              {!editable && (image.caption || image.alt) && (
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 pt-12">
+                  {image.caption && (
+                    <p className="text-white font-display font-semibold text-sm md:text-base leading-tight">
+                      {image.caption}
+                    </p>
+                  )}
+                  {image.alt && image.caption && (
+                    <p className="text-gray-300 text-xs mt-1">{image.alt}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Edit controls overlay */}
+              {editable && canEdit && (
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/card:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                  <button
+                    onClick={() => setReplaceModalIndex(index)}
+                    className="px-3 py-1.5 bg-[#C9A227] text-black text-xs font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
+                  >
+                    Replace
+                  </button>
+                  <button
+                    onClick={() => setAltTextEditorIndex(index)}
+                    className="px-3 py-1.5 bg-[#2A2A2A] text-white text-xs font-medium rounded-lg hover:bg-[#333] transition-colors"
+                  >
+                    Alt Text / Caption
+                  </button>
+                  <div className="flex items-center gap-1 mt-1">
+                    <button
+                      onClick={() => handleMoveImage(index, 'up')}
+                      disabled={index === 0}
+                      className="w-6 h-6 rounded bg-[#2A2A2A] border border-[#444] flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#333] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Move left"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleMoveImage(index, 'down')}
+                      disabled={index === imageList.length - 1}
+                      className="w-6 h-6 rounded bg-[#2A2A2A] border border-[#444] flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#333] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Move right"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleRemoveImage(index)}
+                      className="w-6 h-6 rounded bg-red-900/50 border border-red-700/50 flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-900/70 transition-colors"
+                      title="Remove image"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Dashed border in edit mode */}
+              {editable && canEdit && (
+                <div className="absolute inset-0 border-2 border-dashed border-transparent group-hover/card:border-[#C9A227]/40 pointer-events-none transition-colors" />
+              )}
+
+              {/* Missing alt text warning */}
+              {editable && canEdit && !image.alt && (
+                <div className="absolute top-2 left-2 px-2 py-0.5 bg-amber-500/90 text-black text-[10px] font-bold rounded uppercase">
+                  No alt text
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Add Image card (edit mode) */}
+          {editable && canEdit && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex-shrink-0 w-[260px] h-[340px] md:w-[300px] md:h-[420px] rounded-xl border-2 border-dashed border-[#333] hover:border-[#C9A227]/60 flex flex-col items-center justify-center gap-3 text-gray-500 hover:text-[#C9A227] transition-colors"
+            >
+              <Plus className="w-8 h-8" />
+              <span className="text-sm font-medium">Add Image</span>
+            </button>
+          )}
+        </div>
+
+        {/* Fade edges (view mode only) */}
+        {!editable && imageList.length > 2 && (
+          <>
+            <div className="absolute left-0 top-0 bottom-2 w-12 bg-gradient-to-r from-[#0A0A0A] to-transparent pointer-events-none z-10" />
+            <div className="absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-[#0A0A0A] to-transparent pointer-events-none z-10" />
+          </>
+        )}
+
+        {/* Scroll buttons */}
+        {imageList.length > 2 && (
+          <>
+            <button
+              onClick={() => scrollBy('left')}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-all z-20"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => scrollBy('right')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-all z-20"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </>
+        )}
+      </div>
+    );
+  };
+
   // ---- Render the appropriate layout ----
   const renderLayout = (imageList: EditableImageField[], editable: boolean) => {
     switch (currentLayout) {
@@ -769,6 +922,8 @@ export function EditableImageGallery({
         return renderSliderLayout(imageList, editable);
       case 'masonry':
         return renderMasonryLayout(imageList, editable);
+      case 'filmstrip':
+        return renderFilmstripLayout(imageList, editable);
       case 'grid':
       default:
         return renderGridLayout(imageList, editable);
