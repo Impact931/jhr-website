@@ -165,7 +165,7 @@ export interface FeatureCard {
  * - logo-scroll: Auto-scrolling logo marquee strip (uses card images as logos)
  * - journey: Numbered step-by-step progression with connecting lines
  */
-export type FeatureGridDisplayMode = 'default' | 'logo-scroll' | 'journey' | 'alternating';
+export type FeatureGridDisplayMode = 'default' | 'logo-scroll' | 'journey' | 'alternating' | 'horizontal';
 
 /**
  * A testimonial entry.

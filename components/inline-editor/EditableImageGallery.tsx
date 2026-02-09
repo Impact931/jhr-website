@@ -602,9 +602,9 @@ export function EditableImageGallery({
 
   // ---- Masonry Layout Renderer ----
   const renderMasonryLayout = (imageList: EditableImageField[], editable: boolean) => (
-    <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {imageList.map((image, index) => (
-        <div key={`masonry-${index}`} className="relative group/image break-inside-avoid rounded-lg overflow-hidden bg-[#1A1A1A]">
+        <div key={`masonry-${index}`} className="relative group/image rounded-lg overflow-hidden bg-[#1A1A1A]">
           {image.src ? (
             <img
               src={image.src}
@@ -791,7 +791,7 @@ export function EditableImageGallery({
               className={`relative flex-shrink-0 rounded-xl overflow-hidden bg-[#1A1A1A] group/card ${
                 editable
                   ? 'w-[220px] h-[280px] md:w-[260px] md:h-[340px]'
-                  : 'h-[220px] md:h-[280px]'
+                  : 'h-auto'
               }`}
             >
               {image.src ? (
@@ -807,7 +807,7 @@ export function EditableImageGallery({
                   <img
                     src={image.src}
                     alt={image.alt || `Gallery image ${index + 1}`}
-                    className="h-full w-auto block brightness-90 transition-all duration-500 group-hover/card:scale-[1.04] group-hover/card:brightness-100"
+                    className="max-h-[220px] md:max-h-[280px] w-auto block brightness-90 transition-all duration-500 group-hover/card:scale-[1.04] group-hover/card:brightness-100"
                     loading="lazy"
                   />
                 )

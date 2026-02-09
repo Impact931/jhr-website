@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Video, X } from 'lucide-react';
+import { Video, X, Youtube } from 'lucide-react';
 import { EditableHero } from './EditableHero';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
@@ -31,6 +31,22 @@ import type {
   ColumnsSectionContent,
   StatsSectionContent,
 } from '@/types/inline-editor';
+
+// ============================================================================
+// YouTube URL Parser
+// ============================================================================
+
+function parseYouTubeId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
 
 // ============================================================================
 // Types
@@ -96,12 +112,27 @@ function SectionShell({
   const { isEditMode, canEdit } = useEditMode();
   const { updateSection } = useContent();
   const [showPicker, setShowPicker] = useState(false);
+  const [showYouTubeInput, setShowYouTubeInput] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
 
   const showEditControls = canEdit && isEditMode && sectionId;
 
+  // Detect YouTube video background
+  const isYouTube = videoSrc?.startsWith('youtube:');
+  const youtubeId = isYouTube ? videoSrc!.slice(8) : null;
+
+  const handleYouTubeSubmit = () => {
+    const id = parseYouTubeId(youtubeUrl.trim());
+    if (id && sectionId) {
+      updateSection(sectionId, { backgroundVideo: `youtube:${id}` });
+      setYoutubeUrl('');
+      setShowYouTubeInput(false);
+    }
+  };
+
   return (
-    <section className={`${className}${videoSrc ? ' relative overflow-hidden' : ''}${showEditControls ? ' group/shell' : ''}`}>
-      {videoSrc && (
+    <section className={`${className}${videoSrc ? ' relative overflow-hidden' : ''}`}>
+      {videoSrc && !isYouTube && (
         <>
           <video
             autoPlay
@@ -116,24 +147,73 @@ function SectionShell({
         </>
       )}
 
+      {isYouTube && youtubeId && (
+        <>
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&modestbranding=1&playsinline=1&rel=0&disablekb=1`}
+              allow="autoplay; encrypted-media"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] aspect-video"
+              style={{ transform: 'translate(-50%, -50%) scale(1.2)' }}
+              title="Background video"
+              frameBorder="0"
+            />
+          </div>
+          <div className="absolute inset-0 bg-black/60" />
+        </>
+      )}
+
       {/* Edit-mode video BG controls */}
       {showEditControls && (
-        <div className="absolute top-2 right-2 z-20 flex items-center gap-1 opacity-0 group-hover/shell:opacity-100 transition-opacity">
-          <button
-            onClick={() => setShowPicker(true)}
-            className="flex items-center gap-1 px-2 py-1 rounded-md bg-black/70 text-white text-xs font-medium hover:bg-black/90 backdrop-blur-sm"
-          >
-            <Video className="w-3 h-3" />
-            {videoSrc ? 'Change Video BG' : 'Add Video BG'}
-          </button>
-          {videoSrc && (
+        <div className="absolute top-2 left-2 z-30 flex flex-col items-start gap-1">
+          <div className="flex items-center gap-1">
             <button
-              onClick={() => updateSection(sectionId, { backgroundVideo: undefined })}
-              className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-900/70 text-white text-xs font-medium hover:bg-red-900/90 backdrop-blur-sm"
+              onClick={() => setShowPicker(true)}
+              className="flex items-center gap-1 px-2 py-1 rounded-md bg-black/70 text-white text-xs font-medium hover:bg-black/90 backdrop-blur-sm"
             >
-              <X className="w-3 h-3" />
-              Remove
+              <Video className="w-3 h-3" />
+              {videoSrc ? 'Change Video BG' : 'Add Video BG'}
             </button>
+            <button
+              onClick={() => setShowYouTubeInput(!showYouTubeInput)}
+              className="flex items-center gap-1 px-2 py-1 rounded-md bg-black/70 text-white text-xs font-medium hover:bg-black/90 backdrop-blur-sm"
+            >
+              <Youtube className="w-3 h-3" />
+              YouTube
+            </button>
+            {videoSrc && (
+              <button
+                onClick={() => updateSection(sectionId, { backgroundVideo: undefined })}
+                className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-900/70 text-white text-xs font-medium hover:bg-red-900/90 backdrop-blur-sm"
+              >
+                <X className="w-3 h-3" />
+                Remove
+              </button>
+            )}
+          </div>
+          {showYouTubeInput && (
+            <div className="flex items-center gap-1 mt-1">
+              <input
+                type="text"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleYouTubeSubmit()}
+                placeholder="YouTube URL or ID..."
+                className="px-2 py-1 rounded-md bg-black/80 border border-[#444] text-white text-xs placeholder-gray-500 focus:outline-none focus:border-[#C9A227] w-56 backdrop-blur-sm"
+              />
+              <button
+                onClick={handleYouTubeSubmit}
+                className="px-2 py-1 rounded-md bg-[#C9A227] text-black text-xs font-medium hover:bg-[#D4AF37]"
+              >
+                Set
+              </button>
+              <button
+                onClick={() => { setShowYouTubeInput(false); setYoutubeUrl(''); }}
+                className="px-1.5 py-1 rounded-md bg-black/70 text-gray-400 text-xs hover:text-white backdrop-blur-sm"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -265,6 +345,19 @@ export function SectionRenderer({
 
     case 'image-gallery': {
       const gallery = section as ImageGallerySectionContent;
+      if (isNested) {
+        return (
+          <div className="h-full flex items-center">
+            <EditableImageGallery
+              contentKeyPrefix={prefix}
+              heading={gallery.heading}
+              layout={gallery.layout}
+              images={gallery.images}
+              singleImageFit={gallery.singleImageFit}
+            />
+          </div>
+        );
+      }
       return (
         <AnimatedSection type="image-gallery" isEditMode={isEditMode}>
           <SectionShell className={sectionClass} sectionId={section.id}>
@@ -333,6 +426,19 @@ export function SectionRenderer({
 
     case 'text-block': {
       const textBlock = section as TextBlockSectionContent;
+      if (isNested) {
+        return (
+          <div className="h-full flex items-center">
+            <div className="w-full">
+              <EditableTextBlock
+                contentKeyPrefix={prefix}
+                heading={textBlock.heading}
+                content={textBlock.content}
+              />
+            </div>
+          </div>
+        );
+      }
       return (
         <AnimatedSection type="text-block" isEditMode={isEditMode}>
           <SectionShell className={sectionClass} videoSrc={section.backgroundVideo} sectionId={section.id}>

@@ -771,6 +771,93 @@ function AlternatingView({
 }
 
 // ============================================================================
+// Horizontal Card View (displayMode === 'horizontal')
+// Cards in a 2-column grid, each card is a horizontal flex: image/icon + text
+// ============================================================================
+
+function HorizontalCardView({
+  heading,
+  subheading,
+  features,
+}: {
+  heading?: string;
+  subheading?: string;
+  features: FeatureCard[];
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(containerRef, { once: true, amount: 0.2 });
+
+  return (
+    <div ref={containerRef}>
+      {/* Heading / Subheading */}
+      {(heading || subheading) && (
+        <div className="text-center mb-12">
+          {heading && (
+            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              {...renderInlineHtml(heading)}
+            />
+          )}
+          {subheading && (
+            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              {...renderInlineHtml(subheading)}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Horizontal card grid */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {features.map((feature, index) => {
+          const IconComp = getIconComponent(feature.icon);
+          return (
+            <motion.div
+              key={feature.id}
+              className="card flex flex-row gap-4 items-start"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
+            >
+              {/* Image or Icon — left side */}
+              <div className="w-1/4 flex-shrink-0">
+                {feature.image?.src ? (
+                  <div className="relative aspect-square rounded-lg overflow-hidden bg-[#1A1A1A]">
+                    <SmartImage
+                      src={feature.image.src}
+                      alt={feature.image.alt || feature.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-square rounded-lg bg-jhr-gold/10 flex items-center justify-center">
+                    <IconComp className="w-8 h-8 text-jhr-gold" />
+                  </div>
+                )}
+              </div>
+
+              {/* Text — right side */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-heading-lg font-semibold text-jhr-white mb-2"
+                  {...renderInlineHtml(feature.title)}
+                />
+                <p className="text-body-md text-jhr-white-dim"
+                  {...renderInlineHtml(feature.description)}
+                />
+                {feature.link && (
+                  <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium mt-3 group cursor-pointer">
+                    {feature.link.text} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Default Grid Card (view mode) — Phases 3 + 7
 // ============================================================================
 
@@ -1064,6 +1151,19 @@ export function EditableFeatureGrid({
       return (
         <div>
           <AlternatingView
+            heading={displayHeading}
+            subheading={displaySubheading}
+            features={features}
+          />
+          {children}
+        </div>
+      );
+    }
+
+    if (displayMode === 'horizontal') {
+      return (
+        <div>
+          <HorizontalCardView
             heading={displayHeading}
             subheading={displaySubheading}
             features={features}
