@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   Check,
 } from 'lucide-react';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import type { InlineSectionType } from '@/types/inline-editor';
 import { SECTION_TYPE_META, createDefaultSection } from '@/types/inline-editor';
 import type { PageSectionContent } from '@/types/inline-editor';
@@ -616,6 +617,7 @@ export function AddSectionModal({ onAdd, onClose, insertOrder, excludeTypes }: A
     const variants = SECTION_VARIANTS[selectedType];
 
     return (
+      <ModalPortal>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl max-h-[85vh] overflow-y-auto">
           {/* Header */}
@@ -706,11 +708,13 @@ export function AddSectionModal({ onAdd, onClose, insertOrder, excludeTypes }: A
           </div>
         </div>
       </div>
+      </ModalPortal>
     );
   }
 
   // ---- Step 1: Section type selection ----
   return (
+    <ModalPortal>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-6 max-w-2xl w-full mx-4 shadow-2xl">
         {/* Header */}
@@ -761,5 +765,6 @@ export function AddSectionModal({ onAdd, onClose, insertOrder, excludeTypes }: A
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

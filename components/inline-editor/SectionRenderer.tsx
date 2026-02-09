@@ -190,6 +190,7 @@ export function SectionRenderer({
               subheading={grid.subheading}
               columns={grid.columns}
               features={grid.features}
+              displayMode={grid.displayMode}
             />
           </SectionShell>
         </AnimatedSection>

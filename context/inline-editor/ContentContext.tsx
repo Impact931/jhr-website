@@ -168,10 +168,11 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
   if (elementId === 'cardVariant') { s.cardVariant = value; return; }
   if (elementId === 'backgroundType') { s.backgroundType = value; return; }
   if (elementId === 'backgroundValue') { s.backgroundValue = value; return; }
+  if (elementId === 'displayMode') { s.displayMode = value; return; }
 
-  // --- Serialized JSON array fields (features, items, images, testimonials) ---
-  if (elementId === 'features' || elementId === 'items' || elementId === 'images' || elementId === 'testimonials') {
-    try { s[elementId] = JSON.parse(value); } catch { /* keep existing */ }
+  // --- Serialized JSON array fields (features, items, images, testimonials, stats, columns, buttons) ---
+  if (elementId === 'features' || elementId === 'items' || elementId === 'images' || elementId === 'testimonials' || elementId === 'stats' || elementId === 'columns' || elementId === 'buttons') {
+    try { s[elementId] = JSON.parse(value); } catch (err) { console.error(`[ContentContext] Failed to parse JSON for field "${elementId}":`, err); }
     return;
   }
 

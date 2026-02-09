@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, useEffect, useRef, ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import {
@@ -18,6 +18,7 @@ import {
   User,
   Camera,
 } from 'lucide-react';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import { EditableText } from './EditableText';
@@ -354,6 +355,165 @@ function TestimonialCard({ testimonial, variant = 'dark', index = 0 }: { testimo
 }
 
 // ============================================================================
+// Carousel View (view mode) — Auto-advance + AnimatePresence + touch/swipe
+// ============================================================================
+
+const CAROUSEL_INTERVAL = 5500; // ms
+const SWIPE_THRESHOLD = 50; // px
+
+function CarouselView({
+  testimonials,
+  carouselIndex,
+  setCarouselIndex,
+  onPrev,
+  onNext,
+  cardVariant,
+}: {
+  testimonials: Testimonial[];
+  carouselIndex: number;
+  setCarouselIndex: (idx: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
+  cardVariant: CardVariant;
+}) {
+  const [isPaused, setIsPaused] = useState(false);
+  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+  const [progress, setProgress] = useState(0);
+  const touchStartX = useRef(0);
+  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Auto-advance timer
+  useEffect(() => {
+    if (isPaused || testimonials.length <= 1) {
+      setProgress(0);
+      return;
+    }
+
+    setProgress(0);
+    const startTime = Date.now();
+
+    progressRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const pct = Math.min(elapsed / CAROUSEL_INTERVAL, 1);
+      setProgress(pct);
+
+      if (pct >= 1) {
+        setDirection(1);
+        setCarouselIndex((carouselIndex + 1) % testimonials.length);
+      }
+    }, 50);
+
+    return () => {
+      if (progressRef.current) clearInterval(progressRef.current);
+    };
+  }, [carouselIndex, isPaused, testimonials.length, setCarouselIndex]);
+
+  const handlePrev = useCallback(() => {
+    setDirection(-1);
+    onPrev();
+  }, [onPrev]);
+
+  const handleNext = useCallback(() => {
+    setDirection(1);
+    onNext();
+  }, [onNext]);
+
+  const handleDotClick = useCallback((idx: number) => {
+    setDirection(idx > carouselIndex ? 1 : -1);
+    setCarouselIndex(idx);
+  }, [carouselIndex, setCarouselIndex]);
+
+  // Touch handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) >= SWIPE_THRESHOLD) {
+      if (diff > 0) handleNext();
+      else handlePrev();
+    }
+  }, [handleNext, handlePrev]);
+
+  const slideVariants = {
+    enter: (d: number) => ({ x: d > 0 ? 80 : -80, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (d: number) => ({ x: d > 0 ? -80 : 80, opacity: 0 }),
+  };
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div className="max-w-2xl mx-auto overflow-hidden">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={carouselIndex}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.4, ease: 'easeInOut' }}
+          >
+            <TestimonialCard testimonial={testimonials[carouselIndex]} variant={cardVariant} />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Navigation Arrows */}
+      {testimonials.length > 1 && (
+        <>
+          <button
+            onClick={handlePrev}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-10 h-10 rounded-full bg-[#1A1A1A] border border-[#333] flex items-center justify-center text-gray-400 hover:text-white hover:border-[#C9A227] transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleNext}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-10 h-10 rounded-full bg-[#1A1A1A] border border-[#333] flex items-center justify-center text-gray-400 hover:text-white hover:border-[#C9A227] transition-colors"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </>
+      )}
+
+      {/* Dot Indicators + Progress bar */}
+      {testimonials.length > 1 && (
+        <div className="flex flex-col items-center gap-3 mt-6">
+          <div className="flex justify-center gap-2">
+            {testimonials.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleDotClick(idx)}
+                className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                  idx === carouselIndex
+                    ? 'bg-[#C9A227]'
+                    : 'bg-[#333] hover:bg-[#555]'
+                }`}
+              />
+            ))}
+          </div>
+          {/* Thin progress bar */}
+          <div className="w-24 h-0.5 bg-[#333] rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-jhr-gold/60 rounded-full"
+              style={{ width: `${progress * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
 // EditableTestimonials Component
 // ============================================================================
 
@@ -513,48 +673,16 @@ export function EditableTestimonials({
           </div>
         )}
 
-        {/* Carousel Layout */}
+        {/* Carousel Layout — Auto-advance + AnimatePresence */}
         {currentLayout === 'carousel' && testimonials.length > 0 && (
-          <div className="relative">
-            <div className="max-w-2xl mx-auto">
-              <TestimonialCard testimonial={testimonials[carouselIndex]} variant={displayCardVariant} />
-            </div>
-
-            {/* Navigation Arrows */}
-            {testimonials.length > 1 && (
-              <>
-                <button
-                  onClick={handleCarouselPrev}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-10 h-10 rounded-full bg-[#1A1A1A] border border-[#333] flex items-center justify-center text-gray-400 hover:text-white hover:border-[#C9A227] transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={handleCarouselNext}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-10 h-10 rounded-full bg-[#1A1A1A] border border-[#333] flex items-center justify-center text-gray-400 hover:text-white hover:border-[#C9A227] transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </>
-            )}
-
-            {/* Dot Indicators */}
-            {testimonials.length > 1 && (
-              <div className="flex justify-center gap-2 mt-6">
-                {testimonials.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCarouselIndex(idx)}
-                    className={`w-2.5 h-2.5 rounded-full transition-colors ${
-                      idx === carouselIndex
-                        ? 'bg-[#C9A227]'
-                        : 'bg-[#333] hover:bg-[#555]'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          <CarouselView
+            testimonials={testimonials}
+            carouselIndex={carouselIndex}
+            setCarouselIndex={setCarouselIndex}
+            onPrev={handleCarouselPrev}
+            onNext={handleCarouselNext}
+            cardVariant={displayCardVariant}
+          />
         )}
 
         {/* Grid Layout */}
@@ -781,11 +909,13 @@ export function EditableTestimonials({
 
       {/* Testimonial Editor Modal */}
       {editorTestimonialId && editingTestimonial && (
-        <TestimonialEditor
-          testimonial={editingTestimonial}
-          onSave={handleSaveTestimonial}
-          onClose={() => setEditorTestimonialId(null)}
-        />
+        <ModalPortal>
+          <TestimonialEditor
+            testimonial={editingTestimonial}
+            onSave={handleSaveTestimonial}
+            onClose={() => setEditorTestimonialId(null)}
+          />
+        </ModalPortal>
       )}
     </>
   );

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, ReactNode, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useCallback, ReactNode, useMemo, useRef, useEffect } from 'react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import {
   Pencil,
   Plus,
@@ -82,10 +82,14 @@ import {
   Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { ModalPortal } from '@/components/ui/ModalPortal';
+import SmartImage from '@/components/ui/SmartImage';
+import MediaPicker from '@/components/admin/media/MediaPicker';
+import type { MediaPickerResult } from '@/types/media';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import { EditableText } from './EditableText';
-import type { FeatureGridColumns, FeatureCard } from '@/types/inline-editor';
+import type { FeatureGridColumns, FeatureCard, FeatureGridDisplayMode } from '@/types/inline-editor';
 
 // ============================================================================
 // Icon Map: string name -> Lucide component
@@ -192,6 +196,8 @@ interface EditableFeatureGridProps {
   columns?: FeatureGridColumns;
   /** Feature cards. */
   features: FeatureCard[];
+  /** Display mode variant. */
+  displayMode?: FeatureGridDisplayMode;
   /** Callback when features array changes (for parent state management). */
   onFeaturesChange?: (features: FeatureCard[]) => void;
   /** Callback when columns change. */
@@ -422,6 +428,322 @@ function ColumnSelector({
 }
 
 // ============================================================================
+// Logo Scroll View (displayMode === 'logo-scroll')
+// ============================================================================
+
+function LogoScrollView({
+  heading,
+  subheading,
+  features,
+}: {
+  heading?: string;
+  subheading?: string;
+  features: FeatureCard[];
+}) {
+  // Duplicate array for seamless loop
+  const doubled = [...features, ...features];
+
+  return (
+    <div>
+      {/* Heading */}
+      {(heading || subheading) && (
+        <div className="text-center mb-8">
+          {heading && (
+            <p className="text-body-sm text-jhr-white-muted uppercase tracking-widest font-medium mb-2"
+              {...renderInlineHtml(heading)}
+            />
+          )}
+          {subheading && (
+            <p className="text-body-md text-jhr-white-dim max-w-2xl mx-auto"
+              {...renderInlineHtml(subheading)}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Scrolling marquee */}
+      <div className="relative overflow-hidden py-6">
+        {/* Fade edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-jhr-black to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-jhr-black to-transparent z-10 pointer-events-none" />
+
+        <motion.div
+          className="flex items-center gap-12"
+          animate={{ x: ['0%', '-50%'] }}
+          transition={{
+            x: {
+              repeat: Infinity,
+              repeatType: 'loop',
+              duration: features.length * 4,
+              ease: 'linear',
+            },
+          }}
+        >
+          {doubled.map((feature, index) => (
+            <div
+              key={`logo-${index}`}
+              className="flex-shrink-0 flex flex-col items-center gap-2 group"
+            >
+              {feature.image?.src ? (
+                <div className="relative w-28 h-16 grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500">
+                  <SmartImage
+                    src={feature.image.src}
+                    alt={feature.image.alt || feature.title}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-28 h-16 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                  {(() => {
+                    const IconComp = getIconComponent(feature.icon);
+                    return <IconComp className="w-10 h-10 text-jhr-white-dim group-hover:text-jhr-gold transition-colors duration-500" />;
+                  })()}
+                </div>
+              )}
+              <span className="text-xs text-jhr-white-dim opacity-60 group-hover:opacity-100 whitespace-nowrap transition-opacity duration-500">
+                {feature.title}
+              </span>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Journey View (displayMode === 'journey')
+// ============================================================================
+
+function JourneyView({
+  heading,
+  subheading,
+  features,
+}: {
+  heading?: string;
+  subheading?: string;
+  features: FeatureCard[];
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(containerRef, { once: true, amount: 0.3 });
+
+  return (
+    <div ref={containerRef}>
+      {/* Heading / Subheading */}
+      {(heading || subheading) && (
+        <div className="text-center mb-16">
+          {heading && (
+            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              {...renderInlineHtml(heading)}
+            />
+          )}
+          {subheading && (
+            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              {...renderInlineHtml(subheading)}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Desktop: Horizontal journey with connecting line */}
+      <div className="hidden md:block">
+        <div className="relative">
+          {/* Connecting line */}
+          <motion.div
+            className="absolute top-8 left-[calc(16.67%)] right-[calc(16.67%)] h-0.5 bg-gradient-to-r from-jhr-gold/20 via-jhr-gold/60 to-jhr-gold/20"
+            initial={{ scaleX: 0 }}
+            animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
+            style={{ transformOrigin: 'left' }}
+          />
+
+          <div className="grid grid-cols-3 gap-8">
+            {features.map((feature, index) => {
+              const IconComp = getIconComponent(feature.icon);
+              return (
+                <motion.div
+                  key={feature.id}
+                  className="flex flex-col items-center text-center"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                  transition={{ duration: 0.6, delay: 0.2 + index * 0.3, ease: 'easeOut' }}
+                >
+                  {/* Number badge */}
+                  <motion.div
+                    className="relative z-10 w-16 h-16 rounded-full bg-jhr-black border-2 border-jhr-gold flex items-center justify-center mb-6"
+                    initial={{ scale: 0 }}
+                    animate={isInView ? { scale: 1 } : { scale: 0 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 300,
+                      damping: 15,
+                      delay: 0.3 + index * 0.3,
+                    }}
+                  >
+                    <span className="text-xl font-display font-bold text-jhr-gold">
+                      {index + 1}
+                    </span>
+                  </motion.div>
+
+                  {/* Icon */}
+                  <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4">
+                    <IconComp className="w-6 h-6 text-jhr-gold" />
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-heading-lg font-semibold text-jhr-white mb-2"
+                    {...renderInlineHtml(feature.title)}
+                  />
+
+                  {/* Description */}
+                  <p className="text-body-md text-jhr-white-dim max-w-xs"
+                    {...renderInlineHtml(feature.description)}
+                  />
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile: Vertical journey with left-side numbers */}
+      <div className="md:hidden">
+        <div className="relative pl-12">
+          {/* Vertical connecting line */}
+          <motion.div
+            className="absolute left-5 top-8 bottom-8 w-0.5 bg-gradient-to-b from-jhr-gold/60 via-jhr-gold/40 to-jhr-gold/20"
+            initial={{ scaleY: 0 }}
+            animate={isInView ? { scaleY: 1 } : { scaleY: 0 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
+            style={{ transformOrigin: 'top' }}
+          />
+
+          <div className="space-y-12">
+            {features.map((feature, index) => {
+              const IconComp = getIconComponent(feature.icon);
+              return (
+                <motion.div
+                  key={feature.id}
+                  className="relative"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                  transition={{ duration: 0.5, delay: 0.3 + index * 0.3, ease: 'easeOut' }}
+                >
+                  {/* Number badge (positioned on the line) */}
+                  <motion.div
+                    className="absolute -left-12 top-0 w-10 h-10 rounded-full bg-jhr-black border-2 border-jhr-gold flex items-center justify-center z-10"
+                    initial={{ scale: 0 }}
+                    animate={isInView ? { scale: 1 } : { scale: 0 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 300,
+                      damping: 15,
+                      delay: 0.3 + index * 0.3,
+                    }}
+                  >
+                    <span className="text-sm font-display font-bold text-jhr-gold">
+                      {index + 1}
+                    </span>
+                  </motion.div>
+
+                  {/* Content */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-jhr-gold/10 flex items-center justify-center flex-shrink-0">
+                      <IconComp className="w-5 h-5 text-jhr-gold" />
+                    </div>
+                    <div>
+                      <h3 className="text-heading-lg font-semibold text-jhr-white mb-1"
+                        {...renderInlineHtml(feature.title)}
+                      />
+                      <p className="text-body-md text-jhr-white-dim"
+                        {...renderInlineHtml(feature.description)}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Default Grid Card (view mode) — Phases 3 + 7
+// ============================================================================
+
+function DefaultCardView({
+  feature,
+  index,
+  columnsCount,
+}: {
+  feature: FeatureCard;
+  index: number;
+  columnsCount: FeatureGridColumns;
+}) {
+  const IconComp = getIconComponent(feature.icon);
+  const isCheckCircle = feature.icon === 'CheckCircle';
+  const staggerDelay = columnsCount === 4 && isCheckCircle ? index * 0.2 : index * 0.1;
+
+  return (
+    <motion.div
+      key={feature.id}
+      className={`card group h-full ${isCheckCircle ? 'hover:border-green-500/30' : ''}`}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.5, delay: staggerDelay, ease: 'easeOut' }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+    >
+      {/* Image or Icon */}
+      {feature.image?.src ? (
+        <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-4 bg-[#1A1A1A]">
+          <SmartImage
+            src={feature.image.src}
+            alt={feature.image.alt || feature.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        </div>
+      ) : isCheckCircle ? (
+        <motion.div
+          className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center mb-4 group-hover:bg-green-500/20 transition-all duration-300"
+          initial={{ scale: 0 }}
+          whileInView={{ scale: 1 }}
+          viewport={{ once: true }}
+          transition={{
+            type: 'spring',
+            stiffness: 400,
+            damping: 12,
+            delay: staggerDelay + 0.15,
+          }}
+        >
+          <CheckCircle className="w-6 h-6 text-green-400" />
+        </motion.div>
+      ) : (
+        <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4 group-hover:bg-jhr-gold/20 group-hover:scale-110 transition-all duration-300">
+          <IconComp className="w-6 h-6 text-jhr-gold" />
+        </div>
+      )}
+      <h3 className="text-heading-lg font-semibold text-jhr-white mb-2"
+        {...renderInlineHtml(feature.title)}
+      />
+      <p className="text-body-md text-jhr-white-dim mb-4"
+        {...renderInlineHtml(feature.description)}
+      />
+      {feature.link && (
+        <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium group-hover:gap-3 transition-all">
+          {feature.link.text} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </span>
+      )}
+    </motion.div>
+  );
+}
+
+// ============================================================================
 // EditableFeatureGrid Component
 // ============================================================================
 
@@ -431,6 +753,7 @@ export function EditableFeatureGrid({
   subheading,
   columns = 3,
   features: initialFeatures,
+  displayMode = 'default',
   onFeaturesChange,
   onColumnsChange,
   children,
@@ -445,6 +768,7 @@ export function EditableFeatureGrid({
   // Modal states
   const [iconSelectorCardId, setIconSelectorCardId] = useState<string | null>(null);
   const [linkEditorCardId, setLinkEditorCardId] = useState<string | null>(null);
+  const [imagePickerCardId, setImagePickerCardId] = useState<string | null>(null);
 
   // Get column grid class
   const getGridClass = (cols: FeatureGridColumns): string => {
@@ -532,28 +856,6 @@ export function EditableFeatureGrid({
     [features, updateFeatures]
   );
 
-  // Update a card's title via pending changes
-  const handleCardTitleChange = useCallback(
-    (cardId: string, value: string) => {
-      const newFeatures = features.map((f) =>
-        f.id === cardId ? { ...f, title: value } : f
-      );
-      updateFeatures(newFeatures);
-    },
-    [features, updateFeatures]
-  );
-
-  // Update a card's description via pending changes
-  const handleCardDescriptionChange = useCallback(
-    (cardId: string, value: string) => {
-      const newFeatures = features.map((f) =>
-        f.id === cardId ? { ...f, description: value } : f
-      );
-      updateFeatures(newFeatures);
-    },
-    [features, updateFeatures]
-  );
-
   // Update a card's link
   const handleSaveLink = useCallback(
     (cardId: string, text: string, href: string) => {
@@ -582,6 +884,34 @@ export function EditableFeatureGrid({
     [features, updateFeatures]
   );
 
+  // Handle image selection for a card
+  const handleImageSelect = useCallback(
+    (cardId: string, results: MediaPickerResult[]) => {
+      if (results.length === 0) return;
+      const newFeatures = features.map((f) =>
+        f.id === cardId ? { ...f, image: { src: results[0].publicUrl, alt: results[0].alt || f.title } } : f
+      );
+      updateFeatures(newFeatures);
+      setImagePickerCardId(null);
+    },
+    [features, updateFeatures]
+  );
+
+  // Remove a card's image
+  const handleRemoveImage = useCallback(
+    (cardId: string) => {
+      const newFeatures = features.map((f) => {
+        if (f.id === cardId) {
+          const { image: _img, ...rest } = f;
+          return rest as FeatureCard;
+        }
+        return f;
+      });
+      updateFeatures(newFeatures);
+    },
+    [features, updateFeatures]
+  );
+
   // Get the card being edited for link
   const linkEditingCard = linkEditorCardId
     ? features.find((f) => f.id === linkEditorCardId)
@@ -600,6 +930,34 @@ export function EditableFeatureGrid({
 
   // ---- View Mode ----
   if (!isEditMode) {
+    // Route to special display modes
+    if (displayMode === 'logo-scroll') {
+      return (
+        <div>
+          <LogoScrollView
+            heading={displayHeading}
+            subheading={displaySubheading}
+            features={features}
+          />
+          {children}
+        </div>
+      );
+    }
+
+    if (displayMode === 'journey') {
+      return (
+        <div>
+          <JourneyView
+            heading={displayHeading}
+            subheading={displaySubheading}
+            features={features}
+          />
+          {children}
+        </div>
+      );
+    }
+
+    // Default grid view
     return (
       <div>
         {/* Heading / Subheading */}
@@ -620,35 +978,14 @@ export function EditableFeatureGrid({
 
         {/* Feature Grid */}
         <div className={`grid ${getGridClass(currentColumns)} gap-6`}>
-          {features.map((feature, index) => {
-            const IconComp = getIconComponent(feature.icon);
-            return (
-              <motion.div
-                key={feature.id}
-                className="card group h-full"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              >
-                <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4 group-hover:bg-jhr-gold/20 group-hover:scale-110 transition-all duration-300">
-                  <IconComp className="w-6 h-6 text-jhr-gold" />
-                </div>
-                <h3 className="text-heading-lg font-semibold text-jhr-white mb-2"
-                  {...renderInlineHtml(feature.title)}
-                />
-                <p className="text-body-md text-jhr-white-dim mb-4"
-                  {...renderInlineHtml(feature.description)}
-                />
-                {feature.link && (
-                  <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium group-hover:gap-3 transition-all">
-                    {feature.link.text} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                )}
-              </motion.div>
-            );
-          })}
+          {features.map((feature, index) => (
+            <DefaultCardView
+              key={feature.id}
+              feature={feature}
+              index={index}
+              columnsCount={currentColumns}
+            />
+          ))}
         </div>
 
         {children}
@@ -657,6 +994,7 @@ export function EditableFeatureGrid({
   }
 
   // ---- Edit Mode ----
+  // Edit mode always shows the standard grid editor regardless of displayMode
   return (
     <>
       <div className="relative group/grid">
@@ -666,6 +1004,9 @@ export function EditableFeatureGrid({
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#C9A227]/90 text-black text-xs font-bold rounded-full uppercase tracking-wider shadow-lg">
               <Pencil className="w-3 h-3" />
               Feature Grid
+              {displayMode !== 'default' && (
+                <span className="ml-1 text-[10px] opacity-70">({displayMode})</span>
+              )}
             </span>
           </div>
         )}
@@ -762,16 +1103,53 @@ export function EditableFeatureGrid({
                   </div>
                 )}
 
-                {/* Icon - Clickable to change */}
-                <div
-                  className={`w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4 transition-colors ${
-                    canEdit ? 'cursor-pointer hover:bg-jhr-gold/30 border-2 border-dashed border-transparent hover:border-[#C9A227]/60' : 'group-hover/card:bg-jhr-gold/20'
-                  }`}
-                  onClick={() => canEdit && setIconSelectorCardId(feature.id)}
-                  title={canEdit ? 'Click to change icon' : undefined}
-                >
-                  <IconComp className="w-6 h-6 text-jhr-gold" />
-                </div>
+                {/* Image or Icon */}
+                {feature.image?.src ? (
+                  <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-4 bg-[#1A1A1A] group/img">
+                    <SmartImage
+                      src={feature.image.src}
+                      alt={feature.image.alt || feature.title}
+                      fill
+                      className="object-cover"
+                    />
+                    {canEdit && (
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setImagePickerCardId(feature.id)}
+                          className="px-3 py-1.5 bg-[#C9A227] text-black text-xs font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
+                        >
+                          Replace
+                        </button>
+                        <button
+                          onClick={() => handleRemoveImage(feature.id)}
+                          className="px-3 py-1.5 bg-red-900/70 text-red-300 text-xs font-medium rounded-lg hover:bg-red-900 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mb-4">
+                    <div
+                      className={`w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center transition-colors ${
+                        canEdit ? 'cursor-pointer hover:bg-jhr-gold/30 border-2 border-dashed border-transparent hover:border-[#C9A227]/60' : 'group-hover/card:bg-jhr-gold/20'
+                      }`}
+                      onClick={() => canEdit && setIconSelectorCardId(feature.id)}
+                      title={canEdit ? 'Click to change icon' : undefined}
+                    >
+                      <IconComp className="w-6 h-6 text-jhr-gold" />
+                    </div>
+                    {canEdit && (
+                      <button
+                        onClick={() => setImagePickerCardId(feature.id)}
+                        className="px-2 py-1 text-[10px] text-gray-500 hover:text-[#C9A227] border border-[#333] hover:border-[#C9A227]/60 rounded transition-colors"
+                      >
+                        + Image
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Title - Editable */}
                 <div className="mb-2">
@@ -847,23 +1225,37 @@ export function EditableFeatureGrid({
 
       {/* Icon Selector Modal */}
       {iconSelectorCardId && iconEditingCard && (
-        <IconSelector
-          currentIcon={iconEditingCard.icon}
-          onSelect={(iconName) => handleIconSelect(iconSelectorCardId, iconName)}
-          onClose={() => setIconSelectorCardId(null)}
-        />
+        <ModalPortal>
+          <IconSelector
+            currentIcon={iconEditingCard.icon}
+            onSelect={(iconName) => handleIconSelect(iconSelectorCardId, iconName)}
+            onClose={() => setIconSelectorCardId(null)}
+          />
+        </ModalPortal>
       )}
 
       {/* Link Editor Modal */}
       {linkEditorCardId && linkEditingCard && (
-        <LinkEditor
-          text={linkEditingCard.link?.text ?? ''}
-          href={linkEditingCard.link?.href ?? ''}
-          onSave={(text, href) => handleSaveLink(linkEditorCardId, text, href)}
-          onRemove={() => handleRemoveLink(linkEditorCardId)}
-          onClose={() => setLinkEditorCardId(null)}
-        />
+        <ModalPortal>
+          <LinkEditor
+            text={linkEditingCard.link?.text ?? ''}
+            href={linkEditingCard.link?.href ?? ''}
+            onSave={(text, href) => handleSaveLink(linkEditorCardId, text, href)}
+            onRemove={() => handleRemoveLink(linkEditorCardId)}
+            onClose={() => setLinkEditorCardId(null)}
+          />
+        </ModalPortal>
       )}
+
+      {/* Image Picker Modal */}
+      <MediaPicker
+        isOpen={imagePickerCardId !== null}
+        onClose={() => setImagePickerCardId(null)}
+        onSelect={(results) => {
+          if (imagePickerCardId) handleImageSelect(imagePickerCardId, results);
+        }}
+        options={{ allowedTypes: ['image'] }}
+      />
     </>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { X, Upload, Image as ImageIcon } from 'lucide-react';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import MediaGrid from './MediaGrid';
 import MediaToolbar from './MediaToolbar';
 import MediaUploadZone from './MediaUploadZone';
@@ -145,6 +146,7 @@ export default function MediaPicker({
   if (!isOpen) return null;
 
   return (
+    <ModalPortal>
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
       <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] mx-4 flex flex-col overflow-hidden">
         {/* Header */}
@@ -236,5 +238,6 @@ export default function MediaPicker({
         )}
       </div>
     </div>
+    </ModalPortal>
   );
 }

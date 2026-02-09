@@ -85,6 +85,7 @@ export const HOME_TRUST_BAR: FeatureGridSectionContent = {
   },
   heading: 'Trusted by event teams at',
   columns: 3,
+  displayMode: 'logo-scroll',
   features: [
     {
       id: 'trust-bar-card-0',
@@ -167,6 +168,7 @@ export const HOME_HOW_IT_WORKS: FeatureGridSectionContent = {
   heading: 'A Clear Path to Confident Delivery',
   subheading: 'We\u2019ve done this hundreds of times. The process is simple because it\u2019s designed to be.',
   columns: 3,
+  displayMode: 'journey',
   features: [
     {
       id: 'how-it-works-card-0',
@@ -287,7 +289,7 @@ export const HOME_TESTIMONIALS: TestimonialsSectionContent = {
     dataSectionName: 'testimonials',
   },
   heading: 'They Felt the Difference',
-  layout: 'grid',
+  layout: 'carousel',
   testimonials: [
     {
       id: 'testimonials-0',

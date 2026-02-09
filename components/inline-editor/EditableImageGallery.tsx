@@ -21,6 +21,7 @@ import {
   Minimize,
   RectangleHorizontal,
 } from 'lucide-react';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import { EditableText } from './EditableText';
@@ -895,11 +896,13 @@ export function EditableImageGallery({
 
       {/* Alt Text Editor Modal */}
       {altTextEditorIndex !== null && images[altTextEditorIndex] && (
-        <AltTextEditor
-          image={images[altTextEditorIndex]}
-          onSave={(alt, caption) => handleSaveAltText(altTextEditorIndex, alt, caption)}
-          onClose={() => setAltTextEditorIndex(null)}
-        />
+        <ModalPortal>
+          <AltTextEditor
+            image={images[altTextEditorIndex]}
+            onSave={(alt, caption) => handleSaveAltText(altTextEditorIndex, alt, caption)}
+            onClose={() => setAltTextEditorIndex(null)}
+          />
+        </ModalPortal>
       )}
 
       {/* Image Replace — MediaPicker */}

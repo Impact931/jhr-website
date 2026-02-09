@@ -155,7 +155,17 @@ export interface FeatureCard {
   description: string;
   /** Optional link for the card. */
   link?: { text: string; href: string };
+  /** Optional card image. When present, displayed instead of the icon. */
+  image?: { src: string; alt: string };
 }
+
+/**
+ * Display mode for feature grids.
+ * - default: Standard icon+text card grid
+ * - logo-scroll: Auto-scrolling logo marquee strip (uses card images as logos)
+ * - journey: Numbered step-by-step progression with connecting lines
+ */
+export type FeatureGridDisplayMode = 'default' | 'logo-scroll' | 'journey';
 
 /**
  * A testimonial entry.
@@ -258,6 +268,8 @@ export interface FeatureGridSectionContent extends BaseSectionContent {
   columns: FeatureGridColumns;
   /** Feature cards. Recommended 3-6 items. */
   features: FeatureCard[];
+  /** Display mode variant. Defaults to 'default'. */
+  displayMode?: FeatureGridDisplayMode;
 }
 
 /**
