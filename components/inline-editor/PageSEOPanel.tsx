@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import MediaPicker from '@/components/admin/media/MediaPicker';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import type { MediaPickerResult } from '@/types/media';
 import type { PageSEOMetadata } from '@/types/inline-editor';
 
@@ -703,13 +704,15 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* Media Picker */}
-      <MediaPicker
-        isOpen={showMediaPicker}
-        onClose={() => setShowMediaPicker(false)}
-        onSelect={handleMediaSelect}
-        options={{ allowedTypes: ['image'] }}
-      />
+      {/* Media Picker — portaled to body to escape SEO panel stacking context */}
+      <ModalPortal>
+        <MediaPicker
+          isOpen={showMediaPicker}
+          onClose={() => setShowMediaPicker(false)}
+          onSelect={handleMediaSelect}
+          options={{ allowedTypes: ['image'] }}
+        />
+      </ModalPortal>
     </div>
   );
 }

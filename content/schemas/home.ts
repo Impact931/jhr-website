@@ -216,10 +216,10 @@ export const HOME_SERVICES: FeatureGridSectionContent = {
     {
       id: 'services-card-0',
       icon: 'Camera',
-      title: 'Conference & Event Media',
+      title: 'Corporate Event Coverage',
       description:
         'Turn your event into a year of content. Capture the keynotes, the connections, and the moments between \u2014 delivered as a professional media library your team can use all year.',
-      link: { text: 'Learn How This Works \u2192', href: '/services/corporate-event-coverage' },
+      link: { text: 'Learn More \u2192', href: '/services/corporate-event-coverage' },
     },
     {
       id: 'services-card-1',
@@ -227,7 +227,7 @@ export const HOME_SERVICES: FeatureGridSectionContent = {
       title: 'Headshot Activations',
       description:
         'Be the most popular booth on the floor. A professional activation that draws a crowd, gives attendees something they actually value, and provides your sales team with warm leads.',
-      link: { text: 'Learn How This Works \u2192', href: '/services/headshot-activation' },
+      link: { text: 'Learn More \u2192', href: '/services/headshot-activation' },
     },
     {
       id: 'services-card-2',
@@ -235,7 +235,7 @@ export const HOME_SERVICES: FeatureGridSectionContent = {
       title: 'Executive Imaging',
       description:
         'Your leadership team, represented the right way. Professional imaging aligned to your brand standards, delivered efficiently, and designed to support recruiting and communications.',
-      link: { text: 'Learn How This Works \u2192', href: '/services/executive-imaging' },
+      link: { text: 'Learn More \u2192', href: '/services/executive-imaging' },
     },
     {
       id: 'services-card-3',
@@ -243,7 +243,31 @@ export const HOME_SERVICES: FeatureGridSectionContent = {
       title: 'Trade-Show Media',
       description:
         'Media that proves the investment was worth it. Comprehensive trade-show documentation that gives sponsors the assets they expect and captures the energy of your show floor.',
-      link: { text: 'Learn How This Works \u2192', href: '/services/trade-show-media' },
+      link: { text: 'Learn More \u2192', href: '/services/trade-show-media' },
+    },
+    {
+      id: 'services-card-4',
+      icon: 'Building2',
+      title: 'Convention Media',
+      description:
+        'Full-service convention documentation \u2014 from general sessions to breakout rooms. Professional media that captures the scale and energy of your convention.',
+      link: { text: 'Learn More \u2192', href: '/services/convention-media' },
+    },
+    {
+      id: 'services-card-5',
+      icon: 'Share2',
+      title: 'Social & Networking Media',
+      description:
+        'Capture the energy of your networking events, receptions, and social gatherings. Media designed for social sharing that extends your event\u2019s reach beyond the room.',
+      link: { text: 'Learn More \u2192', href: '/services/social-networking-media' },
+    },
+    {
+      id: 'services-card-6',
+      icon: 'Film',
+      title: 'Event Video Systems',
+      description:
+        'Professional video capture for keynotes, panels, and highlight reels. Multi-camera systems and live production that give you polished video assets ready for distribution.',
+      link: { text: 'Learn More \u2192', href: '/services/event-video-systems' },
     },
   ],
 };

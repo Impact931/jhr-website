@@ -297,23 +297,23 @@ export function EditableHero({
               </motion.p>
             )}
 
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-display-sm sm:text-display-md lg:text-display-lg font-display font-bold text-jhr-white mb-4"
+              {...renderInlineHtml(title)}
+            />
+
             {subtitle && (
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-jhr-gold font-medium text-body-lg mb-4"
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-jhr-gold font-medium text-body-lg mb-6"
                 {...renderInlineHtml(subtitle)}
               />
             )}
-
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-display-sm sm:text-display-md lg:text-display-lg font-display font-bold text-jhr-white mb-6"
-              {...renderInlineHtml(title)}
-            />
 
             {description && (
               <motion.p
@@ -451,9 +451,29 @@ export function EditableHero({
         {/* Content — extra top padding in edit mode to clear fixed header */}
         <div className="relative z-10 section-container pt-28 pb-20 lg:pt-36 lg:pb-32">
           <div className="max-w-3xl">
-            {/* Subtitle - Editable */}
+            {/* Title - Editable */}
+            <div className="mb-4 relative">
+              {canEdit && (
+                <div className="mb-1">
+                  <FieldLabel
+                    label="Title (H1)"
+                    icon={<Type className="w-3 h-3" />}
+                  />
+                </div>
+              )}
+              <EditableText
+                contentKey={`${contentKeyPrefix}:title`}
+                as="h1"
+                className="text-display-sm sm:text-display-md lg:text-display-lg font-display font-bold text-jhr-white"
+                placeholder="Enter headline..."
+              >
+                {title}
+              </EditableText>
+            </div>
+
+            {/* Subtitle - Editable (below title) */}
             {(subtitle || canEdit) && (
-              <div className="mb-4 relative">
+              <div className="mb-6 relative">
                 {canEdit && (
                   <div className="mb-1">
                     <FieldLabel
@@ -472,26 +492,6 @@ export function EditableHero({
                 </EditableText>
               </div>
             )}
-
-            {/* Title - Editable */}
-            <div className="mb-6 relative">
-              {canEdit && (
-                <div className="mb-1">
-                  <FieldLabel
-                    label="Title (H1)"
-                    icon={<Type className="w-3 h-3" />}
-                  />
-                </div>
-              )}
-              <EditableText
-                contentKey={`${contentKeyPrefix}:title`}
-                as="h1"
-                className="text-display-sm sm:text-display-md lg:text-display-lg font-display font-bold text-jhr-white"
-                placeholder="Enter headline..."
-              >
-                {title}
-              </EditableText>
-            </div>
 
             {/* Description - Editable */}
             {(description || canEdit) && (

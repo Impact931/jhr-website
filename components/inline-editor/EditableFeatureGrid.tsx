@@ -80,6 +80,10 @@ import {
   Video,
   Volume2,
   Wrench,
+  Building2,
+  UserCircle,
+  Presentation,
+  ClipboardList,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
@@ -163,6 +167,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Video,
   Volume2,
   Wrench,
+  Building2,
+  UserCircle,
+  Presentation,
+  ClipboardList,
 };
 
 const ICON_NAMES = Object.keys(ICON_MAP);
