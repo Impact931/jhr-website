@@ -266,6 +266,45 @@ body {
   .section-light .filmstrip-fade-right {
     background: linear-gradient(to left, #F9FAFB, transparent) !important;
   }
+
+  /* Glass card effect — lightweight frosted appearance */
+  .glass-cards .card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  .glass-cards .card:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(201, 162, 39, 0.2) !important;
+    box-shadow: 0 0 30px rgba(201, 162, 39, 0.05);
+  }
+
+  /* Button-styled links — standalone links in a <p> become gold buttons */
+  .gold-bullets .blog-content p > a:only-child,
+  .gold-bullets p > a:only-child {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--gold);
+    color: var(--background) !important;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    text-decoration: none !important;
+    transition: background-color 0.2s;
+    margin-top: 0.5rem;
+  }
+  .gold-bullets .blog-content p > a:only-child:hover,
+  .gold-bullets p > a:only-child:hover {
+    background-color: var(--gold-light);
+  }
+
+  /* Filmstrip full-bleed — breaks out of section-container to full viewport width */
+  .filmstrip-full-bleed {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+  }
 }
 
 @layer utilities {

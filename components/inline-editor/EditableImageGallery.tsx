@@ -766,19 +766,21 @@ export function EditableImageGallery({
   };
 
   // ---- Filmstrip Layout Renderer ----
+  // View mode: full-bleed, fixed height, auto-width cards (landscape-friendly)
+  // Edit mode: fixed-dimension cards for clean editing
   const renderFilmstripLayout = (imageList: EditableImageField[], editable: boolean) => {
     const scrollBy = (direction: 'left' | 'right') => {
       if (!filmstripRef.current) return;
-      const amount = direction === 'left' ? -340 : 340;
+      const amount = direction === 'left' ? -400 : 400;
       filmstripRef.current.scrollBy({ left: amount, behavior: 'smooth' });
     };
 
     return (
-      <div className="relative group/filmstrip">
+      <div className={`relative group/filmstrip ${!editable ? 'filmstrip-full-bleed' : ''}`}>
         {/* Scroll container */}
         <div
           ref={filmstripRef}
-          className="flex gap-4 overflow-x-auto scroll-smooth pb-2"
+          className={`flex gap-4 overflow-x-auto scroll-smooth pb-2 ${!editable ? 'px-4 sm:px-6 lg:px-8' : ''}`}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
@@ -786,17 +788,31 @@ export function EditableImageGallery({
           {imageList.map((image, index) => (
             <div
               key={`filmstrip-${index}`}
-              className="relative flex-shrink-0 w-[220px] h-[280px] md:w-[260px] md:h-[340px] rounded-xl overflow-hidden bg-[#1A1A1A] group/card"
+              className={`relative flex-shrink-0 rounded-xl overflow-hidden bg-[#1A1A1A] group/card ${
+                editable
+                  ? 'w-[220px] h-[280px] md:w-[260px] md:h-[340px]'
+                  : 'h-[220px] md:h-[280px]'
+              }`}
             >
               {image.src ? (
-                <SmartImage
-                  src={image.src}
-                  alt={image.alt || `Gallery image ${index + 1}`}
-                  fill
-                  className="object-cover brightness-90 transition-all duration-500 group-hover/card:scale-[1.04] group-hover/card:brightness-100"
-                />
+                editable ? (
+                  <SmartImage
+                    src={image.src}
+                    alt={image.alt || `Gallery image ${index + 1}`}
+                    fill
+                    className="object-cover brightness-90 transition-all duration-500 group-hover/card:scale-[1.04] group-hover/card:brightness-100"
+                  />
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={image.src}
+                    alt={image.alt || `Gallery image ${index + 1}`}
+                    className="h-full w-auto block brightness-90 transition-all duration-500 group-hover/card:scale-[1.04] group-hover/card:brightness-100"
+                    loading="lazy"
+                  />
+                )
               ) : (
-                <div className="flex items-center justify-center h-full">
+                <div className="flex items-center justify-center h-full min-w-[200px]">
                   <ImageIcon className="w-12 h-12 text-gray-600" />
                 </div>
               )}
@@ -882,8 +898,8 @@ export function EditableImageGallery({
         {/* Fade edges (view mode only — adapted to light sections via CSS) */}
         {!editable && imageList.length > 2 && (
           <>
-            <div className="filmstrip-fade-left absolute left-0 top-0 bottom-2 w-12 bg-gradient-to-r from-[#0A0A0A] to-transparent pointer-events-none z-10" />
-            <div className="filmstrip-fade-right absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-[#0A0A0A] to-transparent pointer-events-none z-10" />
+            <div className="filmstrip-fade-left absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-[#0A0A0A] to-transparent pointer-events-none z-10" />
+            <div className="filmstrip-fade-right absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-[#0A0A0A] to-transparent pointer-events-none z-10" />
           </>
         )}
 
@@ -892,13 +908,17 @@ export function EditableImageGallery({
           <>
             <button
               onClick={() => scrollBy('left')}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-all z-20"
+              className={`absolute top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-all z-20 ${
+                !editable ? 'left-6' : 'left-2'
+              }`}
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={() => scrollBy('right')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-all z-20"
+              className={`absolute top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-all z-20 ${
+                !editable ? 'right-6' : 'right-2'
+              }`}
             >
               <ChevronRight className="w-5 h-5" />
             </button>

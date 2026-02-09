@@ -680,6 +680,97 @@ function JourneyView({
 }
 
 // ============================================================================
+// Alternating View (displayMode === 'alternating')
+// Renders cards as full-width rows with image (1/3) + text (2/3), alternating sides
+// ============================================================================
+
+function AlternatingView({
+  heading,
+  subheading,
+  features,
+}: {
+  heading?: string;
+  subheading?: string;
+  features: FeatureCard[];
+}) {
+  return (
+    <div>
+      {/* Heading / Subheading */}
+      {(heading || subheading) && (
+        <div className="text-center mb-12">
+          {heading && (
+            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-4"
+              {...renderInlineHtml(heading)}
+            />
+          )}
+          {subheading && (
+            <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto"
+              {...renderInlineHtml(subheading)}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Alternating rows */}
+      <div className="space-y-8">
+        {features.map((feature, index) => {
+          const isReversed = index % 2 !== 0;
+          const IconComp = getIconComponent(feature.icon);
+          return (
+            <motion.div
+              key={feature.id}
+              className={`flex flex-col md:flex-row gap-6 md:gap-8 items-stretch rounded-xl overflow-hidden ${
+                isReversed ? 'md:flex-row-reverse' : ''
+              }`}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
+            >
+              {/* Image side (1/3) */}
+              <div className="w-full md:w-1/3 min-h-[200px] md:min-h-[280px] relative rounded-xl overflow-hidden bg-[#1A1A1A]">
+                {feature.image?.src ? (
+                  <SmartImage
+                    src={feature.image.src}
+                    alt={feature.image.alt || feature.title}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <IconComp className="w-16 h-16 text-jhr-gold/20" />
+                  </div>
+                )}
+              </div>
+
+              {/* Text side (2/3) */}
+              <div className="w-full md:w-2/3 flex flex-col justify-center p-6 md:p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-jhr-gold/10 flex items-center justify-center">
+                    <IconComp className="w-5 h-5 text-jhr-gold" />
+                  </div>
+                </div>
+                <h3 className="text-heading-lg font-semibold text-jhr-white mb-3"
+                  {...renderInlineHtml(feature.title)}
+                />
+                <p className="text-body-md text-jhr-white-dim leading-relaxed"
+                  {...renderInlineHtml(feature.description)}
+                />
+                {feature.link && (
+                  <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium mt-4 group cursor-pointer">
+                    {feature.link.text} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </span>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // Default Grid Card (view mode) — Phases 3 + 7
 // ============================================================================
 
@@ -960,6 +1051,19 @@ export function EditableFeatureGrid({
       return (
         <div>
           <JourneyView
+            heading={displayHeading}
+            subheading={displaySubheading}
+            features={features}
+          />
+          {children}
+        </div>
+      );
+    }
+
+    if (displayMode === 'alternating') {
+      return (
+        <div>
+          <AlternatingView
             heading={displayHeading}
             subheading={displaySubheading}
             features={features}

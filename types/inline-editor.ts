@@ -165,7 +165,7 @@ export interface FeatureCard {
  * - logo-scroll: Auto-scrolling logo marquee strip (uses card images as logos)
  * - journey: Numbered step-by-step progression with connecting lines
  */
-export type FeatureGridDisplayMode = 'default' | 'logo-scroll' | 'journey';
+export type FeatureGridDisplayMode = 'default' | 'logo-scroll' | 'journey' | 'alternating';
 
 /**
  * A testimonial entry.
@@ -210,6 +210,8 @@ export interface BaseSectionContent {
   order: number;
   /** SEO attributes for this section. */
   seo: SectionSEOAttributes;
+  /** Optional background video URL (autoplay, loop, muted). */
+  backgroundVideo?: string;
 }
 
 /**

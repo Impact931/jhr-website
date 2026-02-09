@@ -135,6 +135,7 @@ export const CEC_SOLUTION: FeatureGridSectionContent = {
   subheading:
     'Corporate Event Coverage isn\u2019t just "having a photographer there." It\u2019s intentional documentation designed to produce assets your organization can use across marketing, recruiting, internal communications, and stakeholder reporting \u2014 all year long.',
   columns: 2,
+  displayMode: 'alternating',
   features: [
     {
       id: 'solution-card-0',
@@ -142,6 +143,7 @@ export const CEC_SOLUTION: FeatureGridSectionContent = {
       title: 'The Big Stage',
       description:
         'General sessions, keynote speakers, panel discussions, and main stage programming. We document the moments your attendees came for \u2014 and the ones your leadership team wants to see reflected in every piece of content that follows.',
+      image: { src: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=800&q=80', alt: 'Keynote speaker at corporate conference' },
     },
     {
       id: 'solution-card-1',
@@ -149,6 +151,7 @@ export const CEC_SOLUTION: FeatureGridSectionContent = {
       title: 'The Breakout Rooms',
       description:
         'Workshops, training sessions, certification programs, and smaller group programming. These are the rooms where real engagement happens, and they\u2019re often the most underdocumented part of any event.',
+      image: { src: 'https://images.unsplash.com/photo-1560439514-4e9645039924?w=800&q=80', alt: 'Breakout session workshop at corporate event' },
     },
     {
       id: 'solution-card-2',
@@ -156,6 +159,7 @@ export const CEC_SOLUTION: FeatureGridSectionContent = {
       title: 'The In-Between',
       description:
         'Hallway conversations, registration energy, attendee interactions, sponsor moments, and the unscripted connections that make an event feel alive. This is where your best social and recruiting content comes from.',
+      image: { src: 'https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=800&q=80', alt: 'Candid networking moment at corporate event' },
     },
     {
       id: 'solution-card-3',
@@ -163,6 +167,7 @@ export const CEC_SOLUTION: FeatureGridSectionContent = {
       title: 'The Branded Details',
       description:
         'Signage, stage design, sponsor recognition, environmental branding, and the visual details your team spent weeks building. These images serve your sponsors, your partners, and your internal reporting.',
+      image: { src: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80', alt: 'Conference stage branding and signage' },
     },
   ],
 };
@@ -435,6 +440,7 @@ export const CEC_VIDEO_BUNDLING: FeatureGridSectionContent = {
     sectionId: 'video-bundling',
     dataSectionName: 'video-bundling',
   },
+  backgroundVideo: '/videos/event-highlight-reel.mp4',
   heading: 'Photography + Video. One Team. One Coordinated Delivery.',
   subheading:
     'Most corporate events benefit from more than photography alone. When you add an Event Video System \u2014 whether it\u2019s a highlight reel, attendee testimonials, or executive leadership messaging \u2014 you get a complete media library from one coordinated team.',

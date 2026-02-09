@@ -23,6 +23,8 @@ const SECTION_CLASS_MAP: Record<string, string> = {
   "faqs": "section-padding section-light",
   "multi-day": "section-padding bg-jhr-black-light callout-gold-border",
   "after-hours": "section-padding bg-jhr-black gold-bullets",
+  "event-types": "section-padding bg-jhr-black glass-cards",
+  "video-bundling": "section-padding bg-jhr-black",
 };
 
 export default function CorporateEventCoveragePage() {

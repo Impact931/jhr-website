@@ -80,13 +80,29 @@ const DEFAULT_SECTION_CLASSES: Record<string, string> = {
 function SectionShell({
   className,
   children,
+  videoSrc,
 }: {
   className: string;
   children: React.ReactNode;
+  videoSrc?: string;
 }) {
   return (
-    <section className={className}>
-      <div className="section-container">
+    <section className={`${className}${videoSrc ? ' relative overflow-hidden' : ''}`}>
+      {videoSrc && (
+        <>
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src={videoSrc} type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-black/60" />
+        </>
+      )}
+      <div className={`section-container${videoSrc ? ' relative z-10' : ''}`}>
         {children}
       </div>
     </section>
@@ -183,7 +199,7 @@ export function SectionRenderer({
       const grid = section as FeatureGridSectionContent;
       return (
         <AnimatedSection type="feature-grid" isEditMode={isEditMode}>
-          <SectionShell className={sectionClass}>
+          <SectionShell className={sectionClass} videoSrc={section.backgroundVideo}>
             <EditableFeatureGrid
               contentKeyPrefix={prefix}
               heading={grid.heading}
@@ -269,7 +285,7 @@ export function SectionRenderer({
       const textBlock = section as TextBlockSectionContent;
       return (
         <AnimatedSection type="text-block" isEditMode={isEditMode}>
-          <SectionShell className={sectionClass}>
+          <SectionShell className={sectionClass} videoSrc={section.backgroundVideo}>
             <EditableTextBlock
               contentKeyPrefix={prefix}
               heading={textBlock.heading}
