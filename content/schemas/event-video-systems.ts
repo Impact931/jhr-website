@@ -130,7 +130,7 @@ export const EVS_SERVICES: FeatureGridSectionContent = {
   },
   heading: 'Video Services',
   subheading:
-    'Each service can be added individually or combined for comprehensive coverage.',
+    'Each system can be added to any photography service or booked independently. One coordinated team handles everything.',
   columns: 2,
   features: [
     {

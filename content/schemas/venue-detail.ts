@@ -629,7 +629,7 @@ export const EMBASSY_SUITES_DATA: VenueData = {
   ],
   services: [
     { title: 'Event Coverage', description: 'Documentation of meetings, trainings, and corporate events.', href: '/services/corporate-event-coverage', icon: 'Camera' },
-    { title: 'Team Headshots', description: 'On-site headshot sessions during corporate gatherings.', href: '/services/corporate-headshot-program', icon: 'Camera' },
+    { title: 'Executive Imaging', description: 'On-site headshot sessions during corporate gatherings.', href: '/services/executive-imaging', icon: 'Camera' },
     { title: 'Event Video', description: 'Training captures and corporate communications.', href: '/services/event-video-systems', icon: 'Camera' },
   ],
   faqs: [

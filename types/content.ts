@@ -118,7 +118,7 @@ import type { PageSectionContent, PageSEOMetadata, InlineSectionType } from './i
  * Valid inline section types for validation.
  */
 export const VALID_SECTION_TYPES: InlineSectionType[] = [
-  'hero', 'text-block', 'feature-grid', 'image-gallery', 'cta', 'testimonials', 'faq', 'columns',
+  'hero', 'text-block', 'feature-grid', 'image-gallery', 'cta', 'testimonials', 'faq', 'columns', 'stats',
 ];
 
 /**

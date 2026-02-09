@@ -11,6 +11,7 @@ import {
   Quote,
   HelpCircle,
   Columns,
+  BarChart,
   ChevronRight,
   ArrowLeft,
   Check,
@@ -32,6 +33,7 @@ const SECTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string 
   Quote,
   HelpCircle,
   Columns,
+  BarChart,
 };
 
 function getSectionIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -311,6 +313,40 @@ const SECTION_VARIANTS: Record<InlineSectionType, LayoutVariant[]> = {
       ],
     },
   ],
+  stats: [
+    {
+      id: 'stats-row',
+      label: 'Stats Row',
+      description: 'Animated stat counters in a horizontal row',
+      previewBlocks: [
+        { type: 'heading', width: 0.15, height: 25, x: 0.05, y: 35 },
+        { type: 'text', width: 0.12, height: 8, x: 0.065, y: 64 },
+        { type: 'heading', width: 0.15, height: 25, x: 0.28, y: 35 },
+        { type: 'text', width: 0.12, height: 8, x: 0.295, y: 64 },
+        { type: 'heading', width: 0.15, height: 25, x: 0.51, y: 35 },
+        { type: 'text', width: 0.12, height: 8, x: 0.525, y: 64 },
+        { type: 'heading', width: 0.15, height: 25, x: 0.74, y: 35 },
+        { type: 'text', width: 0.12, height: 8, x: 0.755, y: 64 },
+      ],
+    },
+    {
+      id: 'stats-with-heading',
+      label: 'With Heading',
+      description: 'Stats row with section heading and subheading above',
+      previewBlocks: [
+        { type: 'heading', width: 0.4, height: 12, x: 0.3, y: 8 },
+        { type: 'text', width: 0.5, height: 6, x: 0.25, y: 24 },
+        { type: 'heading', width: 0.15, height: 22, x: 0.05, y: 45 },
+        { type: 'text', width: 0.12, height: 8, x: 0.065, y: 70 },
+        { type: 'heading', width: 0.15, height: 22, x: 0.28, y: 45 },
+        { type: 'text', width: 0.12, height: 8, x: 0.295, y: 70 },
+        { type: 'heading', width: 0.15, height: 22, x: 0.51, y: 45 },
+        { type: 'text', width: 0.12, height: 8, x: 0.525, y: 70 },
+        { type: 'heading', width: 0.15, height: 22, x: 0.74, y: 45 },
+        { type: 'text', width: 0.12, height: 8, x: 0.755, y: 70 },
+      ],
+    },
+  ],
   columns: [
     {
       id: 'columns-equal-2',
@@ -506,6 +542,10 @@ function applyVariantToSection(
     }
     case 'faq': {
       if (variantId === 'faq-with-heading') return { ...section, heading: 'Frequently Asked Questions' };
+      return section;
+    }
+    case 'stats': {
+      if (variantId === 'stats-with-heading') return { ...section, heading: 'Key Numbers', subheading: 'The stats that matter.' };
       return section;
     }
     case 'columns': {

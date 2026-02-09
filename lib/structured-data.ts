@@ -290,6 +290,92 @@ export function generateWebPageSchema(options: {
 }
 
 // ============================================================================
+// Service Schema Generator
+// ============================================================================
+
+/** Input for generating a Service schema. */
+export interface ServiceSchemaInput {
+  /** Service name (e.g., "Corporate Event Coverage"). */
+  name: string;
+  /** Short description of the service. */
+  description: string;
+  /** URL path to the service page (e.g., "/services/corporate-event-coverage"). */
+  url: string;
+  /** Optional image URL for the service. */
+  image?: string;
+  /** Service types/categories (maps to schema.org serviceType). */
+  serviceTypes?: string[];
+}
+
+/**
+ * Generates Service schema.org markup for a service page.
+ *
+ * @param input - Service metadata.
+ * @returns Service schema.
+ * @see https://schema.org/Service
+ */
+export function generateServiceSchema(
+  input: ServiceSchemaInput
+): StructuredDataSchema {
+  const service: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${resolveUrl(input.url)}#service`,
+    name: input.name,
+    description: input.description,
+    url: resolveUrl(input.url),
+    provider: {
+      '@id': `${SITE_URL}/#organization`,
+    },
+    areaServed: [
+      { '@type': 'City', name: 'Nashville' },
+      { '@type': 'State', name: 'Tennessee' },
+      { '@type': 'Country', name: 'United States' },
+    ],
+  };
+
+  if (input.image) {
+    service.image = resolveUrl(input.image);
+  }
+
+  if (input.serviceTypes && input.serviceTypes.length > 0) {
+    service.serviceType = input.serviceTypes;
+  }
+
+  return {
+    type: 'Service',
+    data: service,
+  };
+}
+
+// ============================================================================
+// WebSite Schema Generator
+// ============================================================================
+
+/**
+ * Generates WebSite schema for the root site.
+ * Includes site identity and search action for sitelinks search box.
+ *
+ * @see https://schema.org/WebSite
+ */
+export function generateWebSiteSchema(): StructuredDataSchema {
+  return {
+    type: 'WebSite',
+    data: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      name: BUSINESS_NAME,
+      url: SITE_URL,
+      publisher: {
+        '@id': `${SITE_URL}/#organization`,
+      },
+      inLanguage: 'en-US',
+    },
+  };
+}
+
+// ============================================================================
 // Composite Generator
 // ============================================================================
 

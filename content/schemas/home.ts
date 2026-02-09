@@ -3,7 +3,7 @@
  *
  * Defines the editable structure for the JHR Photography homepage.
  * Maps each homepage section to an editable component type with default
- * content matching the current static homepage (/app/page.tsx).
+ * content matching the approved homepage copy from content guidance.
  *
  * ============================================================================
  * SECTION MAP: Homepage Sections -> Editable Components
@@ -12,42 +12,21 @@
  * Section #  | Homepage Section              | Editable Component        | Content Key Prefix
  * -----------|-------------------------------|---------------------------|----------------------------
  * 0 (hero)   | Hero Banner                   | EditableHero              | home:hero
- * 1          | Photographer Trust Badges     | EditableFeatureGrid       | home:trust-badges
- * 2          | ICP Routing ("Choose Outcome")| EditableFeatureGrid       | home:icp-routing
- * 3          | Services Overview             | EditableFeatureGrid       | home:services
- * 4          | Venue Fluency                 | EditableCTA               | home:venue-fluency
- * 5          | How It Works (Process)        | EditableFeatureGrid       | home:process
- * 6          | Gallery Preview               | EditableImageGallery      | home:gallery
- * 7          | Social Proof (Testimonials)   | EditableTestimonials      | home:social-proof
- * 8          | Final CTA                     | EditableCTA               | home:final-cta
+ * 1          | Trust Bar                     | EditableFeatureGrid       | home:trust-bar
+ * 2          | Empathy Cards                 | EditableFeatureGrid       | home:empathy
+ * 3          | How It Works (Journey)        | EditableFeatureGrid       | home:how-it-works
+ * 4          | Services                      | EditableFeatureGrid       | home:services
+ * 5          | Local Authority               | EditableCTA               | home:local-authority
+ * 6          | Testimonials                  | EditableTestimonials      | home:testimonials
+ * 7          | Team Extension                | EditableStats             | home:team-extension
+ * 8          | Success Outcomes              | EditableFeatureGrid       | home:outcomes
+ * 9          | Final CTA                     | EditableCTA               | home:final-cta
  *
  * ============================================================================
  * CONTENT KEY NAMING CONVENTION
  * ============================================================================
  *
  * Format: home:{sectionId}:{elementId}
- *
- * Examples:
- *   home:hero:title              - Hero headline text
- *   home:hero:subtitle           - Hero subtitle text
- *   home:hero:description        - Hero description paragraph
- *   home:hero:backgroundImage    - Hero background image
- *   home:hero:primaryCta-text    - Hero primary CTA button text
- *   home:hero:primaryCta-href    - Hero primary CTA button link
- *   home:hero:secondaryCta-text  - Hero secondary CTA button text
- *   home:hero:secondaryCta-href  - Hero secondary CTA button link
- *   home:icp-routing:heading     - ICP section heading
- *   home:icp-routing:subheading  - ICP section subheading
- *   home:icp-routing:features    - ICP section feature cards (JSON array)
- *   home:services:heading        - Services section heading
- *   home:services:subheading     - Services section subheading
- *   home:services:features       - Services feature cards (JSON array)
- *   home:gallery:heading         - Gallery section heading
- *   home:gallery:images          - Gallery images (JSON array)
- *   home:social-proof:heading    - Testimonials section heading
- *   home:social-proof:testimonials - Testimonials (JSON array)
- *   home:final-cta:headline      - Final CTA headline
- *   home:final-cta:subtext       - Final CTA subtext
  */
 
 import type {
@@ -55,9 +34,9 @@ import type {
   PageSectionContent,
   HeroSectionContent,
   FeatureGridSectionContent,
-  ImageGallerySectionContent,
   CTASectionContent,
   TestimonialsSectionContent,
+  StatsSectionContent,
 } from '@/types/inline-editor';
 
 // ============================================================================
@@ -65,221 +44,225 @@ import type {
 // ============================================================================
 
 /**
- * Section 0: Hero Banner
- * Maps to: <HeroBanner> in /app/page.tsx (lines 24-50)
+ * Section 0: Hero Banner (LOCKED COPY)
  * Component: EditableHero
- *
- * Includes title, subtitle, description, background image, two CTAs,
- * and trust signal badges rendered as children.
  */
 export const HOME_HERO: HeroSectionContent = {
   id: 'hero',
   type: 'hero',
   order: 0,
   seo: {
-    ariaLabel: 'JHR Photography hero banner - Nashville corporate event photography',
+    ariaLabel: 'JHR Photography hero banner - Nashville corporate event media',
     sectionId: 'hero',
     dataSectionName: 'hero',
   },
   variant: 'full-height',
-  title: 'Stop Worrying About Your Media Vendor.',
-  subtitle: 'Planning a high-stakes event in Nashville?',
-  description:
-    'JHR Photography is Nashville\u2019s trusted partner for corporate event photography and headshot activations. We remove the friction so you can focus on what matters\u2014delivering an exceptional event.',
+  title: 'Your Event Media Should Make You Look Like the Pro.',
+  subtitle: 'We help busy event planners deliver high-value event media and headshots with certified, Nashville-based operators who know the venues, represent national brands, and align with your production timeline \u2014 so every image reflects the experience and value you worked hard to create.',
   backgroundImage: {
     src: '/images/generated/hero-homepage.jpg',
-    alt: 'Professional corporate event photography at Nashville convention center',
+    alt: 'JHR Photography operator working seamlessly at a Nashville corporate event',
   },
   buttons: [
-    { text: 'Schedule a Strategy Call', href: '/schedule', variant: 'primary' },
-    { text: 'Explore Our Services', href: '/services', variant: 'secondary' },
+    { text: 'Talk With Our Team', href: '/schedule', variant: 'primary' },
+    { text: 'Check Availability', href: '/contact', variant: 'secondary' },
   ],
 };
 
 /**
- * Section 1: Photographer Trust Badges
- * Maps to: <PhotographerTrustBadges> in /app/page.tsx (lines 53-61)
+ * Section 1: Trust Bar
+ * "Trusted by event teams at" + venue/client logos
  * Component: EditableFeatureGrid (compact mode, 3 columns)
- *
- * This section uses a dedicated PhotographerTrustBadges component on the
- * current homepage. In CMS mode we represent it as a feature grid so the
- * title and subtitle are editable. The badge content itself is part of
- * the PhotographerTrustBadges component and would need deeper integration
- * for full inline editing.
  */
-export const HOME_TRUST_BADGES: FeatureGridSectionContent = {
-  id: 'trust-badges',
+export const HOME_TRUST_BAR: FeatureGridSectionContent = {
+  id: 'trust-bar',
   type: 'feature-grid',
   order: 1,
   seo: {
-    ariaLabel: 'Professional photographer trust indicators',
-    sectionId: 'trust-badges',
-    dataSectionName: 'trust-badges',
+    ariaLabel: 'Trusted by event teams at leading Nashville venues',
+    sectionId: 'trust-bar',
+    dataSectionName: 'trust-bar',
   },
-  heading: 'Professional Photographers You Can Trust',
-  subheading: 'Our Team',
+  heading: 'Trusted by event teams at',
   columns: 3,
   features: [
     {
-      id: 'trust-badges-card-0',
-      icon: 'CheckCircle',
-      title: 'Venue-Fluent',
-      description: 'We know Nashville\u2019s premier event venues inside and out.',
+      id: 'trust-bar-card-0',
+      icon: 'Building2',
+      title: 'Gaylord Opryland',
+      description: 'Approved operators at Nashville\u2019s premier convention resort.',
     },
     {
-      id: 'trust-badges-card-1',
-      icon: 'CheckCircle',
-      title: 'Agency-Grade Execution',
-      description: 'Professional reliability that DMCs and agencies depend on.',
+      id: 'trust-bar-card-1',
+      icon: 'Building2',
+      title: 'Music City Center',
+      description: 'Experienced at Nashville\u2019s largest convention center.',
     },
     {
-      id: 'trust-badges-card-2',
-      icon: 'CheckCircle',
-      title: 'AI-Accelerated Delivery',
-      description: 'AI-retouched assets delivered faster than traditional workflows.',
+      id: 'trust-bar-card-2',
+      icon: 'Building2',
+      title: 'Nashville\u2019s Top Venues',
+      description: 'Renaissance, Omni, JW Marriott, and more.',
     },
   ],
 };
 
 /**
- * Section 2: ICP Routing ("What Brings You Here Today?")
- * Maps to: "Choose Your Outcome" section in /app/page.tsx (lines 64-133)
+ * Section 2: Empathy Cards ("Confidence Instead of Guesswork")
+ * Addresses the villain: uncertainty
  * Component: EditableFeatureGrid (3 columns)
- *
- * Three audience-specific cards linking to solutions pages:
- * - DMCs/Agencies -> /solutions/dmcs-agencies
- * - Exhibitors/Sponsors -> /solutions/exhibitors-sponsors
- * - Associations -> /solutions/associations
  */
-export const HOME_ICP_ROUTING: FeatureGridSectionContent = {
-  id: 'icp-routing',
+export const HOME_EMPATHY: FeatureGridSectionContent = {
+  id: 'empathy',
   type: 'feature-grid',
   order: 2,
   seo: {
-    ariaLabel: 'Choose your path based on your event needs',
-    sectionId: 'icp-routing',
-    dataSectionName: 'icp-routing',
+    ariaLabel: 'Common event media uncertainties we solve',
+    sectionId: 'empathy',
+    dataSectionName: 'empathy',
   },
-  heading: 'What Brings You Here Today?',
+  heading: 'Confidence Instead of Guesswork',
   subheading:
-    'We serve different clients with different needs. Choose the path that fits your situation.',
+    'You\u2019ve invested months into this event. The last thing you need is to wonder whether the media will reflect the work you\u2019ve put in \u2014 or whether it will become one more thing you have to manage.',
   columns: 3,
   features: [
     {
-      id: 'icp-routing-card-0',
+      id: 'empathy-card-0',
       icon: 'Shield',
-      title: 'I need reliable execution for my client.',
+      title: 'Will it represent our brand?',
       description:
-        'You\u2019re a DMC, agency, or production company managing an event in Nashville. You need a vendor who won\u2019t let you down.',
-      link: { text: 'Solutions for Agencies', href: '/solutions/dmcs-agencies' },
+        'You need media that matches the quality and standards your organization is known for. Not someone else\u2019s creative interpretation \u2014 your brand, represented the right way.',
     },
     {
-      id: 'icp-routing-card-1',
-      icon: 'Zap',
-      title: 'I need to drive traffic and generate leads.',
+      id: 'empathy-card-1',
+      icon: 'ClipboardList',
+      title: 'Will I have to manage this?',
       description:
-        'You\u2019re an exhibitor or sponsor looking to maximize booth engagement and capture qualified leads at your next event.',
-      link: { text: 'Solutions for Exhibitors', href: '/solutions/exhibitors-sponsors' },
+        'You\u2019re already coordinating vendors, timelines, and stakeholders. Media should integrate into your production flow, not become another item on your checklist.',
     },
     {
-      id: 'icp-routing-card-2',
-      icon: 'Calendar',
-      title: 'I need a meaningful member benefit.',
+      id: 'empathy-card-2',
+      icon: 'Clock',
+      title: 'Will it be ready when I need it?',
       description:
-        'You\u2019re planning a conference and want to deliver real value to attendees while elevating your event experience.',
-      link: { text: 'Solutions for Associations', href: '/solutions/associations' },
+        'Sponsors expect assets. Marketing has deadlines. You need delivery you can count on \u2014 not a timeline that depends on someone else\u2019s schedule.',
     },
   ],
 };
 
 /**
- * Section 3: Services Overview ("Outcome-Based Media Systems")
- * Maps to: Services grid in /app/page.tsx (lines 136-296)
+ * Section 3: How It Works ("A Clear Path to Confident Delivery")
+ * 3-step process
+ * Component: EditableFeatureGrid (3 columns)
+ */
+export const HOME_HOW_IT_WORKS: FeatureGridSectionContent = {
+  id: 'how-it-works',
+  type: 'feature-grid',
+  order: 3,
+  seo: {
+    ariaLabel: 'How working with JHR Photography works - three simple steps',
+    sectionId: 'how-it-works',
+    dataSectionName: 'how-it-works',
+  },
+  heading: 'A Clear Path to Confident Delivery',
+  subheading: 'We\u2019ve done this hundreds of times. The process is simple because it\u2019s designed to be.',
+  columns: 3,
+  features: [
+    {
+      id: 'how-it-works-card-0',
+      icon: 'Phone',
+      title: 'We Connect and Align',
+      description:
+        'A quick conversation to understand what you\u2019re trying to accomplish, what matters most, and how we can support your timeline and brand standards.',
+    },
+    {
+      id: 'how-it-works-card-1',
+      icon: 'Camera',
+      title: 'We Handle the Execution',
+      description:
+        'Our certified operators show up prepared, professional, and already familiar with your venue. You focus on your event. We handle the media.',
+    },
+    {
+      id: 'how-it-works-card-2',
+      icon: 'Send',
+      title: 'You Get Assets You Can Use',
+      description:
+        'Professional media delivered on time, on brand, and ready for your marketing, communications, and sponsors \u2014 no back-and-forth required.',
+    },
+  ],
+};
+
+/**
+ * Section 4: Services ("Media That Matches the Experience")
+ * 4 service cards linking to service pages
  * Component: EditableFeatureGrid (2 columns)
- *
- * Four service cards with images, descriptions, and bullet points:
- * - Headshot Activation
- * - Corporate Event Coverage
- * - Corporate Headshot Program
- * - Event Video Systems
- *
- * Note: The current homepage uses image cards with bullet lists, which is
- * richer than a standard FeatureGrid. The feature grid provides title/icon/
- * description/link per card. Image-based service cards may need a custom
- * variant or the EditableImageGallery component in a future iteration.
  */
 export const HOME_SERVICES: FeatureGridSectionContent = {
   id: 'services',
   type: 'feature-grid',
-  order: 3,
+  order: 4,
   seo: {
     ariaLabel: 'JHR Photography services overview',
     sectionId: 'services',
     dataSectionName: 'services',
   },
-  heading: 'Outcome-Based Media Systems',
+  heading: 'Media That Matches the Experience',
   subheading:
-    'We don\u2019t sell hours or photographers. We deliver complete media systems designed for specific outcomes.',
+    'Every service is designed around one question: how does this help you deliver an event that looks as professional as the work you put into it?',
   columns: 2,
   features: [
     {
       id: 'services-card-0',
       icon: 'Camera',
-      title: 'Headshot Activation\u2122',
+      title: 'Conference & Event Media',
       description:
-        'Turn your booth into a destination with high-engagement headshot stations. 300+ attendees processed per day with real-time lead capture.',
-      link: { text: 'Learn more', href: '/services/headshot-activation' },
+        'Turn your event into a year of content. Capture the keynotes, the connections, and the moments between \u2014 delivered as a professional media library your team can use all year.',
+      link: { text: 'Learn How This Works \u2192', href: '/services/corporate-event-coverage' },
     },
     {
       id: 'services-card-1',
-      icon: 'Camera',
-      title: 'Corporate Event Coverage\u2122',
+      icon: 'Users',
+      title: 'Headshot Activations',
       description:
-        'Comprehensive documentation with the professionalism your brand demands. Multi-day coverage with same-day highlight delivery.',
-      link: { text: 'Learn more', href: '/services/corporate-event-coverage' },
+        'Be the most popular booth on the floor. A professional activation that draws a crowd, gives attendees something they actually value, and provides your sales team with warm leads.',
+      link: { text: 'Learn How This Works \u2192', href: '/services/headshot-activation' },
     },
     {
       id: 'services-card-2',
-      icon: 'Camera',
-      title: 'Corporate Headshot Program\u2122',
+      icon: 'UserCircle',
+      title: 'Executive Imaging',
       description:
-        'Consistent, on-brand headshots for your entire team. On-site at your office, AI-retouched, ready for LinkedIn.',
-      link: { text: 'Learn more', href: '/services/corporate-headshot-program' },
+        'Your leadership team, represented the right way. Professional imaging aligned to your brand standards, delivered efficiently, and designed to support recruiting and communications.',
+      link: { text: 'Learn How This Works \u2192', href: '/services/executive-imaging' },
     },
     {
       id: 'services-card-3',
-      icon: 'Camera',
-      title: 'Event Video Systems\u2122',
+      icon: 'Video',
+      title: 'Trade-Show Media',
       description:
-        'Capture the motion and emotion of your event. Keynote and session capture with social-ready highlight clips.',
-      link: { text: 'Learn more', href: '/services/event-video-systems' },
+        'Media that proves the investment was worth it. Comprehensive trade-show documentation that gives sponsors the assets they expect and captures the energy of your show floor.',
+      link: { text: 'Learn How This Works \u2192', href: '/services/trade-show-media' },
     },
   ],
 };
 
 /**
- * Section 4: Venue Fluency
- * Maps to: Venue section in /app/page.tsx (lines 299-360)
+ * Section 5: Local Authority
+ * "Local Operators. National Brand Expectations."
  * Component: EditableCTA (image background variant)
- *
- * Split layout with text on the left and a 2x2 venue image grid on the
- * right. Uses background image with dark overlay. The venue image grid
- * is custom content that goes beyond a simple CTA. In CMS mode, the
- * headline, subtext, and background are editable. The venue grid would
- * need deeper integration for full inline editing.
  */
-export const HOME_VENUE_FLUENCY: CTASectionContent = {
-  id: 'venue-fluency',
+export const HOME_LOCAL_AUTHORITY: CTASectionContent = {
+  id: 'local-authority',
   type: 'cta',
-  order: 4,
+  order: 5,
   seo: {
-    ariaLabel: 'Nashville venue fluency and experience',
-    sectionId: 'venue-fluency',
-    dataSectionName: 'venue-fluency',
+    ariaLabel: 'Nashville-based certified operators with local venue expertise',
+    sectionId: 'local-authority',
+    dataSectionName: 'local-authority',
   },
-  headline: 'We Know Nashville\u2019s Premier Venues',
+  headline: 'Local Operators. National Brand Expectations.',
   subtext:
-    'When you\u2019re planning from out of state, you need a partner who knows the terrain. We\u2019ve worked extensively at Nashville\u2019s top convention and event venues\u2014we know the marshaling yards, the loading docks, the lighting challenges, and the people who run them.',
+    'We know the venues, the staff, the loading docks, and the lighting. We know where to be and when to be there \u2014 because we\u2019ve been in these rooms before, working alongside teams just like yours. That means less coordination on your end. No orientation needed. No guesswork about logistics.',
   backgroundType: 'image',
   backgroundValue: '/images/generated/hero-venues.jpg',
   primaryButton: {
@@ -290,169 +273,166 @@ export const HOME_VENUE_FLUENCY: CTASectionContent = {
 };
 
 /**
- * Section 5: How It Works (Process Timeline)
- * Maps to: ProcessTimeline in /app/page.tsx (lines 363-400)
- * Component: EditableFeatureGrid (3 columns)
- *
- * Three-step process:
- * 1. Strategy Call (Phone icon)
- * 2. Logistics Takeover (FileText icon)
- * 3. Asset Delivery (Camera icon)
- *
- * Uses ProcessTimeline component on current homepage. In CMS mode, mapped
- * to a feature grid for editable steps.
+ * Section 6: Testimonials ("They Felt the Difference")
+ * 3 testimonials in grid layout
+ * Component: EditableTestimonials (grid layout)
  */
-export const HOME_PROCESS: FeatureGridSectionContent = {
-  id: 'process',
-  type: 'feature-grid',
-  order: 5,
-  seo: {
-    ariaLabel: 'How working with JHR Photography works',
-    sectionId: 'how-it-works',
-    dataSectionName: 'process',
-  },
-  heading: 'A Clear Path to Success',
-  subheading:
-    'Working with JHR is straightforward. We take the burden off your plate so you can focus on your event.',
-  columns: 3,
-  features: [
-    {
-      id: 'process-card-0',
-      icon: 'Phone',
-      title: 'Strategy Call',
-      description:
-        'We schedule a brief consultation to align on your specific logistics, venue constraints, and goals. We identify potential friction points before they happen.',
-    },
-    {
-      id: 'process-card-1',
-      icon: 'FileText',
-      title: 'Logistics Takeover',
-      description:
-        'Our team handles the heavy lifting\u2014coordinating with venues, managing equipment logistics, and executing the onsite activation with uniformed, professional staff.',
-    },
-    {
-      id: 'process-card-2',
-      icon: 'Camera',
-      title: 'Asset Delivery',
-      description:
-        'You receive AI-retouched assets and granular data instantly, ready for your post-event marketing sequences. No delays, no surprises.',
-    },
-  ],
-};
-
-/**
- * Section 6: Gallery Preview ("Our Work")
- * Maps to: Gallery grid in /app/page.tsx (lines 403-439)
- * Component: EditableImageGallery (grid layout, 4 columns)
- *
- * 8 images in a 2x4 grid showcasing event photography:
- * - Keynote speaker, trade show, networking, awards ceremony
- * - 3 headshot samples, hotel ballroom
- */
-export const HOME_GALLERY: ImageGallerySectionContent = {
-  id: 'gallery',
-  type: 'image-gallery',
+export const HOME_TESTIMONIALS: TestimonialsSectionContent = {
+  id: 'testimonials',
+  type: 'testimonials',
   order: 6,
   seo: {
-    ariaLabel: 'JHR Photography event gallery preview',
-    sectionId: 'gallery',
-    dataSectionName: 'gallery',
+    ariaLabel: 'Client testimonials from event planners who worked with JHR Photography',
+    sectionId: 'testimonials',
+    dataSectionName: 'testimonials',
   },
-  heading: 'Event Photography That Delivers',
+  heading: 'They Felt the Difference',
   layout: 'grid',
-  images: [
-    {
-      src: '/images/generated/event-keynote.jpg',
-      alt: 'Keynote speaker at corporate conference',
-    },
-    {
-      src: '/images/generated/event-trade-show.jpg',
-      alt: 'Trade show floor photography',
-    },
-    {
-      src: '/images/generated/event-networking.jpg',
-      alt: 'Networking event photography',
-    },
-    {
-      src: '/images/generated/event-awards-ceremony.jpg',
-      alt: 'Awards ceremony photography',
-    },
-    {
-      src: '/images/generated/gallery-headshot-1.jpg',
-      alt: 'Professional corporate headshot',
-    },
-    {
-      src: '/images/generated/gallery-headshot-2.jpg',
-      alt: 'Executive portrait',
-    },
-    {
-      src: '/images/generated/gallery-headshot-3.jpg',
-      alt: 'Business professional headshot',
-    },
-    {
-      src: '/images/generated/venue-hotel-ballroom.jpg',
-      alt: 'Corporate gala photography',
-    },
-  ],
-};
-
-/**
- * Section 7: Social Proof (Testimonials)
- * Maps to: Testimonial section in /app/page.tsx (lines 442-464)
- * Component: EditableTestimonials (single layout)
- *
- * Currently shows one testimonial in a centered, light-background layout.
- * The light background is a CSS detail (section-light class) that would
- * be preserved in the page template.
- */
-export const HOME_SOCIAL_PROOF: TestimonialsSectionContent = {
-  id: 'social-proof',
-  type: 'testimonials',
-  order: 7,
-  seo: {
-    ariaLabel: 'Client testimonials for JHR Photography',
-    sectionId: 'social-proof',
-    dataSectionName: 'social-proof',
-  },
-  heading: 'Event Professionals Choose JHR',
-  layout: 'single',
   testimonials: [
     {
-      id: 'social-proof-testimonial-0',
+      id: 'testimonials-0',
       quote:
-        'Working with Jayson and his team was seamless. They understood our needs, showed up prepared, and delivered exceptional results. Our attendees loved the headshot activation.',
+        'Working with JHR was seamless. They operated like part of our team \u2014 no oversight needed, no surprises. Our client was thrilled with the media, and honestly, it made us look great.',
       authorName: 'Event Director',
-      authorTitle: 'National Association Conference',
+      authorTitle: 'National Event Agency',
+    },
+    {
+      id: 'testimonials-1',
+      quote:
+        'The assets from our conference are still being used across marketing and recruiting eight months later. That\u2019s never happened with any photographer we\u2019ve hired before.',
+      authorName: 'Marketing Director',
+      authorTitle: 'Enterprise Organization',
+    },
+    {
+      id: 'testimonials-2',
+      quote:
+        'Our booth had a line the entire conference. The headshot activation drove more engagement than anything we\u2019ve tried in five years of exhibiting.',
+      authorName: 'Field Marketing Manager',
+      authorTitle: 'National Brand Exhibitor',
     },
   ],
 };
 
 /**
- * Section 8: Final CTA
- * Maps to: Bottom CTA in /app/page.tsx (lines 467-492)
- * Component: EditableCTA (image background variant)
- *
- * Full-width CTA with background image, headline, subtext, and a single
- * primary button linking to /schedule.
+ * Section 7: Team Extension ("We Work Like Part of Your Team")
+ * Copy + animated stats counters
+ * Component: EditableStats
+ */
+export const HOME_TEAM_EXTENSION: StatsSectionContent = {
+  id: 'team-extension',
+  type: 'stats',
+  order: 7,
+  seo: {
+    ariaLabel: 'JHR Photography operates as an extension of your event team',
+    sectionId: 'team-extension',
+    dataSectionName: 'team-extension',
+  },
+  heading: 'We Work Like Part of Your Team',
+  subheading:
+    'We\u2019re not showing up as an outside vendor who needs to be briefed, oriented, and managed. We operate as a local extension of your team \u2014 aligned with your goals, familiar with your venue, and ready to execute from the moment we arrive.',
+  stats: [
+    {
+      id: 'team-extension-stat-0',
+      value: 200,
+      suffix: '+',
+      label: 'Corporate events in Nashville',
+    },
+    {
+      id: 'team-extension-stat-1',
+      value: 72,
+      suffix: 'hr',
+      label: 'Standard photo delivery window',
+    },
+    {
+      id: 'team-extension-stat-2',
+      value: 100,
+      suffix: '%',
+      label: 'Certified, vetted operators',
+    },
+    {
+      id: 'team-extension-stat-3',
+      value: 15,
+      suffix: '+',
+      label: 'Nashville venues we know by heart',
+    },
+  ],
+};
+
+/**
+ * Section 8: Success Outcomes ("What Success Looks Like for You")
+ * 4 outcome cards
+ * Component: EditableFeatureGrid (4 columns)
+ */
+export const HOME_OUTCOMES: FeatureGridSectionContent = {
+  id: 'outcomes',
+  type: 'feature-grid',
+  order: 8,
+  seo: {
+    ariaLabel: 'What success looks like when you work with JHR Photography',
+    sectionId: 'outcomes',
+    dataSectionName: 'outcomes',
+  },
+  heading: 'What Success Looks Like for You',
+  columns: 4,
+  features: [
+    {
+      id: 'outcomes-card-0',
+      icon: 'CheckCircle',
+      title: 'Media That Gets Used',
+      description:
+        'Professional assets your marketing, recruiting, and communications teams actually want to share \u2014 not files that sit in a folder.',
+    },
+    {
+      id: 'outcomes-card-1',
+      icon: 'CheckCircle',
+      title: 'Delivered On Time',
+      description:
+        'Clear timelines, no chasing. Your gallery arrives when promised \u2014 ready for sponsors, stakeholders, and social.',
+    },
+    {
+      id: 'outcomes-card-2',
+      icon: 'CheckCircle',
+      title: 'You Look Like a Pro',
+      description:
+        'Stakeholders, sponsors, and attendees see the quality and ask who handled the media. You made the right call.',
+    },
+    {
+      id: 'outcomes-card-3',
+      icon: 'CheckCircle',
+      title: 'Happy to Recommend',
+      description:
+        'The experience was seamless enough that you\u2019d mention us without hesitation the next time someone asks.',
+    },
+  ],
+};
+
+/**
+ * Section 9: Final CTA
+ * Component: EditableCTA
  */
 export const HOME_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 8,
+  order: 9,
   seo: {
-    ariaLabel: 'Schedule a strategy call with JHR Photography',
+    ariaLabel: 'Contact JHR Photography to discuss your event media needs',
     sectionId: 'final-cta',
     dataSectionName: 'final-cta',
   },
-  headline: 'Ready to Remove the Worry?',
+  headline: 'Your Event Deserves Media That Matches the Work You Put In.',
   subtext:
-    'Let\u2019s talk about your event. Schedule a strategy call and discover how JHR can deliver the professional reliability and results your event deserves.',
+    'Tell us about your event. We\u2019ll show you exactly how we can support your timeline, your brand, and your team.',
   backgroundType: 'image',
   backgroundValue: '/images/generated/event-keynote.jpg',
   primaryButton: {
-    text: 'Schedule a Strategy Call',
+    text: 'Talk With Our Team',
     href: '/schedule',
     variant: 'primary',
+  },
+  secondaryButton: {
+    text: 'Check Availability',
+    href: '/contact',
+    variant: 'secondary',
   },
 };
 
@@ -466,13 +446,14 @@ export const HOME_FINAL_CTA: CTASectionContent = {
  */
 export const HOME_SECTIONS: PageSectionContent[] = [
   HOME_HERO,
-  HOME_TRUST_BADGES,
-  HOME_ICP_ROUTING,
+  HOME_TRUST_BAR,
+  HOME_EMPATHY,
+  HOME_HOW_IT_WORKS,
   HOME_SERVICES,
-  HOME_VENUE_FLUENCY,
-  HOME_PROCESS,
-  HOME_GALLERY,
-  HOME_SOCIAL_PROOF,
+  HOME_LOCAL_AUTHORITY,
+  HOME_TESTIMONIALS,
+  HOME_TEAM_EXTENSION,
+  HOME_OUTCOMES,
   HOME_FINAL_CTA,
 ];
 
@@ -485,13 +466,17 @@ export const HOME_PAGE_SCHEMA: PageSchema = {
   slug: 'home',
   name: 'Homepage',
   seo: {
-    pageTitle: 'JHR Photography | Nashville Corporate Event Photography & Headshots',
+    pageTitle: 'JHR Photography | Nashville Event Media & Headshot Activations',
     metaDescription:
-      'Nashville\u2019s trusted partner for corporate event photography and headshot activations. Venue-fluent, agency-grade execution, AI-accelerated delivery.',
+      'Your event media should make you look like the pro. Certified Nashville-based operators for corporate event photography, headshot activations, and executive imaging.',
     ogImage: '/images/generated/hero-homepage.jpg',
-    ogTitle: 'JHR Photography - Stop Worrying About Your Media Vendor',
+    ogTitle: 'JHR Photography - Event Media That Matches the Experience',
     ogDescription:
-      'Professional corporate event photography and headshot activations in Nashville. Schedule a strategy call today.',
+      'Professional corporate event media and headshot activations in Nashville. Talk with our team today.',
+    primarySEOFocus: 'Nashville corporate event photography',
+    secondarySEOSignals: ['headshot activation Nashville', 'convention photographer Nashville', 'corporate event media'],
+    geoEntitySignals: ['Nashville TN', 'Music City Center', 'Gaylord Opryland', 'Nashville convention photography'],
+    trustAuthoritySignal: 'Certified Nashville-based event media operators serving national brands at top convention venues.',
   },
   sections: HOME_SECTIONS,
   updatedAt: new Date().toISOString(),
@@ -504,7 +489,6 @@ export const HOME_PAGE_SCHEMA: PageSchema = {
 
 /**
  * Look up a homepage section by its ID.
- * Useful for targeted section updates without loading the full schema.
  */
 export function getHomeSectionById(sectionId: string): PageSectionContent | undefined {
   return HOME_SECTIONS.find((s) => s.id === sectionId);

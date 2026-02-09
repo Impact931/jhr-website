@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, ReactNode, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import {
   Pencil,
   Plus,
@@ -619,11 +620,19 @@ export function EditableFeatureGrid({
 
         {/* Feature Grid */}
         <div className={`grid ${getGridClass(currentColumns)} gap-6`}>
-          {features.map((feature) => {
+          {features.map((feature, index) => {
             const IconComp = getIconComponent(feature.icon);
             return (
-              <div key={feature.id} className="card group h-full">
-                <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4 group-hover:bg-jhr-gold/20 transition-colors">
+              <motion.div
+                key={feature.id}
+                className="card group h-full"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              >
+                <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4 group-hover:bg-jhr-gold/20 group-hover:scale-110 transition-all duration-300">
                   <IconComp className="w-6 h-6 text-jhr-gold" />
                 </div>
                 <h3 className="text-heading-lg font-semibold text-jhr-white mb-2"
@@ -634,10 +643,10 @@ export function EditableFeatureGrid({
                 />
                 {feature.link && (
                   <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium group-hover:gap-3 transition-all">
-                    {feature.link.text} <ArrowRight className="w-4 h-4" />
+                    {feature.link.text} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </span>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>

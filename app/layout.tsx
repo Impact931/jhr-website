@@ -3,6 +3,11 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import TrackingScripts from "@/components/analytics/TrackingScripts";
+import {
+  generateOrganizationSchema,
+  generateWebSiteSchema,
+  serializeSchemas,
+} from "@/lib/structured-data";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -83,50 +88,8 @@ export const metadata: Metadata = {
   },
 };
 
-// JSON-LD Schema for Organization
-const organizationSchema = {
-  "@context": "https://schema.org",
-  "@type": "ProfessionalService",
-  "@id": "https://jhr-photography.com/#organization",
-  name: "JHR Photography",
-  url: "https://jhr-photography.com",
-  logo: "https://jhr-photography.com/images/jhr-logo-white.png",
-  description:
-    "Nashville's trusted partner for corporate event photography, headshot activations, and conference media coverage.",
-  telephone: "+1-615-555-0123",
-  email: "info@jhr-photography.com",
-  address: {
-    "@type": "PostalAddress",
-    addressLocality: "Nashville",
-    addressRegion: "TN",
-    addressCountry: "US",
-  },
-  geo: {
-    "@type": "GeoCoordinates",
-    latitude: 36.1627,
-    longitude: -86.7816,
-  },
-  areaServed: [
-    {
-      "@type": "City",
-      name: "Nashville",
-    },
-    {
-      "@type": "State",
-      name: "Tennessee",
-    },
-    {
-      "@type": "Country",
-      name: "United States",
-    },
-  ],
-  priceRange: "$$$$",
-  sameAs: [
-    "https://www.linkedin.com/company/jhr-photography",
-    "https://www.instagram.com/jhrphotography",
-    "https://www.facebook.com/jhrphotography",
-  ],
-};
+// Generate Organization + WebSite structured data from centralized helpers
+const siteSchemas = [generateOrganizationSchema(), generateWebSiteSchema()];
 
 export default function RootLayout({
   children,
@@ -136,12 +99,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema),
-          }}
-        />
+        {serializeSchemas(siteSchemas).map((json, i) => (
+          <script
+            key={i}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: json }}
+          />
+        ))}
         {/* Editor fonts — Google Fonts for inline editor font picker */}
         <link
           href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;800&family=Open+Sans:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&family=Merriweather:wght@300;400;700&family=Poppins:wght@300;400;500;600;700;800&family=Raleway:wght@300;400;500;600;700;800&display=swap"

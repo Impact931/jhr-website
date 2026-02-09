@@ -11,15 +11,18 @@ const navigation = [
     name: "Services",
     href: "/services",
     children: [
-      { name: "Headshot Activation", href: "/services/headshot-activation" },
       { name: "Corporate Event Coverage", href: "/services/corporate-event-coverage" },
-      { name: "Corporate Headshot Program", href: "/services/corporate-headshot-program" },
+      { name: "Convention Media Services", href: "/services/convention-media" },
+      { name: "Trade-Show Media Services", href: "/services/trade-show-media" },
+      { name: "Headshot Activations", href: "/services/headshot-activation" },
+      { name: "Executive Imaging", href: "/services/executive-imaging" },
+      { name: "Social & Networking Media", href: "/services/social-networking-media" },
       { name: "Event Video Systems", href: "/services/event-video-systems" },
     ],
   },
   { name: "Venues", href: "/venues" },
   { name: "About", href: "/about" },
-  { name: "Blog", href: "/blog" },
+  { name: "Nashville Insider", href: "/blog" },
   { name: "FAQs", href: "/faqs" },
 ];
 

@@ -17,9 +17,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Service pages
   const servicePages = [
-    { url: "/services/headshot-activation", priority: 0.9 },
     { url: "/services/corporate-event-coverage", priority: 0.9 },
-    { url: "/services/corporate-headshot-program", priority: 0.8 },
+    { url: "/services/convention-media", priority: 0.9 },
+    { url: "/services/trade-show-media", priority: 0.9 },
+    { url: "/services/headshot-activation", priority: 0.9 },
+    { url: "/services/executive-imaging", priority: 0.8 },
+    { url: "/services/social-networking-media", priority: 0.8 },
     { url: "/services/event-video-systems", priority: 0.8 },
   ];
 

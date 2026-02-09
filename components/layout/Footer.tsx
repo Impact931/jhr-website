@@ -3,9 +3,12 @@ import Image from "next/image";
 
 const footerLinks = {
   services: [
-    { name: "Headshot Activation", href: "/services/headshot-activation" },
     { name: "Corporate Event Coverage", href: "/services/corporate-event-coverage" },
-    { name: "Corporate Headshot Program", href: "/services/corporate-headshot-program" },
+    { name: "Headshot Activations", href: "/services/headshot-activation" },
+    { name: "Executive Imaging", href: "/services/executive-imaging" },
+    { name: "Trade-Show Media", href: "/services/trade-show-media" },
+    { name: "Convention Media", href: "/services/convention-media" },
+    { name: "Social & Networking Media", href: "/services/social-networking-media" },
     { name: "Event Video Systems", href: "/services/event-video-systems" },
   ],
   venues: [
@@ -16,10 +19,10 @@ const footerLinks = {
   ],
   company: [
     { name: "About", href: "/about" },
-    { name: "Blog", href: "/blog" },
+    { name: "Nashville Insider", href: "/blog" },
     { name: "FAQs", href: "/faqs" },
     { name: "Contact", href: "/contact" },
-    { name: "Schedule a Call", href: "/schedule" },
+    { name: "Talk With Our Team", href: "/schedule" },
   ],
 };
 

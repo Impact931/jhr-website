@@ -2,6 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -20,6 +21,15 @@ const nextConfig = {
         hostname: 'placehold.co',
       },
     ],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/services/corporate-headshot-program',
+        destination: '/services/executive-imaging',
+        permanent: true,
+      },
+    ];
   },
 };
 

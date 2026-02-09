@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, ReactNode } from 'react';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import {
@@ -297,14 +298,26 @@ const CARD_CLASSES: Record<CardVariant, { card: string; quote: string; name: str
   },
 };
 
-function TestimonialCard({ testimonial, variant = 'dark' }: { testimonial: Testimonial; variant?: CardVariant }) {
+function TestimonialCard({ testimonial, variant = 'dark', index = 0 }: { testimonial: Testimonial; variant?: CardVariant; index?: number }) {
   const styles = CARD_CLASSES[variant];
   return (
-    <div className={`${styles.card} h-full flex flex-col`}>
+    <motion.div
+      className={`${styles.card} h-full flex flex-col`}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.5, delay: index * 0.15, ease: 'easeOut' }}
+    >
       {/* Quote icon */}
-      <div className="w-10 h-10 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4">
+      <motion.div
+        className="w-10 h-10 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4"
+        initial={{ scale: 0, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.4, delay: index * 0.15 + 0.2, ease: 'easeOut' }}
+      >
         <Quote className="w-5 h-5 text-jhr-gold" />
-      </div>
+      </motion.div>
 
       {/* Quote text */}
       <blockquote className={`${styles.quote} flex-1 mb-6`}>
@@ -336,7 +349,7 @@ function TestimonialCard({ testimonial, variant = 'dark' }: { testimonial: Testi
           </p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -547,8 +560,8 @@ export function EditableTestimonials({
         {/* Grid Layout */}
         {currentLayout === 'grid' && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <TestimonialCard key={t.id} testimonial={t} variant={displayCardVariant} />
+            {testimonials.map((t, idx) => (
+              <TestimonialCard key={t.id} testimonial={t} variant={displayCardVariant} index={idx} />
             ))}
           </div>
         )}

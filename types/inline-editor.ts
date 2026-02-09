@@ -27,7 +27,8 @@ export type InlineSectionType =
   | 'cta'
   | 'testimonials'
   | 'faq'
-  | 'columns';
+  | 'columns'
+  | 'stats';
 
 /**
  * Variant options for hero sections.
@@ -343,6 +344,39 @@ export interface FAQSectionContent extends BaseSectionContent {
 }
 
 /**
+ * A single stat item for the stats section.
+ * AI constraint: label max 40 characters, suffix/prefix max 5 characters.
+ */
+export interface StatItem {
+  id: string;
+  /** Numeric value to animate to. */
+  value: number;
+  /** Optional suffix (e.g., "+", "%", "hr"). Max 5 characters. */
+  suffix?: string;
+  /** Optional prefix (e.g., "$"). Max 5 characters. */
+  prefix?: string;
+  /** Label below the number. Max 40 characters. */
+  label: string;
+}
+
+/**
+ * Stats section content.
+ * Animated statistics counters displayed in a row.
+ *
+ * AI hint: heading max 100 characters, subheading max 200 characters.
+ * 3-4 stats recommended for visual balance.
+ */
+export interface StatsSectionContent extends BaseSectionContent {
+  type: 'stats';
+  /** Section heading. Rendered as h2. Max 100 characters. */
+  heading?: string;
+  /** Section subheading. Rendered as p. Max 200 characters. */
+  subheading?: string;
+  /** Stat items. Recommended 3-4. */
+  stats: StatItem[];
+}
+
+/**
  * Columns section content.
  * A multi-column layout container that holds child sections side-by-side.
  * Columns collapse to single column on mobile.
@@ -370,7 +404,8 @@ export type PageSectionContent =
   | CTASectionContent
   | TestimonialsSectionContent
   | FAQSectionContent
-  | ColumnsSectionContent;
+  | ColumnsSectionContent
+  | StatsSectionContent;
 
 // ============================================================================
 // Page Schema
@@ -559,6 +594,18 @@ export function createDefaultSection(
           { sections: [] },
         ],
       };
+    case 'stats':
+      return {
+        id,
+        type: 'stats',
+        order,
+        seo: baseSeo,
+        stats: [
+          { id: `${id}-stat-0`, value: 100, suffix: '+', label: 'Events Covered' },
+          { id: `${id}-stat-1`, value: 72, suffix: 'hr', label: 'Delivery Window' },
+          { id: `${id}-stat-2`, value: 100, suffix: '%', label: 'Satisfaction Rate' },
+        ],
+      };
   }
 }
 
@@ -605,6 +652,7 @@ export const SECTION_TYPE_META: Record<InlineSectionType, { label: string; descr
   'testimonials': { label: 'Testimonials', description: 'Customer testimonials in various layouts', icon: 'Quote' },
   'faq': { label: 'FAQ', description: 'Frequently asked questions with accordion layout', icon: 'HelpCircle' },
   'columns': { label: 'Columns', description: 'Multi-column layout with side-by-side content sections', icon: 'Columns' },
+  'stats': { label: 'Stats Counter', description: 'Animated statistics with count-up effect on scroll', icon: 'BarChart' },
 };
 
 // ============================================================================

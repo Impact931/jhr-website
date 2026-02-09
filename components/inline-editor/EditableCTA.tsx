@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, ReactNode } from 'react';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import Link from 'next/link';
@@ -563,25 +564,45 @@ export function EditableCTA({
         )}
 
         <div className={`section-container relative z-10 ${textAlignClass}`}>
-          <h2 className="text-display-sm lg:text-display-md font-display font-bold text-jhr-white mb-6"
+          <motion.h2
+            className="text-display-sm lg:text-display-md font-display font-bold text-jhr-white mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
             {...renderInlineHtml(headline)}
           />
-          <p className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+          <motion.p
+            className="text-body-lg text-jhr-white-muted max-w-2xl mx-auto mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
             {...renderInlineHtml(subtext)}
           />
 
-          <div className={`flex flex-col sm:flex-row gap-4 ${alignment === 'center' ? 'justify-center' : alignment === 'right' ? 'justify-end' : 'justify-start'}`}>
-            <Link href={primaryBtnHref} className={getButtonClasses(primaryBtnVariant)}>
-              {primaryBtnText}
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Link>
+          <motion.div
+            className={`flex flex-col sm:flex-row gap-4 ${alignment === 'center' ? 'justify-center' : alignment === 'right' ? 'justify-end' : 'justify-start'}`}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+          >
+            <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
+              <Link href={primaryBtnHref} className={getButtonClasses(primaryBtnVariant)}>
+                {primaryBtnText}
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </motion.div>
 
             {secondaryButton && (
-              <Link href={secondaryBtnHref} className={getButtonClasses(secondaryBtnVariant)}>
-                {secondaryBtnText}
-              </Link>
+              <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
+                <Link href={secondaryBtnHref} className={getButtonClasses(secondaryBtnVariant)}>
+                  {secondaryBtnText}
+                </Link>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
 
           {children}
         </div>

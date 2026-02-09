@@ -216,7 +216,7 @@ export default function EmbassySuitesPage() {
                 Documentation of meetings, trainings, and corporate events.
               </p>
             </Link>
-            <Link href="/services/corporate-headshot-program" className="card group">
+            <Link href="/services/executive-imaging" className="card group">
               <Camera className="w-8 h-8 text-jhr-gold mb-4" />
               <h3 className="text-heading-md font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors mb-2">
                 Team Headshots

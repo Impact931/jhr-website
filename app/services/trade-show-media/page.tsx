@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from "react";
 import { useEditMode } from "@/context/inline-editor/EditModeContext";
 import { useContent } from "@/context/inline-editor/ContentContext";
-import { CHP_SECTIONS } from "@/content/schemas/corporate-headshot-program";
+import { TSM_SECTIONS } from "@/content/schemas/trade-show-media";
 import { SectionRenderer } from "@/components/inline-editor/SectionRenderer";
 import { SectionWrapper, AddSectionButton } from "@/components/inline-editor/SectionWrapper";
 import { createDefaultSection } from "@/types/inline-editor";
@@ -14,14 +14,15 @@ import type {
 } from "@/types/inline-editor";
 
 // ============================================================================
-// Corporate Headshot Program Service Page - Editable with inline CMS
+// Trade-Show Media Services Page - Editable with inline CMS
 // ============================================================================
 
 const SECTION_CLASS_MAP: Record<string, string> = {
-  "benefits": "section-padding bg-jhr-black-light",
+  "whats-included": "section-padding bg-jhr-black-light",
+  "exhibitor-crossover": "section-padding bg-jhr-black-light",
 };
 
-export default function CorporateHeadshotProgramPage() {
+export default function TradeShowMediaPage() {
   const { isEditMode } = useEditMode();
   const {
     sections,
@@ -34,7 +35,7 @@ export default function CorporateHeadshotProgramPage() {
   } = useContent();
 
   useEffect(() => {
-    loadSectionsForPage('corporate-headshot-program', CHP_SECTIONS);
+    loadSectionsForPage('trade-show-media', TSM_SECTIONS);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddSection = useCallback(
@@ -94,7 +95,7 @@ export default function CorporateHeadshotProgramPage() {
         >
           <SectionRenderer
             section={section}
-            pageSlug="corporate-headshot-program"
+            pageSlug="trade-show-media"
             sectionClassMap={SECTION_CLASS_MAP}
           />
         </SectionWrapper>
