@@ -93,7 +93,8 @@ function mergeSectionImages(
             existingImg = existing.images[i];
           }
           if (existingImg?.src) {
-            return { ...img, src: existingImg.src, alt: existingImg.alt || img.alt };
+            // Preserve all user-edited image metadata (src, alt, caption, etc.)
+            return { ...img, ...existingImg };
           }
           return img;
         });
@@ -101,7 +102,54 @@ function mergeSectionImages(
       break;
     }
 
-    // text-block, faq, stats, columns, testimonials — no user-uploadable images to preserve
+    case 'columns': {
+      // Recursively merge nested sections inside each column
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existing = existingSection as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const m = merged as any;
+      if (existing.columns && m.columns) {
+        m.columns = m.columns.map((col: { sections: PageSectionContent[] }, colIdx: number) => {
+          const existingCol = existing.columns[colIdx];
+          if (!existingCol?.sections) return col;
+
+          const mergedChildren = col.sections.map((childSchema: PageSectionContent) => {
+            const existingChild = existingCol.sections.find(
+              (ec: PageSectionContent) => ec.id === childSchema.id
+            );
+            if (existingChild) {
+              return mergeSectionImages(childSchema, existingChild);
+            }
+            return childSchema;
+          });
+
+          return { ...col, sections: mergedChildren };
+        });
+      }
+      break;
+    }
+
+    case 'testimonials': {
+      // Preserve user-uploaded avatar images on testimonials
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existing = existingSection as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const m = merged as any;
+      if (existing.testimonials && m.testimonials) {
+        m.testimonials = m.testimonials.map((t: { id: string; authorImage?: { src?: string } }) => {
+          const existingT = existing.testimonials.find(
+            (et: { id: string }) => et.id === t.id
+          );
+          if (existingT?.authorImage?.src) {
+            return { ...t, authorImage: existingT.authorImage };
+          }
+          return t;
+        });
+      }
+      break;
+    }
+
+    // text-block, faq, stats — no user-uploadable images to preserve
   }
 
   // Preserve backgroundVideo on any section type (YouTube embeds, uploaded videos, etc.)
