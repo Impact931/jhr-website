@@ -21,6 +21,8 @@ import {
   Minimize,
   RectangleHorizontal,
   Film,
+  Video,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
@@ -29,6 +31,32 @@ import { EditableText } from './EditableText';
 import MediaPicker from '@/components/admin/media/MediaPicker';
 import type { MediaPickerResult } from '@/types/media';
 import type { GalleryLayout, EditableImageField, SingleImageFit } from '@/types/inline-editor';
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/** Convert YouTube URL (watch, short, or embed) → embeddable URL */
+function getYouTubeEmbedUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.pathname.startsWith('/embed/')) return url;
+    if (u.hostname === 'youtu.be') return `https://www.youtube.com/embed${u.pathname}`;
+    const v = u.searchParams.get('v');
+    if (v) return `https://www.youtube.com/embed/${v}`;
+  } catch { /* fall through */ }
+  return url;
+}
+
+/** Check if a gallery item is a video (uploaded or embed) */
+function isVideoItem(item: EditableImageField): boolean {
+  return item.mediaType === 'video' || !!item.videoUrl;
+}
+
+/** Check if a src is a video file (by extension) */
+function isVideoSrc(src: string): boolean {
+  return /\.(mp4|webm|mov)(\?|$)/i.test(src);
+}
 
 // ============================================================================
 // Types
@@ -239,6 +267,90 @@ function AltTextEditor({ image, onSave, onClose }: AltTextEditorProps) {
 // ImageReplaceModal removed — replaced by MediaPicker integration
 
 // ============================================================================
+// Gallery Media Renderer — renders image or video depending on item type
+// ============================================================================
+
+function GalleryMediaContent({
+  item,
+  index,
+  fill = false,
+  className = '',
+}: {
+  item: EditableImageField;
+  index: number;
+  fill?: boolean;
+  className?: string;
+}) {
+  // Video embed (YouTube/Vimeo)
+  if (item.videoUrl) {
+    return (
+      <iframe
+        src={getYouTubeEmbedUrl(item.videoUrl)}
+        title={item.alt || `Gallery video ${index + 1}`}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        className={fill ? 'absolute inset-0 w-full h-full' : `w-full aspect-video ${className}`}
+      />
+    );
+  }
+
+  // Uploaded video file
+  if (isVideoItem(item) || isVideoSrc(item.src)) {
+    return (
+      <video
+        src={item.src}
+        controls
+        playsInline
+        preload="metadata"
+        className={fill ? 'absolute inset-0 w-full h-full object-cover' : `w-full ${className}`}
+      >
+        <track kind="captions" />
+      </video>
+    );
+  }
+
+  // Image (default)
+  if (!item.src) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <ImageIcon className="w-12 h-12 text-gray-600" />
+      </div>
+    );
+  }
+
+  if (fill) {
+    return (
+      <SmartImage
+        src={item.src}
+        alt={item.alt || `Gallery image ${index + 1}`}
+        fill
+        className={className || 'object-cover'}
+      />
+    );
+  }
+
+  // eslint-disable-next-line @next/next/no-img-element
+  return (
+    <img
+      src={item.src}
+      alt={item.alt || `Gallery image ${index + 1}`}
+      className={className || 'w-full h-auto object-cover'}
+      loading="lazy"
+    />
+  );
+}
+
+/** Badge shown on video items to distinguish from photos */
+function VideoTypeBadge() {
+  return (
+    <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/70 backdrop-blur-sm rounded text-[10px] font-bold text-white uppercase flex items-center gap-1 pointer-events-none z-10">
+      <Video className="w-3 h-3" />
+      Video
+    </div>
+  );
+}
+
+// ============================================================================
 // Field Label Badge (edit mode overlay)
 // ============================================================================
 
@@ -283,6 +395,8 @@ export function EditableImageGallery({
   const [altTextEditorIndex, setAltTextEditorIndex] = useState<number | null>(null);
   const [replaceModalIndex, setReplaceModalIndex] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isVideoEmbedOpen, setIsVideoEmbedOpen] = useState(false);
+  const [videoEmbedUrl, setVideoEmbedUrl] = useState('');
 
   // Slider state
   const [sliderIndex, setSliderIndex] = useState(0);
@@ -334,15 +448,31 @@ export function EditableImageGallery({
     [contentKeyPrefix, onSingleImageFitChange, updateContent]
   );
 
-  // Add a new image
-  const handleAddImage = useCallback((url: string) => {
-    const newImage: EditableImageField = {
+  // Add a new media item (image or uploaded video)
+  const handleAddMedia = useCallback((url: string, type: 'image' | 'video' = 'image') => {
+    const newItem: EditableImageField = {
       src: url,
       alt: '',
       caption: '',
+      ...(type === 'video' ? { mediaType: 'video' as const } : {}),
     };
-    updateImages([...images, newImage]);
+    updateImages([...images, newItem]);
     setIsAddModalOpen(false);
+  }, [images, updateImages]);
+
+  // Add a video embed (YouTube/Vimeo URL)
+  const handleAddVideoEmbed = useCallback((url: string) => {
+    const embedUrl = getYouTubeEmbedUrl(url.trim());
+    const newItem: EditableImageField = {
+      src: '', // No direct file — embed only
+      alt: '',
+      caption: '',
+      mediaType: 'video',
+      videoUrl: embedUrl,
+    };
+    updateImages([...images, newItem]);
+    setIsVideoEmbedOpen(false);
+    setVideoEmbedUrl('');
   }, [images, updateImages]);
 
   // Remove an image
@@ -372,12 +502,22 @@ export function EditableImageGallery({
     [images, updateImages]
   );
 
-  // Replace an image
+  // Replace a media item
   const handleReplaceImage = useCallback(
-    (index: number, url: string) => {
-      const newImages = images.map((img, i) =>
-        i === index ? { ...img, src: url } : img
-      );
+    (index: number, url: string, type?: 'image' | 'video') => {
+      const newImages = images.map((img, i) => {
+        if (i !== index) return img;
+        const updated = { ...img, src: url };
+        if (type === 'video') {
+          updated.mediaType = 'video';
+          // Clear embed URL since this is now an uploaded file
+          delete updated.videoUrl;
+        } else if (type === 'image') {
+          updated.mediaType = undefined;
+          delete updated.videoUrl;
+        }
+        return updated;
+      });
       updateImages(newImages);
       setReplaceModalIndex(null);
     },
@@ -413,19 +553,9 @@ export function EditableImageGallery({
   const renderGridLayout = (imageList: EditableImageField[], editable: boolean) => (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {imageList.map((image, index) => (
-        <div key={`img-${index}`} className="relative group/image aspect-square rounded-lg overflow-hidden bg-[#1A1A1A]">
-          {image.src ? (
-            <SmartImage
-              src={image.src}
-              alt={image.alt || `Gallery image ${index + 1}`}
-              fill
-              className="object-cover transition-transform group-hover/image:scale-105"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <ImageIcon className="w-12 h-12 text-gray-600" />
-            </div>
-          )}
+        <div key={`img-${index}`} className={`relative group/image ${isVideoItem(image) ? 'aspect-video' : 'aspect-square'} rounded-lg overflow-hidden bg-[#1A1A1A]`}>
+          {isVideoItem(image) && <VideoTypeBadge />}
+          <GalleryMediaContent item={image} index={index} fill className="object-cover transition-transform group-hover/image:scale-105" />
 
           {/* Caption overlay */}
           {image.caption && !editable && (
@@ -503,18 +633,8 @@ export function EditableImageGallery({
       <div className="relative" ref={sliderRef}>
         {/* Main image */}
         <div className="relative aspect-[16/9] rounded-lg overflow-hidden bg-[#1A1A1A] group/slider">
-          {currentImage.src ? (
-            <SmartImage
-              src={currentImage.src}
-              alt={currentImage.alt || `Gallery image ${currentIdx + 1}`}
-              fill
-              className="object-cover"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <ImageIcon className="w-16 h-16 text-gray-600" />
-            </div>
-          )}
+          {isVideoItem(currentImage) && <VideoTypeBadge />}
+          <GalleryMediaContent item={currentImage} index={currentIdx} fill className="object-cover" />
 
           {/* Caption overlay */}
           {currentImage.caption && !editable && (
@@ -605,18 +725,8 @@ export function EditableImageGallery({
     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {imageList.map((image, index) => (
         <div key={`masonry-${index}`} className="relative group/image rounded-lg overflow-hidden bg-[#1A1A1A]">
-          {image.src ? (
-            <img
-              src={image.src}
-              alt={image.alt || `Gallery image ${index + 1}`}
-              className="w-full h-auto object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex items-center justify-center aspect-square">
-              <ImageIcon className="w-12 h-12 text-gray-600" />
-            </div>
-          )}
+          {isVideoItem(image) && <VideoTypeBadge />}
+          <GalleryMediaContent item={image} index={index} className="w-full h-auto object-cover" />
 
           {/* Caption overlay */}
           {image.caption && !editable && (
@@ -689,34 +799,26 @@ export function EditableImageGallery({
     const image = imageList[0];
     if (!image) return null;
 
+    // Video items always use 16:9 aspect
+    const isVideo = isVideoItem(image);
     // 'cover' = fixed 16:9 with object-cover (fills, crops)
     // 'contain' = fixed 16:9 with object-contain (fits, letterboxed)
     // 'full-height' = natural aspect ratio, full width (no crop)
-    const isNatural = currentFit === 'full-height';
+    const isNatural = currentFit === 'full-height' && !isVideo;
     const objectClass = currentFit === 'contain' ? 'object-contain' : 'object-cover';
 
     return (
       <div
         className={`relative group/image rounded-lg overflow-hidden bg-[#1A1A1A] w-full ${isNatural ? '' : 'aspect-[16/9]'}`}
       >
-        {image.src ? (
+        {isVideo && <VideoTypeBadge />}
+        {isVideo ? (
+          <GalleryMediaContent item={image} index={0} fill className={objectClass} />
+        ) : image.src ? (
           isNatural ? (
-            // Natural: full-width image at its own aspect ratio
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={image.src}
-              alt={image.alt || 'Gallery image'}
-              className="w-full h-auto block"
-              loading="lazy"
-            />
+            <GalleryMediaContent item={image} index={0} className="w-full h-auto block" />
           ) : (
-            // Cover / Contain: fill the 16:9 container
-            <SmartImage
-              src={image.src}
-              alt={image.alt || 'Gallery image'}
-              fill
-              className={objectClass}
-            />
+            <GalleryMediaContent item={image} index={0} fill className={objectClass} />
           )
         ) : (
           <div className="flex items-center justify-center h-full min-h-[200px]">
@@ -785,16 +887,21 @@ export function EditableImageGallery({
         >
           <style jsx>{`div::-webkit-scrollbar { display: none; }`}</style>
 
-          {imageList.map((image, index) => (
+          {imageList.map((image, index) => {
+            const isVid = isVideoItem(image);
+            return (
             <div
               key={`filmstrip-${index}`}
               className={`relative flex-shrink-0 rounded-xl overflow-hidden bg-[#1A1A1A] group/card ${
                 editable
-                  ? 'w-[220px] h-[280px] md:w-[260px] md:h-[340px]'
-                  : 'h-auto'
+                  ? isVid ? 'w-[360px] h-[220px] md:w-[450px] md:h-[260px]' : 'w-[220px] h-[280px] md:w-[260px] md:h-[340px]'
+                  : isVid ? 'aspect-video min-w-[300px] md:min-w-[400px]' : 'h-auto'
               }`}
             >
-              {image.src ? (
+              {isVid && <VideoTypeBadge />}
+              {isVid ? (
+                <GalleryMediaContent item={image} index={index} fill className="object-cover" />
+              ) : image.src ? (
                 editable ? (
                   <SmartImage
                     src={image.src}
@@ -875,13 +982,13 @@ export function EditableImageGallery({
               )}
 
               {/* Missing alt text warning */}
-              {editable && canEdit && !image.alt && (
+              {editable && canEdit && !image.alt && !isVid && (
                 <div className="absolute top-2 left-2 px-2 py-0.5 bg-amber-500/90 text-black text-[10px] font-bold rounded uppercase">
                   No alt text
                 </div>
               )}
             </div>
-          ))}
+          ); })}
 
           {/* Add Image card (edit mode) */}
           {editable && canEdit && (
@@ -1014,7 +1121,7 @@ export function EditableImageGallery({
             <div className="flex items-center justify-between">
               <LayoutSelector layout={currentLayout} onChange={handleLayoutChange} />
               <div className="flex items-center gap-2">
-                <FieldLabel label={`${images.length} Images`} icon={<ImageIcon className="w-3 h-3" />} />
+                <FieldLabel label={`${images.length} Items`} icon={<ImageIcon className="w-3 h-3" />} />
               </div>
             </div>
             {currentLayout === 'single' && (
@@ -1031,19 +1138,28 @@ export function EditableImageGallery({
             <ImageIcon className="w-12 h-12 mx-auto mb-3" />
             <p className="mb-4">No images in this gallery</p>
             {canEdit && (
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="px-4 py-2 bg-[#C9A227] text-black text-sm font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
-              >
-                Add First Image
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="px-4 py-2 bg-[#C9A227] text-black text-sm font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
+                >
+                  Add Media
+                </button>
+                <button
+                  onClick={() => setIsVideoEmbedOpen(true)}
+                  className="px-4 py-2 bg-[#2A2A2A] text-white text-sm font-medium rounded-lg hover:bg-[#333] transition-colors flex items-center gap-1.5"
+                >
+                  <Video className="w-4 h-4" />
+                  Embed Video
+                </button>
+              </div>
             )}
           </div>
         )}
 
-        {/* Add Image Button */}
+        {/* Add Media Buttons */}
         {canEdit && images.length > 0 && (
-          <div className="mt-6 flex justify-center">
+          <div className="mt-6 flex justify-center gap-3">
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-[#333] hover:border-[#C9A227]/60 text-gray-500 hover:text-[#C9A227] transition-colors group/add"
@@ -1051,7 +1167,16 @@ export function EditableImageGallery({
               <div className="w-8 h-8 rounded-lg bg-[#1A1A1A] group-hover/add:bg-[#C9A227]/10 flex items-center justify-center transition-colors">
                 <Plus className="w-4 h-4" />
               </div>
-              <span className="text-sm font-medium">Add Image</span>
+              <span className="text-sm font-medium">Add Media</span>
+            </button>
+            <button
+              onClick={() => setIsVideoEmbedOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-dashed border-[#333] hover:border-[#C9A227]/60 text-gray-500 hover:text-[#C9A227] transition-colors group/add"
+            >
+              <div className="w-8 h-8 rounded-lg bg-[#1A1A1A] group-hover/add:bg-[#C9A227]/10 flex items-center justify-center transition-colors">
+                <LinkIcon className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-medium">Embed Video</span>
             </button>
           </div>
         )}
@@ -1075,29 +1200,84 @@ export function EditableImageGallery({
         </ModalPortal>
       )}
 
-      {/* Image Replace — MediaPicker */}
+      {/* Replace — MediaPicker (images + videos) */}
       <MediaPicker
         isOpen={replaceModalIndex !== null}
         onClose={() => setReplaceModalIndex(null)}
         onSelect={(results: MediaPickerResult[]) => {
           if (results.length > 0 && replaceModalIndex !== null) {
-            handleReplaceImage(replaceModalIndex, results[0].publicUrl);
+            const r = results[0];
+            handleReplaceImage(replaceModalIndex, r.publicUrl, r.mediaType === 'video' ? 'video' : 'image');
           }
         }}
-        options={{ allowedTypes: ['image'] }}
+        options={{ allowedTypes: ['image', 'video'] }}
       />
 
-      {/* Add Image — MediaPicker */}
+      {/* Add Media — MediaPicker (images + videos) */}
       <MediaPicker
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSelect={(results: MediaPickerResult[]) => {
           if (results.length > 0) {
-            handleAddImage(results[0].publicUrl);
+            const r = results[0];
+            handleAddMedia(r.publicUrl, r.mediaType === 'video' ? 'video' : 'image');
           }
         }}
-        options={{ allowedTypes: ['image'] }}
+        options={{ allowedTypes: ['image', 'video'] }}
       />
+
+      {/* Video Embed URL Modal */}
+      {isVideoEmbedOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-display font-bold text-white flex items-center gap-2">
+                  <Video className="w-5 h-5 text-jhr-gold" />
+                  Embed Video
+                </h3>
+                <button
+                  onClick={() => { setIsVideoEmbedOpen(false); setVideoEmbedUrl(''); }}
+                  className="p-1 rounded-lg hover:bg-[#2A2A2A] text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-400 mb-3">
+                Paste a YouTube or Vimeo URL to embed in the gallery.
+              </p>
+              <input
+                type="url"
+                value={videoEmbedUrl}
+                onChange={(e) => setVideoEmbedUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && videoEmbedUrl.trim()) {
+                    handleAddVideoEmbed(videoEmbedUrl);
+                  }
+                }}
+                className="w-full px-3 py-2 bg-[#0A0A0A] border border-[#333] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A227] transition-colors"
+                placeholder="https://www.youtube.com/watch?v=..."
+                autoFocus
+              />
+              <div className="flex justify-end mt-4 gap-3">
+                <button
+                  onClick={() => { setIsVideoEmbedOpen(false); setVideoEmbedUrl(''); }}
+                  className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleAddVideoEmbed(videoEmbedUrl)}
+                  disabled={!videoEmbedUrl.trim()}
+                  className="px-4 py-2 text-sm bg-[#C9A227] text-black font-medium rounded-lg hover:bg-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Add to Gallery
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </>
   );
 }

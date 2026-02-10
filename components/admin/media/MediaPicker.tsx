@@ -119,6 +119,7 @@ export default function MediaPicker({
         alt: i.alt,
         thumbnailUrl: i.thumbnailUrl,
         dimensions: i.dimensions,
+        mediaType: i.mediaType,
       }));
     onSelect(results);
     onClose();

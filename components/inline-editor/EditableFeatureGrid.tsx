@@ -1050,6 +1050,8 @@ export function EditableFeatureGrid({
   const [iconSelectorCardId, setIconSelectorCardId] = useState<string | null>(null);
   const [linkEditorCardId, setLinkEditorCardId] = useState<string | null>(null);
   const [imagePickerCardId, setImagePickerCardId] = useState<string | null>(null);
+  const [videoUrlCardId, setVideoUrlCardId] = useState<string | null>(null);
+  const [videoUrlInput, setVideoUrlInput] = useState('');
 
   // Get column grid class
   const getGridClass = (cols: FeatureGridColumns): string => {
@@ -1210,6 +1212,35 @@ export function EditableFeatureGrid({
       const newFeatures = features.map((f) => {
         if (f.id === cardId) {
           const { image: _img, ...rest } = f;
+          return rest as FeatureCard;
+        }
+        return f;
+      });
+      updateFeatures(newFeatures);
+    },
+    [features, updateFeatures]
+  );
+
+  // Save video URL for a card
+  const handleSaveVideoUrl = useCallback(
+    (cardId: string, url: string) => {
+      const trimmed = url.trim();
+      const newFeatures = features.map((f) =>
+        f.id === cardId ? { ...f, videoUrl: trimmed || undefined } : f
+      );
+      updateFeatures(newFeatures);
+      setVideoUrlCardId(null);
+      setVideoUrlInput('');
+    },
+    [features, updateFeatures]
+  );
+
+  // Remove video URL from a card
+  const handleRemoveVideoUrl = useCallback(
+    (cardId: string) => {
+      const newFeatures = features.map((f) => {
+        if (f.id === cardId) {
+          const { videoUrl: _v, ...rest } = f;
           return rest as FeatureCard;
         }
         return f;
@@ -1458,8 +1489,37 @@ export function EditableFeatureGrid({
                   </div>
                 )}
 
-                {/* Image or Icon */}
-                {feature.image?.src ? (
+                {/* Video, Image, or Icon */}
+                {feature.videoUrl ? (
+                  <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4 bg-[#1A1A1A] group/vid">
+                    <iframe
+                      src={getYouTubeEmbedUrl(feature.videoUrl)}
+                      title={feature.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                    />
+                    {canEdit && (
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/vid:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => {
+                            setVideoUrlInput(feature.videoUrl || '');
+                            setVideoUrlCardId(feature.id);
+                          }}
+                          className="px-3 py-1.5 bg-[#C9A227] text-black text-xs font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
+                        >
+                          Change URL
+                        </button>
+                        <button
+                          onClick={() => handleRemoveVideoUrl(feature.id)}
+                          className="px-3 py-1.5 bg-red-900/70 text-red-300 text-xs font-medium rounded-lg hover:bg-red-900 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : feature.image?.src ? (
                   <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-4 bg-[#1A1A1A] group/img">
                     <SmartImage
                       src={feature.image.src}
@@ -1496,12 +1556,23 @@ export function EditableFeatureGrid({
                       <IconComp className="w-6 h-6 text-jhr-gold" />
                     </div>
                     {canEdit && (
-                      <button
-                        onClick={() => setImagePickerCardId(feature.id)}
-                        className="px-2 py-1 text-[10px] text-gray-500 hover:text-[#C9A227] border border-[#333] hover:border-[#C9A227]/60 rounded transition-colors"
-                      >
-                        + Image
-                      </button>
+                      <>
+                        <button
+                          onClick={() => setImagePickerCardId(feature.id)}
+                          className="px-2 py-1 text-[10px] text-gray-500 hover:text-[#C9A227] border border-[#333] hover:border-[#C9A227]/60 rounded transition-colors"
+                        >
+                          + Image
+                        </button>
+                        <button
+                          onClick={() => {
+                            setVideoUrlInput('');
+                            setVideoUrlCardId(feature.id);
+                          }}
+                          className="px-2 py-1 text-[10px] text-gray-500 hover:text-[#C9A227] border border-[#333] hover:border-[#C9A227]/60 rounded transition-colors"
+                        >
+                          + Video
+                        </button>
+                      </>
                     )}
                   </div>
                 )}
@@ -1611,6 +1682,59 @@ export function EditableFeatureGrid({
         }}
         options={{ allowedTypes: ['image'] }}
       />
+
+      {/* Video URL Editor Modal */}
+      {videoUrlCardId && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[210] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <div className="bg-[#1A1A1A] border border-[#333] rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-display font-bold text-white flex items-center gap-2">
+                  <Video className="w-5 h-5 text-jhr-gold" />
+                  Video Embed URL
+                </h3>
+                <button
+                  onClick={() => { setVideoUrlCardId(null); setVideoUrlInput(''); }}
+                  className="p-1 rounded-lg hover:bg-[#2A2A2A] text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-400 mb-3">
+                Paste a YouTube URL (watch, short, or embed format).
+              </p>
+              <input
+                type="url"
+                value={videoUrlInput}
+                onChange={(e) => setVideoUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && videoUrlInput.trim()) {
+                    handleSaveVideoUrl(videoUrlCardId, videoUrlInput);
+                  }
+                }}
+                className="w-full px-3 py-2 bg-[#0A0A0A] border border-[#333] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#C9A227] transition-colors"
+                placeholder="https://www.youtube.com/watch?v=..."
+                autoFocus
+              />
+              <div className="flex justify-end mt-4 gap-3">
+                <button
+                  onClick={() => { setVideoUrlCardId(null); setVideoUrlInput(''); }}
+                  className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSaveVideoUrl(videoUrlCardId, videoUrlInput)}
+                  disabled={!videoUrlInput.trim()}
+                  className="px-4 py-2 text-sm bg-[#C9A227] text-black font-medium rounded-lg hover:bg-[#D4AF37] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
     </>
   );
 }

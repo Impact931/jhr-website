@@ -129,7 +129,7 @@ export interface CTAButton {
 }
 
 /**
- * An image with editable source, alt text, and optional caption.
+ * A media item in the gallery — image or video (uploaded file or embed URL).
  * AI constraint: alt text max 125 characters (for screen readers),
  * caption max 200 characters.
  */
@@ -141,6 +141,10 @@ export interface EditableImageField {
   height?: number;
   /** Vertical position for object-fit: cover (0-100, where 0=top, 50=center, 100=bottom). */
   positionY?: number;
+  /** Media type — defaults to 'image' for backward compatibility. */
+  mediaType?: 'image' | 'video';
+  /** YouTube/Vimeo embed URL. When set with mediaType 'video', renders an iframe player. */
+  videoUrl?: string;
 }
 
 /**

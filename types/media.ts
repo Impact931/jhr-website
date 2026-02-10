@@ -316,4 +316,5 @@ export interface MediaPickerResult {
   alt?: string;
   thumbnailUrl?: string;
   dimensions?: MediaDimensions;
+  mediaType?: MediaType;
 }
