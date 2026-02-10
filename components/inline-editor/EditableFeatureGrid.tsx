@@ -206,6 +206,8 @@ interface EditableFeatureGridProps {
   features: FeatureCard[];
   /** Display mode variant. */
   displayMode?: FeatureGridDisplayMode;
+  /** Show numbered step indicators in alternating mode. */
+  showStepNumbers?: boolean;
   /** Card variant: 'default' = solid bg, 'glass' = frosted glass effect. */
   cardVariant?: 'default' | 'glass';
   /** Callback when features array changes (for parent state management). */
@@ -736,10 +738,12 @@ function AlternatingView({
   heading,
   subheading,
   features,
+  showStepNumbers = false,
 }: {
   heading?: string;
   subheading?: string;
   features: FeatureCard[];
+  showStepNumbers?: boolean;
 }) {
   return (
     <div>
@@ -794,10 +798,12 @@ function AlternatingView({
 
               {/* Text side */}
               <div className="w-full md:w-1/2 flex flex-col justify-center p-6 md:p-8">
-                {/* Ghost step number */}
-                <span className="text-[4rem] md:text-[5rem] font-display font-bold leading-none text-jhr-white-dim/20 select-none mb-2">
-                  {stepNumber}
-                </span>
+                {/* Ghost step number (optional) */}
+                {showStepNumbers && (
+                  <span className="text-[4rem] md:text-[5rem] font-display font-bold leading-none text-jhr-white-dim/20 select-none mb-2">
+                    {stepNumber}
+                  </span>
+                )}
                 <h3 className="text-heading-lg font-semibold text-jhr-white mb-3"
                   {...renderInlineHtml(feature.title)}
                 />
@@ -992,6 +998,7 @@ export function EditableFeatureGrid({
   columns = 3,
   features: initialFeatures,
   displayMode = 'default',
+  showStepNumbers,
   cardVariant: initialCardVariant = 'default',
   onFeaturesChange,
   onColumnsChange,
@@ -1234,6 +1241,7 @@ export function EditableFeatureGrid({
             heading={displayHeading}
             subheading={displaySubheading}
             features={features}
+            showStepNumbers={showStepNumbers}
           />
           {children}
         </div>

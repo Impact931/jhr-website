@@ -67,8 +67,9 @@ export const HA_HERO: HeroSectionContent = {
     sectionId: 'hero',
     dataSectionName: 'hero',
   },
-  variant: 'half-height',
-  title: 'Turn Your Booth Into the Most Popular Spot on the Floor',
+  variant: 'split',
+  imagePosition: 'right',
+  title: 'Turn Your Booth Into the Most <em class="text-jhr-gold not-italic">Popular Spot</em> on the Floor',
   subtitle: 'Headshot Activation\u2122',
   description:
     'A Headshot Activation isn\u2019t a photo booth \u2014 it\u2019s a professional engagement system that draws a crowd, captures qualified leads, and gives every attendee something they actually value. Your sales team gets natural conversations. Your attendees get a polished headshot they\u2019ll use for months. And your booth becomes the one everyone\u2019s talking about.',
@@ -140,6 +141,7 @@ export const HA_SOLUTION: FeatureGridSectionContent = {
     'A Headshot Activation is a turnkey, on-site professional headshot experience deployed directly at your booth or event space. We bring the lighting, the equipment, the professional direction, and the Camera Ready Touchup Service\u2122 \u2014 everything needed to make attendees feel like a VIP the moment they step in.',
   columns: 2,
   displayMode: 'alternating',
+  showStepNumbers: true,
   features: [
     {
       id: 'solution-card-0',

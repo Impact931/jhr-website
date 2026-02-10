@@ -45,6 +45,8 @@ interface EditableHeroProps {
   variant?: HeroVariant;
   /** Height setting matching HeroBanner (mapped from variant). */
   height?: 'full' | 'large' | 'medium';
+  /** Image position for split variant ('left' or 'right'). */
+  imagePosition?: 'left' | 'right';
   /** Additional children rendered below CTAs. */
   children?: ReactNode;
 }
@@ -69,6 +71,7 @@ function getHeightClass(variant?: HeroVariant, height?: 'full' | 'large' | 'medi
       'full-height': 'min-h-screen',
       'half-height': 'min-h-[50vh]',
       'banner': 'min-h-[40vh]',
+      'split': 'min-h-[85vh]',
     };
     return variantClasses[variant];
   }
@@ -203,6 +206,7 @@ export function EditableHero({
   overlay = 'gradient',
   variant,
   height,
+  imagePosition = 'right',
   children,
 }: EditableHeroProps) {
   const { canEdit, isEditMode } = useEditMode();
@@ -264,6 +268,96 @@ export function EditableHero({
   const heightClass = getHeightClass(variant, height);
   const overlayClass = getOverlayClass(overlay);
   const imageContentKey = `${contentKeyPrefix}:backgroundImage`;
+
+  // ---- Split Variant (View Mode) ----
+  if (!isEditMode && variant === 'split') {
+    const isImageLeft = imagePosition === 'left';
+    return (
+      <section className="relative bg-[#0B0C0F] min-h-[85vh] flex items-center">
+        <div className={`w-full flex flex-col ${isImageLeft ? 'md:flex-row-reverse' : 'md:flex-row'}`}>
+          {/* Text side */}
+          <div className="w-full md:w-[45%] flex flex-col justify-center px-6 md:px-12 lg:px-20 py-16 md:py-20">
+            {subtitle && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex items-center gap-3 mb-6"
+              >
+                <span className="w-8 h-[2px] bg-jhr-gold" />
+                <span className="text-jhr-gold font-medium text-body-sm uppercase tracking-widest"
+                  {...renderInlineHtml(subtitle)}
+                />
+              </motion.div>
+            )}
+
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-display-sm sm:text-display-md lg:text-[3.25rem] lg:leading-[1.15] font-display font-bold text-jhr-white mb-6"
+              {...renderInlineHtml(title)}
+            />
+
+            {description && (
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="text-body-lg text-jhr-white-muted mb-8 leading-relaxed"
+                {...renderInlineHtml(description)}
+              />
+            )}
+
+            {(primaryCta || secondaryCta) && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex flex-col sm:flex-row gap-4"
+              >
+                {primaryCta && (
+                  <Link href={primaryCtaHref} className="btn-primary">
+                    {primaryCtaText}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Link>
+                )}
+                {secondaryCta && (
+                  <Link href={secondaryCtaHref} className="btn-secondary">
+                    {secondaryCtaText}
+                  </Link>
+                )}
+              </motion.div>
+            )}
+
+            {children && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="mt-8"
+              >
+                {children}
+              </motion.div>
+            )}
+          </div>
+
+          {/* Image side */}
+          <div className="w-full md:w-[55%] relative min-h-[300px] md:min-h-[85vh]">
+            <SmartImage
+              src={image}
+              alt={imageAlt}
+              fill
+              className="object-cover"
+              objectPosition={objectPosition}
+              priority
+              quality={90}
+            />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   // ---- View Mode ----
   if (!isEditMode) {

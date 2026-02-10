@@ -36,8 +36,9 @@ export type InlineSectionType =
  * - full-height: 100vh hero with overlay
  * - half-height: 50vh hero
  * - banner: Compact banner style
+ * - split: Side-by-side text + image layout
  */
-export type HeroVariant = 'full-height' | 'half-height' | 'banner';
+export type HeroVariant = 'full-height' | 'half-height' | 'banner' | 'split';
 
 /**
  * Layout options for image galleries.
@@ -234,6 +235,8 @@ export interface HeroSectionContent extends BaseSectionContent {
   description?: string;
   /** Background image for the hero. */
   backgroundImage?: EditableImageField;
+  /** Image position for split variant. Defaults to 'right'. */
+  imagePosition?: 'left' | 'right';
   /** Call-to-action buttons. Max 2 buttons. */
   buttons: CTAButton[];
 }
@@ -273,6 +276,8 @@ export interface FeatureGridSectionContent extends BaseSectionContent {
   features: FeatureCard[];
   /** Display mode variant. Defaults to 'default'. */
   displayMode?: FeatureGridDisplayMode;
+  /** Show numbered step indicators (01, 02, 03...) in alternating mode. */
+  showStepNumbers?: boolean;
   /** Card visual variant. 'glass' = frosted glass effect over video/backgrounds. */
   cardVariant?: 'default' | 'glass';
 }

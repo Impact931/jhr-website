@@ -323,6 +323,7 @@ export function SectionRenderer({
           primaryCta={hero.buttons?.[0]}
           secondaryCta={hero.buttons?.[1]}
           variant={hero.variant}
+          imagePosition={hero.imagePosition}
         >
           {heroChildren}
         </EditableHero>
@@ -341,6 +342,7 @@ export function SectionRenderer({
               columns={grid.columns}
               features={grid.features}
               displayMode={grid.displayMode}
+              showStepNumbers={grid.showStepNumbers}
               cardVariant={grid.cardVariant}
             />
           </SectionShell>
