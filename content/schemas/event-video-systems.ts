@@ -64,7 +64,7 @@ export const EVS_HERO: HeroSectionContent = {
     alt: 'Professional video production at corporate event',
   },
   buttons: [
-    { text: 'Schedule a Strategy Call', href: '/schedule', variant: 'primary' },
+    { text: 'Schedule a Strategy Call', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
   ],
 };
 
@@ -347,7 +347,7 @@ export const EVS_FINAL_CTA: CTASectionContent = {
   backgroundValue: '/images/generated/event-awards-ceremony.jpg',
   primaryButton: {
     text: 'Schedule a Strategy Call',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
 };

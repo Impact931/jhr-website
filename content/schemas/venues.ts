@@ -222,7 +222,7 @@ export const VENUES_FINAL_CTA: CTASectionContent = {
   backgroundValue: '/images/generated/venue-hotel-ballroom.jpg',
   primaryButton: {
     text: 'Schedule a Strategy Call',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
 };

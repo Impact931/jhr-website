@@ -64,7 +64,7 @@ export const EI_HERO: HeroSectionContent = {
     alt: 'Executive imaging session for leadership team',
   },
   buttons: [
-    { text: 'Talk With Our Team', href: '/schedule', variant: 'primary' },
+    { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
   ],
 };
 
@@ -183,7 +183,7 @@ export const EI_TWO_TIERS: FeatureGridSectionContent = {
       title: 'Executive Imaging',
       description:
         'For teams of 1-15. Individual sessions with personalized direction, multiple poses, and on-screen selection. Includes Camera Ready Touchup Service\u2122.',
-      link: { text: 'Talk With Our Team', href: '/schedule' },
+      link: { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105' },
     },
     {
       id: 'two-tiers-card-1',
@@ -191,7 +191,7 @@ export const EI_TWO_TIERS: FeatureGridSectionContent = {
       title: 'Executive Group Imaging Experience',
       description:
         'For groups of 16-50+. Streamlined group sessions with consistent brand standards across your entire team. Volume efficiency with individual quality.',
-      link: { text: 'Talk With Our Team', href: '/schedule' },
+      link: { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105' },
     },
   ],
 };
@@ -364,7 +364,7 @@ export const EI_FINAL_CTA: CTASectionContent = {
   backgroundValue: '/images/generated/service-corporate-headshots.jpg',
   primaryButton: {
     text: 'Talk With Our Team',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
 };

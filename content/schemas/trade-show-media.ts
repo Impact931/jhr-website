@@ -65,7 +65,7 @@ export const TSM_HERO: HeroSectionContent = {
     alt: 'Professional trade show photography on the show floor',
   },
   buttons: [
-    { text: 'Talk With Our Team', href: '/schedule', variant: 'primary' },
+    { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
   ],
 };
 
@@ -373,7 +373,7 @@ export const TSM_FINAL_CTA: CTASectionContent = {
   backgroundValue: '/images/generated/event-trade-show.jpg',
   primaryButton: {
     text: 'Talk With Our Team',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
 };

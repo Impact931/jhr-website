@@ -24,9 +24,10 @@
  * 9  | What's Included (deliverables)   | EditableFeatureGrid    | deliverables
  * 10 | Multi-Day Callout                | EditableTextBlock      | multi-day
  * 11 | Video Bundling                   | EditableFeatureGrid    | video-bundling
- * 12 | Testimonials                     | EditableTestimonials   | social-proof
- * 13 | FAQs                             | EditableFAQ            | faqs
- * 14 | Final CTA                        | EditableCTA            | final-cta
+ * 12 | Video CTA                        | EditableCTA            | video-cta
+ * 13 | Testimonials                     | EditableTestimonials   | social-proof
+ * 14 | FAQs                             | EditableFAQ            | faqs
+ * 15 | Final CTA                        | EditableCTA            | final-cta
  */
 
 import type {
@@ -65,8 +66,8 @@ export const CEC_HERO: HeroSectionContent = {
     alt: 'Professional event photography at corporate conference in Nashville',
   },
   buttons: [
-    { text: 'Talk With Our Team', href: '/schedule', variant: 'primary' },
-    { text: 'Check Availability', href: '/contact', variant: 'secondary' },
+    { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
+    { text: 'Check Availability', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'secondary' },
   ],
 };
 
@@ -474,13 +475,38 @@ export const CEC_VIDEO_BUNDLING: FeatureGridSectionContent = {
 };
 
 // ============================================================================
-// Section 12: Testimonials (carousel, light variant)
+// Section 12: Video CTA
+// ============================================================================
+
+export const CEC_VIDEO_CTA: CTASectionContent = {
+  id: 'video-cta',
+  type: 'cta',
+  order: 12,
+  seo: {
+    ariaLabel: 'Connect with the JHR video production team',
+    sectionId: 'video-cta',
+    dataSectionName: 'video-cta',
+  },
+  headline: 'Add Video to Your Event Coverage',
+  subtext:
+    'Our Event Video Systems integrate seamlessly with photography coverage — one team, one coordinated delivery, one complete media library.',
+  backgroundType: 'solid',
+  backgroundValue: '#111318',
+  primaryButton: {
+    text: 'Connect with the Video Crew',
+    href: '/services/event-video-systems',
+    variant: 'primary',
+  },
+};
+
+// ============================================================================
+// Section 13: Testimonials (carousel, light variant)
 // ============================================================================
 
 export const CEC_TESTIMONIALS: TestimonialsSectionContent = {
   id: 'social-proof',
   type: 'testimonials',
-  order: 12,
+  order: 13,
   seo: {
     ariaLabel: 'Client testimonials for corporate event coverage',
     sectionId: 'social-proof',
@@ -515,13 +541,13 @@ export const CEC_TESTIMONIALS: TestimonialsSectionContent = {
 };
 
 // ============================================================================
-// Section 13: FAQs (expanded — 13 questions)
+// Section 14: FAQs (expanded — 13 questions)
 // ============================================================================
 
 export const CEC_FAQS: FAQSectionContent = {
   id: 'faqs',
   type: 'faq',
-  order: 13,
+  order: 14,
   seo: {
     ariaLabel: 'Frequently asked questions about corporate event coverage',
     sectionId: 'faqs',
@@ -605,13 +631,13 @@ export const CEC_FAQS: FAQSectionContent = {
 };
 
 // ============================================================================
-// Section 14: Final CTA
+// Section 15: Final CTA
 // ============================================================================
 
 export const CEC_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 14,
+  order: 15,
   seo: {
     ariaLabel: 'Schedule a strategy call for corporate event coverage',
     sectionId: 'final-cta',
@@ -624,12 +650,12 @@ export const CEC_FINAL_CTA: CTASectionContent = {
   backgroundValue: '#111318',
   primaryButton: {
     text: 'Talk With Our Team',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
   secondaryButton: {
     text: 'Check Availability',
-    href: '/contact',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'secondary',
   },
 };
@@ -651,6 +677,7 @@ export const CEC_SECTIONS: PageSectionContent[] = [
   CEC_DELIVERABLES,
   CEC_MULTI_DAY,
   CEC_VIDEO_BUNDLING,
+  CEC_VIDEO_CTA,
   CEC_TESTIMONIALS,
   CEC_FAQS,
   CEC_FINAL_CTA,

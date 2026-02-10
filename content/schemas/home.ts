@@ -64,8 +64,8 @@ export const HOME_HERO: HeroSectionContent = {
     alt: 'JHR Photography operator working seamlessly at a Nashville corporate event',
   },
   buttons: [
-    { text: 'Talk With Our Team', href: '/schedule', variant: 'primary' },
-    { text: 'Check Availability', href: '/contact', variant: 'secondary' },
+    { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
+    { text: 'Check Availability', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'secondary' },
   ],
 };
 
@@ -452,12 +452,12 @@ export const HOME_FINAL_CTA: CTASectionContent = {
   backgroundValue: '/images/generated/event-keynote.jpg',
   primaryButton: {
     text: 'Talk With Our Team',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
   secondaryButton: {
     text: 'Check Availability',
-    href: '/contact',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'secondary',
   },
 };

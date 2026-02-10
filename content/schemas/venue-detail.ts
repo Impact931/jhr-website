@@ -108,7 +108,7 @@ export function buildVenueDetailSchema(venue: VenueData): PageSchema {
       alt: venue.heroImageAlt,
     },
     buttons: [
-      { text: 'Schedule a Strategy Call', href: '/schedule', variant: 'primary' },
+      { text: 'Schedule a Strategy Call', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
     ],
   };
 
@@ -220,7 +220,7 @@ export function buildVenueDetailSchema(venue: VenueData): PageSchema {
     backgroundValue: venue.ctaBackgroundImage,
     primaryButton: {
       text: 'Schedule a Strategy Call',
-      href: '/schedule',
+      href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
       variant: 'primary',
     },
   };

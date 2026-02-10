@@ -63,8 +63,8 @@ export const VSOL_HERO: HeroSectionContent = {
   description:
     'When clients ask for photography recommendations, you need vendors you can trust. JHR Photography understands venue operations, respects your protocols, and consistently delivers quality that reflects well on everyone involved.',
   buttons: [
-    { text: 'Schedule a Strategy Call', href: '/schedule', variant: 'primary' },
-    { text: 'Request Vendor Information', href: '/contact', variant: 'secondary' },
+    { text: 'Schedule a Strategy Call', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
+    { text: 'Request Vendor Information', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'secondary' },
   ],
 };
 
@@ -224,7 +224,7 @@ export const VSOL_SERVICES: FeatureGridSectionContent = {
       title: 'Venue Photography',
       description:
         'Professional documentation of your spaces for marketing materials. Empty spaces and events-in-progress.',
-      link: { text: 'Contact us', href: '/contact' },
+      link: { text: 'Contact us', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105' },
     },
   ],
 };
@@ -374,7 +374,7 @@ export const VSOL_FINAL_CTA: CTASectionContent = {
   backgroundValue: 'linear-gradient(135deg, #0A0A0A 0%, #1a1a2e 100%)',
   primaryButton: {
     text: 'Schedule a Strategy Call',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
 };

@@ -60,8 +60,8 @@ export const DMC_HERO: HeroSectionContent = {
   description:
     'You\u2019ve built trust over years. One unreliable vendor can damage that in a day. JHR Photography operates as an extension of your team\u2014professional, prepared, and consistent every time.',
   buttons: [
-    { text: 'Schedule a Strategy Call', href: '/schedule', variant: 'primary' },
-    { text: 'Request Information', href: '/contact', variant: 'secondary' },
+    { text: 'Schedule a Strategy Call', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
+    { text: 'Request Information', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'secondary' },
   ],
 };
 
@@ -288,7 +288,7 @@ export const DMC_FINAL_CTA: CTASectionContent = {
   backgroundValue: 'linear-gradient(135deg, #0A0A0A 0%, #1a1a2e 100%)',
   primaryButton: {
     text: 'Schedule a Strategy Call',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
 };

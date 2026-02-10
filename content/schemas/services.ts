@@ -71,7 +71,7 @@ export const SERVICES_HERO: HeroSectionContent = {
     alt: 'Professional photographer at corporate event',
   },
   buttons: [
-    { text: 'Talk With Our Team', href: '/schedule', variant: 'primary' },
+    { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
   ],
 };
 
@@ -148,7 +148,7 @@ export const SERVICES_NOT_SURE_CTA: CTASectionContent = {
   backgroundValue: '#1A1A1A',
   primaryButton: {
     text: 'Talk With Our Team',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
 };
@@ -289,12 +289,12 @@ export const SERVICES_FINAL_CTA: CTASectionContent = {
   backgroundValue: '/images/generated/event-networking.jpg',
   primaryButton: {
     text: 'Talk With Our Team',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
   secondaryButton: {
     text: 'Check Availability',
-    href: '/contact',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'secondary',
   },
 };

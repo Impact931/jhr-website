@@ -71,8 +71,8 @@ export const HA_HERO: HeroSectionContent = {
     alt: 'Professional headshot activation at trade show booth',
   },
   buttons: [
-    { text: 'Talk With Our Team', href: '/schedule', variant: 'primary' },
-    { text: 'Check Availability', href: '/contact', variant: 'secondary' },
+    { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
+    { text: 'Check Availability', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'secondary' },
   ],
 };
 
@@ -189,7 +189,7 @@ export const HA_USE_CASES: FeatureGridSectionContent = {
       title: 'For Exhibitors & Sponsors',
       description:
         'Deploy a Headshot Activation at your trade show booth to create a high-energy destination attendees seek out. Your sales team gets natural, extended conversations with people who chose to engage \u2014 not people you chased down in the aisle.',
-      link: { text: 'Talk With Our Team', href: '/schedule' },
+      link: { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105' },
     },
     {
       id: 'use-cases-card-1',
@@ -197,7 +197,7 @@ export const HA_USE_CASES: FeatureGridSectionContent = {
       title: 'For Event Hosts & Corporate Programs',
       description:
         'Add a Headshot Activation to your conference, corporate event, or tenant appreciation program as a premium attendee benefit. Attendees get a professional headshot update they\u2019ve been meaning to get for months \u2014 and your organization gets credit for providing it.',
-      link: { text: 'Talk With Our Team', href: '/schedule' },
+      link: { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105' },
     },
   ],
 };
@@ -479,12 +479,12 @@ export const HA_FINAL_CTA: CTASectionContent = {
   backgroundValue: '/images/generated/service-headshot-activation.jpg',
   primaryButton: {
     text: 'Talk With Our Team',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
   secondaryButton: {
     text: 'Check Availability',
-    href: '/contact',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'secondary',
   },
 };

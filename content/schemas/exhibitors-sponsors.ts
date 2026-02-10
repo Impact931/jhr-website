@@ -63,7 +63,7 @@ export const EXSP_HERO: HeroSectionContent = {
   description:
     'You\u2019ve spent thousands on booth space. You\u2019ve got great products and a sharp team. But half the conference is walking right by. What if you had something everyone at the show actually wanted?',
   buttons: [
-    { text: 'Schedule a Strategy Call', href: '/schedule', variant: 'primary' },
+    { text: 'Schedule a Strategy Call', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
     { text: 'Learn About Headshot Activation', href: '/services/headshot-activation', variant: 'secondary' },
   ],
 };
@@ -336,7 +336,7 @@ export const EXSP_FINAL_CTA: CTASectionContent = {
   backgroundValue: 'linear-gradient(135deg, #0A0A0A 0%, #1a1a2e 100%)',
   primaryButton: {
     text: 'Schedule a Strategy Call',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
 };

@@ -63,8 +63,8 @@ export const ASSOC_HERO: HeroSectionContent = {
   description:
     'Your conference is more than sessions and networking\u2014it\u2019s a demonstration of member value. JHR helps you document the experience, celebrate achievements, and provide benefits members talk about long after they return home.',
   buttons: [
-    { text: 'Schedule a Strategy Call', href: '/schedule', variant: 'primary' },
-    { text: 'Request Information', href: '/contact', variant: 'secondary' },
+    { text: 'Schedule a Strategy Call', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
+    { text: 'Request Information', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'secondary' },
   ],
 };
 
@@ -341,7 +341,7 @@ export const ASSOC_FINAL_CTA: CTASectionContent = {
   backgroundValue: 'linear-gradient(135deg, #0A0A0A 0%, #1a1a2e 100%)',
   primaryButton: {
     text: 'Schedule a Strategy Call',
-    href: '/schedule',
+    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
     variant: 'primary',
   },
 };

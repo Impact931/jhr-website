@@ -788,11 +788,13 @@ function AlternatingView({
 
               {/* Text side (2/3) */}
               <div className="w-full md:w-2/3 flex flex-col justify-center p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-jhr-gold/10 flex items-center justify-center">
-                    <IconComp className="w-5 h-5 text-jhr-gold" />
+                {!feature.image?.src && (
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-jhr-gold/10 flex items-center justify-center">
+                      <IconComp className="w-5 h-5 text-jhr-gold" />
+                    </div>
                   </div>
-                </div>
+                )}
                 <h3 className="text-heading-lg font-semibold text-jhr-white mb-3"
                   {...renderInlineHtml(feature.title)}
                 />
