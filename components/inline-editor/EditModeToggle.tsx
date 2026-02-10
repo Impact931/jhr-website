@@ -152,12 +152,21 @@ export function EditModeToggle() {
             onClick={() => save()}
             disabled={saveState.status === 'saving'}
             title={`Save (${getShortcutLabel('save')})`}
-            className="flex items-center gap-2 px-4 py-2.5 sm:py-2 font-semibold rounded-lg shadow-lg transition-all touch-manipulation min-h-[44px] bg-green-700 hover:bg-green-600 text-white disabled:opacity-50"
+            className={`flex items-center gap-2 px-4 py-2.5 sm:py-2 font-semibold rounded-lg shadow-lg transition-all duration-300 touch-manipulation min-h-[44px] text-white disabled:opacity-50 ${
+              saveState.status === 'saved'
+                ? 'bg-emerald-500 scale-105 ring-2 ring-emerald-400/50'
+                : 'bg-green-700 hover:bg-green-600'
+            }`}
           >
             {saveState.status === 'saving' ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Saving...
+              </>
+            ) : saveState.status === 'saved' ? (
+              <>
+                <Check className="w-4 h-4" />
+                Saved!
               </>
             ) : (
               <>

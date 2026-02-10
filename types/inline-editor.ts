@@ -272,6 +272,8 @@ export interface FeatureGridSectionContent extends BaseSectionContent {
   features: FeatureCard[];
   /** Display mode variant. Defaults to 'default'. */
   displayMode?: FeatureGridDisplayMode;
+  /** Card visual variant. 'glass' = frosted glass effect over video/backgrounds. */
+  cardVariant?: 'default' | 'glass';
 }
 
 /**

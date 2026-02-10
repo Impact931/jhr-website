@@ -131,7 +131,7 @@ function SectionShell({
   };
 
   return (
-    <section className={`${className}${videoSrc ? ' relative overflow-hidden' : ''}`}>
+    <section className={`${className}${videoSrc ? ' relative overflow-hidden' : ''} group/shell`}>
       {videoSrc && !isYouTube && (
         <>
           <video
@@ -165,21 +165,21 @@ function SectionShell({
 
       {/* Edit-mode video BG controls */}
       {showEditControls && (
-        <div className="absolute top-2 left-2 z-30 flex flex-col items-start gap-1">
+        <div className={`absolute top-2 left-2 z-30 flex flex-col items-start gap-1 transition-opacity ${videoSrc ? 'opacity-100' : 'opacity-0 group-hover/shell:opacity-100'}`}>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowPicker(true)}
               className="flex items-center gap-1 px-2 py-1 rounded-md bg-black/70 text-white text-xs font-medium hover:bg-black/90 backdrop-blur-sm"
             >
               <Video className="w-3 h-3" />
-              {videoSrc ? 'Change Video BG' : 'Add Video BG'}
+              {videoSrc ? 'Change' : 'Video BG'}
             </button>
             <button
               onClick={() => setShowYouTubeInput(!showYouTubeInput)}
               className="flex items-center gap-1 px-2 py-1 rounded-md bg-black/70 text-white text-xs font-medium hover:bg-black/90 backdrop-blur-sm"
             >
               <Youtube className="w-3 h-3" />
-              YouTube
+              YT
             </button>
             {videoSrc && (
               <button
@@ -187,7 +187,6 @@ function SectionShell({
                 className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-900/70 text-white text-xs font-medium hover:bg-red-900/90 backdrop-blur-sm"
               >
                 <X className="w-3 h-3" />
-                Remove
               </button>
             )}
           </div>
@@ -337,6 +336,7 @@ export function SectionRenderer({
               columns={grid.columns}
               features={grid.features}
               displayMode={grid.displayMode}
+              cardVariant={grid.cardVariant}
             />
           </SectionShell>
         </AnimatedSection>

@@ -206,6 +206,8 @@ interface EditableFeatureGridProps {
   features: FeatureCard[];
   /** Display mode variant. */
   displayMode?: FeatureGridDisplayMode;
+  /** Card variant: 'default' = solid bg, 'glass' = frosted glass effect. */
+  cardVariant?: 'default' | 'glass';
   /** Callback when features array changes (for parent state management). */
   onFeaturesChange?: (features: FeatureCard[]) => void;
   /** Callback when columns change. */
@@ -429,6 +431,47 @@ function ColumnSelector({
           `}
         >
           {col}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================================
+// Display Mode Selector
+// ============================================================================
+
+const DISPLAY_MODE_OPTIONS: { value: FeatureGridDisplayMode; label: string }[] = [
+  { value: 'default', label: 'Grid' },
+  { value: 'horizontal', label: 'Horizontal' },
+  { value: 'alternating', label: 'Alternating' },
+  { value: 'journey', label: 'Journey' },
+  { value: 'logo-scroll', label: 'Logo Scroll' },
+];
+
+function DisplayModeSelector({
+  mode,
+  onChange,
+}: {
+  mode: FeatureGridDisplayMode;
+  onChange: (mode: FeatureGridDisplayMode) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-400 uppercase tracking-wider">Mode:</span>
+      {DISPLAY_MODE_OPTIONS.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`
+            px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+            ${mode === opt.value
+              ? 'bg-[#C9A227] text-black'
+              : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#333]'
+            }
+          `}
+        >
+          {opt.label}
         </button>
       ))}
     </div>
@@ -944,6 +987,7 @@ export function EditableFeatureGrid({
   columns = 3,
   features: initialFeatures,
   displayMode = 'default',
+  cardVariant: initialCardVariant = 'default',
   onFeaturesChange,
   onColumnsChange,
   children,
@@ -954,6 +998,8 @@ export function EditableFeatureGrid({
   // Local feature state for add/remove/reorder
   const [features, setFeatures] = useState<FeatureCard[]>(initialFeatures);
   const [currentColumns, setCurrentColumns] = useState<FeatureGridColumns>(columns);
+  const [currentDisplayMode, setCurrentDisplayMode] = useState<FeatureGridDisplayMode>(displayMode);
+  const [currentCardVariant, setCurrentCardVariant] = useState<'default' | 'glass'>(initialCardVariant);
 
   // Modal states
   const [iconSelectorCardId, setIconSelectorCardId] = useState<string | null>(null);
@@ -997,6 +1043,32 @@ export function EditableFeatureGrid({
       );
     },
     [contentKeyPrefix, onColumnsChange, updateContent]
+  );
+
+  // Handle display mode change
+  const handleDisplayModeChange = useCallback(
+    (mode: FeatureGridDisplayMode) => {
+      setCurrentDisplayMode(mode);
+      updateContent(
+        `${contentKeyPrefix}:displayMode`,
+        mode,
+        'text'
+      );
+    },
+    [contentKeyPrefix, updateContent]
+  );
+
+  // Handle card variant change
+  const handleCardVariantChange = useCallback(
+    (variant: 'default' | 'glass') => {
+      setCurrentCardVariant(variant);
+      updateContent(
+        `${contentKeyPrefix}:cardVariant`,
+        variant,
+        'text'
+      );
+    },
+    [contentKeyPrefix, updateContent]
   );
 
   // Add a new feature card
@@ -1118,10 +1190,13 @@ export function EditableFeatureGrid({
   const displayHeading = pendingChanges.get(headingKey)?.newValue ?? heading;
   const displaySubheading = pendingChanges.get(subheadingKey)?.newValue ?? subheading;
 
+  // Glass class wrapper
+  const glassClass = currentCardVariant === 'glass' ? 'glass-cards' : '';
+
   // ---- View Mode ----
   if (!isEditMode) {
     // Route to special display modes
-    if (displayMode === 'logo-scroll') {
+    if (currentDisplayMode === 'logo-scroll') {
       return (
         <div>
           <LogoScrollView
@@ -1134,7 +1209,7 @@ export function EditableFeatureGrid({
       );
     }
 
-    if (displayMode === 'journey') {
+    if (currentDisplayMode === 'journey') {
       return (
         <div>
           <JourneyView
@@ -1147,9 +1222,9 @@ export function EditableFeatureGrid({
       );
     }
 
-    if (displayMode === 'alternating') {
+    if (currentDisplayMode === 'alternating') {
       return (
-        <div>
+        <div className={glassClass}>
           <AlternatingView
             heading={displayHeading}
             subheading={displaySubheading}
@@ -1160,9 +1235,9 @@ export function EditableFeatureGrid({
       );
     }
 
-    if (displayMode === 'horizontal') {
+    if (currentDisplayMode === 'horizontal') {
       return (
-        <div>
+        <div className={glassClass}>
           <HorizontalCardView
             heading={displayHeading}
             subheading={displaySubheading}
@@ -1175,7 +1250,7 @@ export function EditableFeatureGrid({
 
     // Default grid view
     return (
-      <div>
+      <div className={glassClass}>
         {/* Heading / Subheading */}
         {(displayHeading || displaySubheading) && (
           <div className="text-center mb-12">
@@ -1213,15 +1288,15 @@ export function EditableFeatureGrid({
   // Edit mode always shows the standard grid editor regardless of displayMode
   return (
     <>
-      <div className="relative group/grid">
+      <div className={`relative group/grid ${glassClass}`}>
         {/* Section Label */}
         {canEdit && (
           <div className="absolute -top-3 left-4 z-20">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#C9A227]/90 text-black text-xs font-bold rounded-full uppercase tracking-wider shadow-lg">
               <Pencil className="w-3 h-3" />
               Feature Grid
-              {displayMode !== 'default' && (
-                <span className="ml-1 text-[10px] opacity-70">({displayMode})</span>
+              {currentDisplayMode !== 'default' && (
+                <span className="ml-1 text-[10px] opacity-70">({currentDisplayMode})</span>
               )}
             </span>
           </div>
@@ -1266,12 +1341,30 @@ export function EditableFeatureGrid({
           )}
         </div>
 
-        {/* Column selector */}
+        {/* Display mode, column selector, and card variant */}
         {canEdit && (
-          <div className="flex items-center justify-between mb-6">
-            <ColumnSelector columns={currentColumns} onChange={handleColumnsChange} />
-            <div className="flex items-center gap-2">
-              <FieldLabel label="Feature Cards" icon={<Grid3X3 className="w-3 h-3" />} />
+          <div className="flex flex-col gap-3 mb-6">
+            <DisplayModeSelector mode={currentDisplayMode} onChange={handleDisplayModeChange} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <ColumnSelector columns={currentColumns} onChange={handleColumnsChange} />
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 uppercase tracking-wider">Style:</span>
+                  <button
+                    onClick={() => handleCardVariantChange(currentCardVariant === 'glass' ? 'default' : 'glass')}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      currentCardVariant === 'glass'
+                        ? 'bg-[#C9A227] text-black'
+                        : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#333]'
+                    }`}
+                  >
+                    Glass
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <FieldLabel label="Feature Cards" icon={<Grid3X3 className="w-3 h-3" />} />
+              </div>
             </div>
           </div>
         )}
