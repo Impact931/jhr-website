@@ -96,7 +96,7 @@ export function ROICalculator({
             step="50"
             value={attendees}
             onChange={(e) => setAttendees(Number(e.target.value))}
-            className="w-full h-2 bg-jhr-black-lighter rounded-lg appearance-none cursor-pointer accent-jhr-gold"
+            className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-jhr-gold ${isDark ? 'bg-jhr-black-lighter' : 'bg-gray-200'}`}
           />
           <div
             className={`flex justify-between text-xs mt-1 ${
@@ -130,7 +130,7 @@ export function ROICalculator({
             step="5"
             value={leadValue}
             onChange={(e) => setLeadValue(Number(e.target.value))}
-            className="w-full h-2 bg-jhr-black-lighter rounded-lg appearance-none cursor-pointer accent-jhr-gold"
+            className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-jhr-gold ${isDark ? 'bg-jhr-black-lighter' : 'bg-gray-200'}`}
           />
           <div
             className={`flex justify-between text-xs mt-1 ${

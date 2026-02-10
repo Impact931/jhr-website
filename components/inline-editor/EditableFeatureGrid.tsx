@@ -764,6 +764,7 @@ function AlternatingView({
         {features.map((feature, index) => {
           const isReversed = index % 2 !== 0;
           const IconComp = getIconComponent(feature.icon);
+          const stepNumber = String(index + 1).padStart(2, '0');
           return (
             <motion.div
               key={feature.id}
@@ -775,8 +776,8 @@ function AlternatingView({
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
             >
-              {/* Image side (1/3) */}
-              <div className="w-full md:w-1/3 min-h-[200px] md:min-h-[280px] relative rounded-xl overflow-hidden bg-[#1A1A1A]">
+              {/* Image side */}
+              <div className="w-full md:w-1/2 min-h-[200px] md:min-h-[340px] relative rounded-xl overflow-hidden bg-[#1A1A1A]">
                 {feature.image?.src ? (
                   <SmartImage
                     src={feature.image.src}
@@ -791,15 +792,12 @@ function AlternatingView({
                 )}
               </div>
 
-              {/* Text side (2/3) */}
-              <div className="w-full md:w-2/3 flex flex-col justify-center p-6 md:p-8">
-                {!feature.image?.src && (
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-jhr-gold/10 flex items-center justify-center">
-                      <IconComp className="w-5 h-5 text-jhr-gold" />
-                    </div>
-                  </div>
-                )}
+              {/* Text side */}
+              <div className="w-full md:w-1/2 flex flex-col justify-center p-6 md:p-8">
+                {/* Ghost step number */}
+                <span className="text-[4rem] md:text-[5rem] font-display font-bold leading-none text-jhr-white-dim/20 select-none mb-2">
+                  {stepNumber}
+                </span>
                 <h3 className="text-heading-lg font-semibold text-jhr-white mb-3"
                   {...renderInlineHtml(feature.title)}
                 />
