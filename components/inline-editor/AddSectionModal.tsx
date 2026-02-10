@@ -18,9 +18,8 @@ import {
   Check,
 } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
-import type { InlineSectionType } from '@/types/inline-editor';
+import type { InlineSectionType, PageSectionContent, TabbedContentSectionContent, TabItem } from '@/types/inline-editor';
 import { SECTION_TYPE_META, createDefaultSection } from '@/types/inline-editor';
-import type { PageSectionContent } from '@/types/inline-editor';
 
 // ============================================================================
 // Icon map (same as SectionWrapper)
@@ -580,16 +579,16 @@ function applyVariantToSection(
     }
     case 'tabbed-content': {
       if (variantId === 'tabbed-3-dark') {
-        const s = section as any;
-        const thirdTab = {
+        const s = section as TabbedContentSectionContent;
+        const thirdTab: TabItem = {
           id: `${section.id}-tab-2`,
           tabLabel: 'Tab Three',
           heading: 'Tab Three Heading',
           bodyParagraphs: ['Describe this pathway or option.'],
           cta: { text: 'Learn More', href: '#' },
-          image: { src: '/images/generated/placeholder.jpg', alt: 'Tab image', position: 'right' as const },
+          image: { src: '/images/generated/placeholder.jpg', alt: 'Tab image', position: 'right' },
         };
-        return { ...s, tabs: [...(s.tabs || []), thirdTab] };
+        return { ...s, tabs: [...s.tabs, thirdTab] };
       }
       return section;
     }
