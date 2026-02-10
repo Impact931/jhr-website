@@ -19,6 +19,7 @@ const EditableTestimonials = dynamic(() => import('./EditableTestimonials').then
 const EditableTextBlock = dynamic(() => import('./EditableTextBlock').then(m => ({ default: m.EditableTextBlock })));
 const EditableColumns = dynamic(() => import('./EditableColumns').then(m => ({ default: m.EditableColumns })));
 const EditableStats = dynamic(() => import('./EditableStats').then(m => ({ default: m.EditableStats })));
+const EditableTabbedContent = dynamic(() => import('./EditableTabbedContent').then(m => ({ default: m.EditableTabbedContent })));
 import type {
   PageSectionContent,
   HeroSectionContent,
@@ -30,6 +31,7 @@ import type {
   TestimonialsSectionContent,
   ColumnsSectionContent,
   StatsSectionContent,
+  TabbedContentSectionContent,
 } from '@/types/inline-editor';
 
 // ============================================================================
@@ -92,6 +94,7 @@ const DEFAULT_SECTION_CLASSES: Record<string, string> = {
   'text-block': 'section-padding bg-jhr-black',
   'columns': 'section-padding bg-jhr-black',
   'stats': 'section-padding bg-jhr-black-light',
+  'tabbed-content': 'section-padding bg-[#0B0C0F]',
 };
 
 // ============================================================================
@@ -271,6 +274,8 @@ function AnimatedSection({
     case 'columns':
       return <FadeUp once>{children}</FadeUp>;
     case 'stats':
+      return <FadeUp once>{children}</FadeUp>;
+    case 'tabbed-content':
       return <FadeUp once>{children}</FadeUp>;
     case 'image-gallery':
       return <FadeIn once>{children}</FadeIn>;
@@ -480,6 +485,23 @@ export function SectionRenderer({
               heading={statsSection.heading}
               subheading={statsSection.subheading}
               stats={statsSection.stats}
+            />
+          </SectionShell>
+        </AnimatedSection>
+      );
+    }
+
+    case 'tabbed-content': {
+      const tabbed = section as TabbedContentSectionContent;
+      return (
+        <AnimatedSection type="tabbed-content" isEditMode={isEditMode}>
+          <SectionShell className={sectionClass} videoSrc={section.backgroundVideo} sectionId={section.id}>
+            <EditableTabbedContent
+              contentKeyPrefix={prefix}
+              heading={tabbed.heading}
+              sectionLabel={tabbed.sectionLabel}
+              tabs={tabbed.tabs}
+              variant={tabbed.variant}
             />
           </SectionShell>
         </AnimatedSection>

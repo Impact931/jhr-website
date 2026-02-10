@@ -17,7 +17,7 @@
  * 0 (hero)   | Hero Banner                   | EditableHero              | headshot-activation:hero
  * 1          | The Booth Problem (Empathy)   | EditableFeatureGrid       | headshot-activation:problem
  * 2          | How It Works (Solution)       | EditableFeatureGrid       | headshot-activation:solution
- * 3          | Two Ways to Activate          | EditableFeatureGrid       | headshot-activation:use-cases
+ * 3          | Two Ways to Activate          | EditableTabbedContent     | headshot-activation:use-cases
  * 4          | What's Included               | EditableFeatureGrid       | headshot-activation:whats-included
  * 5          | Headshot Styles               | EditableFeatureGrid       | headshot-activation:headshot-styles
  * 6          | Social Proof                  | EditableTestimonials      | headshot-activation:social-proof
@@ -39,6 +39,7 @@ import type {
   PageSectionContent,
   HeroSectionContent,
   FeatureGridSectionContent,
+  TabbedContentSectionContent,
   TestimonialsSectionContent,
   FAQSectionContent,
   CTASectionContent,
@@ -169,11 +170,11 @@ export const HA_SOLUTION: FeatureGridSectionContent = {
 
 /**
  * Section 3: Two Ways to Activate (Use Cases)
- * Component: EditableFeatureGrid (2 columns)
+ * Component: EditableTabbedContent (2 tabs)
  */
-export const HA_USE_CASES: FeatureGridSectionContent = {
+export const HA_USE_CASES: TabbedContentSectionContent = {
   id: 'use-cases',
-  type: 'feature-grid',
+  type: 'tabbed-content',
   order: 3,
   seo: {
     ariaLabel: 'Two ways to use headshot activation - exhibitors and event hosts',
@@ -181,23 +182,61 @@ export const HA_USE_CASES: FeatureGridSectionContent = {
     dataSectionName: 'use-cases',
   },
   heading: 'Two Ways to Activate',
-  columns: 2,
-  features: [
+  variant: 'dark',
+  tabs: [
     {
-      id: 'use-cases-card-0',
-      icon: 'Building',
-      title: 'For Exhibitors & Sponsors',
-      description:
+      id: 'use-cases-tab-0',
+      tabLabel: 'For Exhibitors & Sponsors',
+      heading: 'Drive Booth Traffic and Capture Qualified Leads',
+      bodyParagraphs: [
         'Deploy a Headshot Activation at your trade show booth to create a high-energy destination attendees seek out. Your sales team gets natural, extended conversations with people who chose to engage \u2014 not people you chased down in the aisle.',
-      link: { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105' },
+        'This is the setup that turns a six-figure booth investment into measurable results.',
+      ],
+      listItems: [
+        'Professional activation station with signature lighting',
+        'Camera Ready Touchup Service\u2122 (included full-day)',
+        'Integrated lead capture with real-time data delivery',
+        'Direct-to-attendee headshot delivery',
+        'White-label branding on gallery and images',
+        'Same-day social sharing capability',
+      ],
+      tags: 'Trade shows \u00b7 Conventions \u00b7 Exhibitor booths \u00b7 Sponsor activations \u00b7 Product launches',
+      cta: {
+        text: 'Talk With Our Team',
+        href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
+      },
+      image: {
+        src: '/images/generated/service-headshot-activation.jpg',
+        alt: 'Trade show headshot activation booth with professional lighting',
+        position: 'right',
+      },
     },
     {
-      id: 'use-cases-card-1',
-      icon: 'Users',
-      title: 'For Event Hosts & Corporate Programs',
-      description:
+      id: 'use-cases-tab-1',
+      tabLabel: 'For Event Hosts & Corporate Programs',
+      heading: 'Offer Your Attendees Something They\u2019ll Actually Thank You For',
+      bodyParagraphs: [
         'Add a Headshot Activation to your conference, corporate event, or tenant appreciation program as a premium attendee benefit. Attendees get a professional headshot update they\u2019ve been meaning to get for months \u2014 and your organization gets credit for providing it.',
-      link: { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105' },
+        'This is the model companies like Cushman & Wakefield have used to strengthen tenant relationships and elevate their event experience.',
+      ],
+      listItems: [
+        'Full-service headshot experience for attendees or tenants',
+        'Camera Ready Touchup Service\u2122 (included)',
+        'Professional direction and confidence coaching',
+        'Direct-to-individual delivery',
+        'Branded gallery with your organization\u2019s identity',
+        'Scalable for 50 to 500+ participants',
+      ],
+      tags: 'Annual conferences \u00b7 Corporate appreciation events \u00b7 Tenant programs \u00b7 Employee engagement \u00b7 Client hospitality',
+      cta: {
+        text: 'Talk With Our Team',
+        href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
+      },
+      image: {
+        src: '/images/generated/service-headshot-activation.jpg',
+        alt: 'Corporate event headshot activation for attendees',
+        position: 'right',
+      },
     },
   ],
 };

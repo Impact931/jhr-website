@@ -28,7 +28,8 @@ export type InlineSectionType =
   | 'testimonials'
   | 'faq'
   | 'columns'
-  | 'stats';
+  | 'stats'
+  | 'tabbed-content';
 
 /**
  * Variant options for hero sections.
@@ -393,6 +394,53 @@ export interface StatsSectionContent extends BaseSectionContent {
 }
 
 /**
+ * A single tab within a tabbed content section.
+ */
+export interface TabItem {
+  id: string;
+  /** Tab button text. */
+  tabLabel: string;
+  /** H3 heading inside the tab panel. */
+  heading: string;
+  /** 1-3 body paragraphs. */
+  bodyParagraphs: string[];
+  /** Optional bullet list items (displayed with gold dash markers). */
+  listItems?: string[];
+  /** Optional tag line (e.g., "Best For: ..."). */
+  tags?: string;
+  /** CTA button inside the tab panel. */
+  cta: {
+    text: string;
+    href: string;
+  };
+  /** Image displayed alongside the text content. */
+  image: {
+    src: string;
+    alt: string;
+    /** Which column the image occupies: left or right. */
+    position: 'left' | 'right';
+  };
+}
+
+/**
+ * Tabbed content section.
+ * 2-3 tabs, each containing a two-column layout with rich text + image and an independent CTA.
+ *
+ * AI hint: heading max 100 characters. Each tab represents a distinct pathway or use case.
+ */
+export interface TabbedContentSectionContent extends BaseSectionContent {
+  type: 'tabbed-content';
+  /** Section heading. Rendered as h2. Max 100 characters. */
+  heading?: string;
+  /** Optional eyebrow text above the heading. */
+  sectionLabel?: string;
+  /** Tab items. 2-3 tabs recommended. */
+  tabs: TabItem[];
+  /** Color variant. Defaults to 'dark'. */
+  variant?: 'dark' | 'light';
+}
+
+/**
  * Columns section content.
  * A multi-column layout container that holds child sections side-by-side.
  * Columns collapse to single column on mobile.
@@ -421,7 +469,8 @@ export type PageSectionContent =
   | TestimonialsSectionContent
   | FAQSectionContent
   | ColumnsSectionContent
-  | StatsSectionContent;
+  | StatsSectionContent
+  | TabbedContentSectionContent;
 
 // ============================================================================
 // Page Schema
@@ -622,6 +671,33 @@ export function createDefaultSection(
           { id: `${id}-stat-2`, value: 100, suffix: '%', label: 'Satisfaction Rate' },
         ],
       };
+    case 'tabbed-content':
+      return {
+        id,
+        type: 'tabbed-content',
+        order,
+        seo: baseSeo,
+        heading: 'Section Heading',
+        tabs: [
+          {
+            id: `${id}-tab-0`,
+            tabLabel: 'Tab One',
+            heading: 'Tab One Heading',
+            bodyParagraphs: ['Describe this pathway or option.'],
+            cta: { text: 'Learn More', href: '#' },
+            image: { src: '/images/generated/placeholder.jpg', alt: 'Tab image', position: 'right' as const },
+          },
+          {
+            id: `${id}-tab-1`,
+            tabLabel: 'Tab Two',
+            heading: 'Tab Two Heading',
+            bodyParagraphs: ['Describe this pathway or option.'],
+            cta: { text: 'Learn More', href: '#' },
+            image: { src: '/images/generated/placeholder.jpg', alt: 'Tab image', position: 'right' as const },
+          },
+        ],
+        variant: 'dark',
+      };
   }
 }
 
@@ -669,6 +745,7 @@ export const SECTION_TYPE_META: Record<InlineSectionType, { label: string; descr
   'faq': { label: 'FAQ', description: 'Frequently asked questions with accordion layout', icon: 'HelpCircle' },
   'columns': { label: 'Columns', description: 'Multi-column layout with side-by-side content sections', icon: 'Columns' },
   'stats': { label: 'Stats Counter', description: 'Animated statistics with count-up effect on scroll', icon: 'BarChart' },
+  'tabbed-content': { label: 'Tabbed Content', description: 'Tabbed section with 2-3 content pathways, each with text and image', icon: 'PanelTop' },
 };
 
 // ============================================================================

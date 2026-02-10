@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Columns,
   BarChart,
+  PanelTop,
   ChevronRight,
   ArrowLeft,
   Check,
@@ -35,6 +36,7 @@ const SECTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string 
   HelpCircle,
   Columns,
   BarChart,
+  PanelTop,
 };
 
 function getSectionIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -348,6 +350,33 @@ const SECTION_VARIANTS: Record<InlineSectionType, LayoutVariant[]> = {
       ],
     },
   ],
+  'tabbed-content': [
+    {
+      id: 'tabbed-2-dark',
+      label: '2 Tabs (Dark)',
+      description: 'Two tabbed content pathways on dark background',
+      previewBlocks: [
+        { type: 'heading', width: 0.5, height: 8, x: 0.25, y: 0 },
+        { type: 'button', width: 0.2, height: 6, x: 0.1, y: 14 },
+        { type: 'button', width: 0.2, height: 6, x: 0.32, y: 14 },
+        { type: 'text', width: 0.5, height: 30, x: 0, y: 26 },
+        { type: 'image', width: 0.42, height: 30, x: 0.55, y: 26 },
+      ],
+    },
+    {
+      id: 'tabbed-3-dark',
+      label: '3 Tabs (Dark)',
+      description: 'Three tabbed content pathways on dark background',
+      previewBlocks: [
+        { type: 'heading', width: 0.5, height: 8, x: 0.25, y: 0 },
+        { type: 'button', width: 0.15, height: 6, x: 0.1, y: 14 },
+        { type: 'button', width: 0.15, height: 6, x: 0.27, y: 14 },
+        { type: 'button', width: 0.15, height: 6, x: 0.44, y: 14 },
+        { type: 'text', width: 0.5, height: 30, x: 0, y: 26 },
+        { type: 'image', width: 0.42, height: 30, x: 0.55, y: 26 },
+      ],
+    },
+  ],
   columns: [
     {
       id: 'columns-equal-2',
@@ -547,6 +576,21 @@ function applyVariantToSection(
     }
     case 'stats': {
       if (variantId === 'stats-with-heading') return { ...section, heading: 'Key Numbers', subheading: 'The stats that matter.' };
+      return section;
+    }
+    case 'tabbed-content': {
+      if (variantId === 'tabbed-3-dark') {
+        const s = section as any;
+        const thirdTab = {
+          id: `${section.id}-tab-2`,
+          tabLabel: 'Tab Three',
+          heading: 'Tab Three Heading',
+          bodyParagraphs: ['Describe this pathway or option.'],
+          cta: { text: 'Learn More', href: '#' },
+          image: { src: '/images/generated/placeholder.jpg', alt: 'Tab image', position: 'right' as const },
+        };
+        return { ...s, tabs: [...(s.tabs || []), thirdTab] };
+      }
       return section;
     }
     case 'columns': {

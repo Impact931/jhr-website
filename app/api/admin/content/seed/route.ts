@@ -149,6 +149,23 @@ function mergeSectionImages(
       break;
     }
 
+    case 'tabbed-content': {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existing = existingSection as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const m = merged as any;
+      if (existing.tabs && m.tabs) {
+        m.tabs = m.tabs.map((tab: { id: string; image?: { src?: string } }) => {
+          const existingTab = existing.tabs.find((et: { id: string }) => et.id === tab.id);
+          if (existingTab?.image?.src) {
+            return { ...tab, image: existingTab.image };
+          }
+          return tab;
+        });
+      }
+      break;
+    }
+
     // text-block, faq, stats — no user-uploadable images to preserve
   }
 
