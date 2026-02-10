@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback } from "react";
 import { ROICalculator } from "@/components/ui/ROICalculator";
 import { useEditMode } from "@/context/inline-editor/EditModeContext";
 import { useContent } from "@/context/inline-editor/ContentContext";
@@ -19,7 +19,17 @@ import type {
 // ============================================================================
 
 const SECTION_CLASS_MAP: Record<string, string> = {
-  "how-it-works": "section-padding bg-jhr-black-light",
+  'stats': 'section-padding-sm bg-[#0B0C0F]',
+  'problem': 'section-padding section-light',
+  'solution': 'section-padding section-light',
+  'gallery-strip-1': 'py-6 section-light',
+  'use-cases': 'section-padding bg-[#0B0C0F]',
+  'whats-included': 'section-padding section-light',
+  'gallery-strip-2': 'py-6 section-light',
+  'headshot-styles': 'section-padding section-light',
+  'social-proof': 'section-padding bg-[#0B0C0F]',
+  'faqs': 'section-padding section-light',
+  'final-cta': 'section-padding bg-[#0B0C0F]',
 };
 
 export default function HeadshotActivationPage() {
@@ -77,42 +87,45 @@ export default function HeadshotActivationPage() {
       )}
 
       {sections.map((section, index) => (
-        <SectionWrapper
-          key={section.id}
-          sectionType={section.type as InlineSectionType}
-          sectionId={section.id}
-          index={index}
-          totalSections={sections.length}
-          {...(isEditMode ? {
-            onMoveUp: moveSectionUp,
-            onMoveDown: moveSectionDown,
-            onDelete: deleteSection,
-            onAddSection: handleAddSection,
-            onAddSectionWithContent: handleAddSectionWithContent,
-            onUpdateSEO: handleUpdateSEO,
-          } : {})}
-          sectionSEO={section.seo}
-        >
-          <SectionRenderer
-            section={section}
-            pageSlug="headshot-activation"
-            sectionClassMap={SECTION_CLASS_MAP}
-          />
-        </SectionWrapper>
-      ))}
+        <React.Fragment key={section.id}>
+          <SectionWrapper
+            sectionType={section.type as InlineSectionType}
+            sectionId={section.id}
+            index={index}
+            totalSections={sections.length}
+            {...(isEditMode ? {
+              onMoveUp: moveSectionUp,
+              onMoveDown: moveSectionDown,
+              onDelete: deleteSection,
+              onAddSection: handleAddSection,
+              onAddSectionWithContent: handleAddSectionWithContent,
+              onUpdateSEO: handleUpdateSEO,
+            } : {})}
+            sectionSEO={section.seo}
+          >
+            <SectionRenderer
+              section={section}
+              pageSlug="headshot-activation"
+              sectionClassMap={SECTION_CLASS_MAP}
+            />
+          </SectionWrapper>
 
-      {/* ROI Calculator - static component, not editable via CMS */}
-      <section className="section-padding section-light">
-        <div className="section-container">
-          <div className="text-center mb-12">
-            <p className="text-jhr-gold-dark font-medium text-body-lg mb-2">Calculate Your Value</p>
-            <h2 className="text-display-sm font-display font-bold text-jhr-black mb-4">
-              See What Your Activation Could Deliver
-            </h2>
-          </div>
-          <ROICalculator variant="light" />
-        </div>
-      </section>
+          {/* ROI Calculator - injected after use-cases section */}
+          {section.id === 'use-cases' && (
+            <section className="section-padding section-light">
+              <div className="section-container">
+                <div className="text-center mb-12">
+                  <p className="text-jhr-gold-dark font-medium text-body-lg mb-2">Calculate Your Value</p>
+                  <h2 className="text-display-sm font-display font-bold text-jhr-black mb-4">
+                    See What Your Activation Could Deliver
+                  </h2>
+                </div>
+                <ROICalculator variant="light" />
+              </div>
+            </section>
+          )}
+        </React.Fragment>
+      ))}
     </div>
   );
 }

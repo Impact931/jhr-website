@@ -267,6 +267,16 @@ body {
     background: linear-gradient(to left, #F9FAFB, transparent) !important;
   }
 
+  /* Logo-scroll fade edges adapt to light sections */
+  .section-light .from-jhr-black {
+    --tw-gradient-from: #F9FAFB !important;
+  }
+
+  /* Alternating view image placeholder adapts to light sections */
+  .section-light .bg-\[\\#1A1A1A\] {
+    background-color: #E5E7EB !important;
+  }
+
   /* Glass card effect — lightweight frosted appearance */
   .glass-cards .card {
     background: rgba(255, 255, 255, 0.03) !important;

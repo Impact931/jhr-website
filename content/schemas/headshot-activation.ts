@@ -15,17 +15,20 @@
  * Section #  | Page Section                  | Editable Component        | Content Key Prefix
  * -----------|-------------------------------|---------------------------|-------------------------------------------
  * 0 (hero)   | Hero Banner                   | EditableHero              | headshot-activation:hero
- * 1          | The Booth Problem (Empathy)   | EditableFeatureGrid       | headshot-activation:problem
- * 2          | How It Works (Solution)       | EditableFeatureGrid       | headshot-activation:solution
- * 3          | Two Ways to Activate          | EditableTabbedContent     | headshot-activation:use-cases
- * 4          | What's Included               | EditableFeatureGrid       | headshot-activation:whats-included
- * 5          | Headshot Styles               | EditableFeatureGrid       | headshot-activation:headshot-styles
- * 6          | Social Proof                  | EditableTestimonials      | headshot-activation:social-proof
- * 7          | FAQs                          | EditableFAQ               | headshot-activation:faqs
- * 8          | Final CTA                     | EditableCTA               | headshot-activation:final-cta
+ * 1          | Stats Bar                     | EditableStats             | headshot-activation:stats
+ * 2          | The Booth Problem (Empathy)   | EditableTextBlock         | headshot-activation:problem
+ * 3          | How It Works (Solution)       | EditableFeatureGrid       | headshot-activation:solution
+ * 4          | Gallery Strip 1               | EditableFeatureGrid       | headshot-activation:gallery-strip-1
+ * 5          | Two Ways to Activate          | EditableTabbedContent     | headshot-activation:use-cases
+ * 6          | What's Included               | EditableFeatureGrid       | headshot-activation:whats-included
+ * 7          | Gallery Strip 2               | EditableFeatureGrid       | headshot-activation:gallery-strip-2
+ * 8          | Headshot Styles               | EditableFeatureGrid       | headshot-activation:headshot-styles
+ * 9          | Social Proof                  | EditableTestimonials      | headshot-activation:social-proof
+ * 10         | FAQs                          | EditableFAQ               | headshot-activation:faqs
+ * 11         | Final CTA                     | EditableCTA               | headshot-activation:final-cta
  *
  * Note: The ROI Calculator is a custom interactive component embedded
- * in the page between sections 3 and 4. It is not represented in the schema.
+ * in the page between sections 5 and 6. It is not represented in the schema.
  *
  * ============================================================================
  * CONTENT KEY NAMING CONVENTION
@@ -38,6 +41,8 @@ import type {
   PageSchema,
   PageSectionContent,
   HeroSectionContent,
+  StatsSectionContent,
+  TextBlockSectionContent,
   FeatureGridSectionContent,
   TabbedContentSectionContent,
   TestimonialsSectionContent,
@@ -78,55 +83,53 @@ export const HA_HERO: HeroSectionContent = {
 };
 
 /**
- * Section 1: The Booth Problem (Empathy)
- * Component: EditableFeatureGrid (3 columns)
+ * Section 1: Stats Bar
+ * Component: EditableStats
  */
-export const HA_PROBLEM: FeatureGridSectionContent = {
-  id: 'problem',
-  type: 'feature-grid',
+export const HA_STATS: StatsSectionContent = {
+  id: 'stats',
+  type: 'stats',
   order: 1,
   seo: {
-    ariaLabel: 'The problem with traditional trade show booth engagement',
-    sectionId: 'problem',
-    dataSectionName: 'problem',
+    ariaLabel: 'Key activation metrics',
+    sectionId: 'stats',
+    dataSectionName: 'stats',
   },
-  heading: 'Swag Gets Ignored. Badge Scans Go Cold. Your Booth Deserves Better.',
-  subheading:
-    'You\u2019ve invested serious budget into your exhibit space \u2014 the booth, the travel, the team. But traditional engagement tactics don\u2019t hold attention. People grab the pen, scan the badge, and move on. You\u2019re left with a stack of cold contacts and nothing that tells your sales team who actually cared.',
-  columns: 3,
-  features: [
-    {
-      id: 'problem-card-0',
-      icon: 'FolderOpen',
-      title: 'Cold Leads, No Context',
-      description:
-        'Badge scans don\u2019t tell your sales team who was genuinely interested. Everyone gets the same follow-up, and most go unanswered.',
-    },
-    {
-      id: 'problem-card-1',
-      icon: 'Clock',
-      title: 'Seconds of Attention',
-      description:
-        'Traditional booth setups get a passing glance. Attendees walk by, grab a giveaway, and move on. No real engagement, no real conversations.',
-    },
-    {
-      id: 'problem-card-2',
-      icon: 'DollarSign',
-      title: 'Six-Figure Investment, Zero Proof',
-      description:
-        'Trade show booths cost serious money. Without meaningful engagement data, it\u2019s impossible to prove the investment was worth it.',
-    },
+  stats: [
+    { id: 'stat-0', value: 5, suffix: '+ min', label: 'Avg. Dwell Time' },
+    { id: 'stat-1', value: 150, suffix: '+', label: 'Headshots per Day' },
+    { id: 'stat-2', value: 5, prefix: '< ', suffix: ' min', label: 'Delivery to Attendee' },
+    { id: 'stat-3', value: 100, suffix: '%', label: 'White-Label Branded' },
   ],
 };
 
 /**
- * Section 2: How It Works (The Solution - 4 Key Moments)
- * Component: EditableFeatureGrid (2 columns)
+ * Section 2: The Booth Problem (Empathy)
+ * Component: EditableTextBlock (centered)
+ */
+export const HA_PROBLEM: TextBlockSectionContent = {
+  id: 'problem',
+  type: 'text-block',
+  order: 2,
+  seo: {
+    ariaLabel: 'The problem with traditional trade show engagement',
+    sectionId: 'problem',
+    dataSectionName: 'problem',
+  },
+  heading: 'Swag Gets Ignored. Badge Scans Go Cold. Your Booth Deserves Better.',
+  alignment: 'center',
+  content:
+    '<p>You\u2019ve invested serious budget into your exhibit space \u2014 the booth, the travel, the team. But traditional engagement tactics don\u2019t hold attention. People grab the pen, scan the badge, and move on. You\u2019re left with a stack of cold contacts and nothing that tells your sales team who actually cared.</p><p><em>What if your booth offered something people genuinely wanted \u2014 and stayed for?</em></p>',
+};
+
+/**
+ * Section 3: How It Works (The Solution - 4 Key Moments)
+ * Component: EditableFeatureGrid (alternating layout with images)
  */
 export const HA_SOLUTION: FeatureGridSectionContent = {
   id: 'solution',
   type: 'feature-grid',
-  order: 2,
+  order: 3,
   seo: {
     ariaLabel: 'How a headshot activation works - four key moments',
     sectionId: 'solution',
@@ -136,6 +139,7 @@ export const HA_SOLUTION: FeatureGridSectionContent = {
   subheading:
     'A Headshot Activation is a turnkey, on-site professional headshot experience deployed directly at your booth or event space. We bring the lighting, the equipment, the professional direction, and the Camera Ready Touchup Service\u2122 \u2014 everything needed to make attendees feel like a VIP the moment they step in.',
   columns: 2,
+  displayMode: 'alternating',
   features: [
     {
       id: 'solution-card-0',
@@ -143,6 +147,7 @@ export const HA_SOLUTION: FeatureGridSectionContent = {
       title: 'The Draw',
       description:
         'Professional lighting and energy create a visual beacon on the show floor. Attendees notice \u2014 and they come to you. Average dwell time at an activated booth runs five minutes or more, compared to seconds for traditional setups.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Activation drawing a crowd on the trade show floor' },
     },
     {
       id: 'solution-card-1',
@@ -150,6 +155,7 @@ export const HA_SOLUTION: FeatureGridSectionContent = {
       title: 'The Experience',
       description:
         'Every attendee gets professional direction, confidence coaching, and a Camera Ready Touchup Service\u2122 before stepping in front of the camera. They feel prepared, valued, and taken care of \u2014 and that feeling gets associated with your brand.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Attendee receiving Camera Ready Touchup before headshot' },
     },
     {
       id: 'solution-card-2',
@@ -157,6 +163,7 @@ export const HA_SOLUTION: FeatureGridSectionContent = {
       title: 'The Asset',
       description:
         'Each attendee walks away with a polished, professionally retouched headshot delivered directly to them \u2014 typically within minutes. This isn\u2019t a novelty photo. It\u2019s something they\u2019ll actually use on LinkedIn, company bios, and professional profiles for months.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Professional headshot being delivered to attendee' },
     },
     {
       id: 'solution-card-3',
@@ -164,18 +171,48 @@ export const HA_SOLUTION: FeatureGridSectionContent = {
       title: 'The Data',
       description:
         'Every headshot captured includes integrated lead capture. Your sales team gets real contact data attached to a positive, memorable experience \u2014 not a cold badge scan they\u2019ll never follow up on.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Lead capture data dashboard from headshot activation' },
     },
   ],
 };
 
 /**
- * Section 3: Two Ways to Activate (Use Cases)
+ * Section 4: Gallery Strip 1 (scrolling headshot examples)
+ * Component: EditableFeatureGrid (logo-scroll)
+ */
+export const HA_GALLERY_STRIP_1: FeatureGridSectionContent = {
+  id: 'gallery-strip-1',
+  type: 'feature-grid',
+  order: 4,
+  seo: {
+    ariaLabel: 'Professional headshot examples',
+    sectionId: 'gallery-strip-1',
+    dataSectionName: 'gallery-strip-1',
+  },
+  columns: 4,
+  displayMode: 'logo-scroll',
+  features: [
+    { id: 'hs-strip-1-0', icon: 'User', title: 'Corporate headshot', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Corporate headshot example' } },
+    { id: 'hs-strip-1-1', icon: 'User', title: 'Executive portrait', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Executive portrait example' } },
+    { id: 'hs-strip-1-2', icon: 'User', title: 'Legal professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Legal professional headshot' } },
+    { id: 'hs-strip-1-3', icon: 'User', title: 'Tech professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Tech professional headshot' } },
+    { id: 'hs-strip-1-4', icon: 'User', title: 'Finance headshot', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Finance professional headshot' } },
+    { id: 'hs-strip-1-5', icon: 'User', title: 'Healthcare headshot', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Healthcare professional headshot' } },
+    { id: 'hs-strip-1-6', icon: 'User', title: 'Real estate headshot', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Real estate agent headshot' } },
+    { id: 'hs-strip-1-7', icon: 'User', title: 'Sales professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Sales professional headshot' } },
+    { id: 'hs-strip-1-8', icon: 'User', title: 'Creative professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Creative professional headshot' } },
+    { id: 'hs-strip-1-9', icon: 'User', title: 'Casual professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Casual professional headshot' } },
+  ],
+};
+
+/**
+ * Section 5: Two Ways to Activate (Use Cases)
  * Component: EditableTabbedContent (2 tabs)
  */
 export const HA_USE_CASES: TabbedContentSectionContent = {
   id: 'use-cases',
   type: 'tabbed-content',
-  order: 3,
+  order: 5,
   seo: {
     ariaLabel: 'Two ways to use headshot activation - exhibitors and event hosts',
     sectionId: 'use-cases',
@@ -242,13 +279,13 @@ export const HA_USE_CASES: TabbedContentSectionContent = {
 };
 
 /**
- * Section 4: What's Included
+ * Section 6: What's Included
  * Component: EditableFeatureGrid (2 columns)
  */
 export const HA_WHATS_INCLUDED: FeatureGridSectionContent = {
   id: 'whats-included',
   type: 'feature-grid',
-  order: 4,
+  order: 6,
   seo: {
     ariaLabel: 'What is included in a headshot activation from JHR Photography',
     sectionId: 'whats-included',
@@ -319,13 +356,42 @@ export const HA_WHATS_INCLUDED: FeatureGridSectionContent = {
 };
 
 /**
- * Section 5: Headshot Styles
- * Component: EditableFeatureGrid (3 columns)
+ * Section 7: Gallery Strip 2 (scrolling headshot examples)
+ * Component: EditableFeatureGrid (logo-scroll)
+ */
+export const HA_GALLERY_STRIP_2: FeatureGridSectionContent = {
+  id: 'gallery-strip-2',
+  type: 'feature-grid',
+  order: 7,
+  seo: {
+    ariaLabel: 'More professional headshot examples',
+    sectionId: 'gallery-strip-2',
+    dataSectionName: 'gallery-strip-2',
+  },
+  columns: 4,
+  displayMode: 'logo-scroll',
+  features: [
+    { id: 'hs-strip-2-0', icon: 'User', title: 'Corporate headshot', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Corporate headshot example' } },
+    { id: 'hs-strip-2-1', icon: 'User', title: 'Executive portrait', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Executive portrait example' } },
+    { id: 'hs-strip-2-2', icon: 'User', title: 'Legal professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Legal professional headshot' } },
+    { id: 'hs-strip-2-3', icon: 'User', title: 'Tech professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Tech professional headshot' } },
+    { id: 'hs-strip-2-4', icon: 'User', title: 'Finance headshot', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Finance professional headshot' } },
+    { id: 'hs-strip-2-5', icon: 'User', title: 'Healthcare headshot', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Healthcare professional headshot' } },
+    { id: 'hs-strip-2-6', icon: 'User', title: 'Real estate headshot', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Real estate agent headshot' } },
+    { id: 'hs-strip-2-7', icon: 'User', title: 'Sales professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Sales professional headshot' } },
+    { id: 'hs-strip-2-8', icon: 'User', title: 'Creative professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Creative professional headshot' } },
+    { id: 'hs-strip-2-9', icon: 'User', title: 'Casual professional', description: '', image: { src: '/images/generated/placeholder.jpg', alt: 'Casual professional headshot' } },
+  ],
+};
+
+/**
+ * Section 8: Headshot Styles
+ * Component: EditableFeatureGrid (3 columns with images)
  */
 export const HA_HEADSHOT_STYLES: FeatureGridSectionContent = {
   id: 'headshot-styles',
   type: 'feature-grid',
-  order: 5,
+  order: 8,
   seo: {
     ariaLabel: 'Professional headshot styles available in activation events',
     sectionId: 'headshot-styles',
@@ -342,6 +408,7 @@ export const HA_HEADSHOT_STYLES: FeatureGridSectionContent = {
       title: 'Corporate Headshot',
       description:
         'The standard for enterprise professionals \u2014 clean background, polished lighting, and a confident, approachable expression.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Corporate headshot example' },
     },
     {
       id: 'headshot-styles-card-1',
@@ -349,6 +416,7 @@ export const HA_HEADSHOT_STYLES: FeatureGridSectionContent = {
       title: 'Legal & Finance Headshot',
       description:
         'Authority and trust. Tailored for attorneys, bankers, financial advisors, and consultants who need credibility and professionalism.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Legal and finance headshot example' },
     },
     {
       id: 'headshot-styles-card-2',
@@ -356,6 +424,7 @@ export const HA_HEADSHOT_STYLES: FeatureGridSectionContent = {
       title: 'Casual Professional Headshot',
       description:
         'Modern and approachable. Ideal for tech, creative, and startup professionals who want to look polished without looking stiff.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Casual professional headshot example' },
     },
     {
       id: 'headshot-styles-card-3',
@@ -363,6 +432,7 @@ export const HA_HEADSHOT_STYLES: FeatureGridSectionContent = {
       title: 'Executive Portrait',
       description:
         'Elevated and intentional. For C-suite, board members, and senior leadership who need an image that matches their role.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Executive portrait example' },
     },
     {
       id: 'headshot-styles-card-4',
@@ -370,6 +440,7 @@ export const HA_HEADSHOT_STYLES: FeatureGridSectionContent = {
       title: 'Real Estate & Sales Headshot',
       description:
         'Warm, confident, and client-facing. Designed for professionals whose headshot IS their first impression.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Real estate headshot example' },
     },
     {
       id: 'headshot-styles-card-5',
@@ -377,18 +448,19 @@ export const HA_HEADSHOT_STYLES: FeatureGridSectionContent = {
       title: 'Healthcare Professional Headshot',
       description:
         'Clean, trustworthy, and approachable. For physicians, practitioners, and healthcare administrators.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Healthcare professional headshot example' },
     },
   ],
 };
 
 /**
- * Section 6: Social Proof (Testimonials)
+ * Section 9: Social Proof (Testimonials)
  * Component: EditableTestimonials (grid layout)
  */
 export const HA_SOCIAL_PROOF: TestimonialsSectionContent = {
   id: 'social-proof',
   type: 'testimonials',
-  order: 6,
+  order: 9,
   seo: {
     ariaLabel: 'What happens when you activate - testimonials from exhibitors and event hosts',
     sectionId: 'social-proof',
@@ -411,17 +483,24 @@ export const HA_SOCIAL_PROOF: TestimonialsSectionContent = {
       authorName: 'Events Manager',
       authorTitle: 'Corporate Program Host',
     },
+    {
+      id: 'social-proof-2',
+      quote:
+        'I wasn\u2019t expecting much \u2014 but the touchup, the coaching, and the quality blew me away. I updated my LinkedIn that night.',
+      authorName: 'Conference Attendee',
+      authorTitle: 'National Sales Summit 2024',
+    },
   ],
 };
 
 /**
- * Section 7: FAQs
+ * Section 10: FAQs
  * Component: EditableFAQ
  */
 export const HA_FAQS: FAQSectionContent = {
   id: 'faqs',
   type: 'faq',
-  order: 7,
+  order: 10,
   seo: {
     ariaLabel: 'Frequently asked questions about headshot activations',
     sectionId: 'faqs',
@@ -495,17 +574,23 @@ export const HA_FAQS: FAQSectionContent = {
       answer:
         'We recommend booking at least 4\u20136 weeks before your event to ensure operator availability and allow time for branding coordination. For large conventions or multi-day activations, 8\u201312 weeks is ideal. That said, if your event is sooner, reach out anyway \u2014 we\u2019ll do our best to accommodate.',
     },
+    {
+      id: 'faqs-item-11',
+      question: 'What happens if our event date changes or we need to reschedule?',
+      answer:
+        'We understand events shift. If your date changes, let us know as soon as possible and we\u2019ll work to accommodate the new timeline. We\u2019re flexible with rescheduling as long as operator availability allows.',
+    },
   ],
 };
 
 /**
- * Section 8: Final CTA
- * Component: EditableCTA (image background variant)
+ * Section 11: Final CTA
+ * Component: EditableCTA (gradient background variant)
  */
 export const HA_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 8,
+  order: 11,
   seo: {
     ariaLabel: 'Talk with JHR Photography about headshot activation for your event',
     sectionId: 'final-cta',
@@ -514,8 +599,9 @@ export const HA_FINAL_CTA: CTASectionContent = {
   headline: 'Your Booth Should Be the One Everyone\u2019s Talking About.',
   subtext:
     'Tell us about your event \u2014 the venue, the timeline, and what you\u2019re trying to accomplish. We\u2019ll show you exactly how a Headshot Activation supports your goals and give you a clear picture of what to expect.',
-  backgroundType: 'image',
-  backgroundValue: '/images/generated/service-headshot-activation.jpg',
+  backgroundType: 'gradient',
+  backgroundValue:
+    'radial-gradient(circle at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 50%), linear-gradient(180deg, #0B0C0F 0%, #0B0C0F 100%)',
   primaryButton: {
     text: 'Talk With Our Team',
     href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
@@ -534,10 +620,13 @@ export const HA_FINAL_CTA: CTASectionContent = {
 
 export const HA_SECTIONS: PageSectionContent[] = [
   HA_HERO,
+  HA_STATS,
   HA_PROBLEM,
   HA_SOLUTION,
+  HA_GALLERY_STRIP_1,
   HA_USE_CASES,
   HA_WHATS_INCLUDED,
+  HA_GALLERY_STRIP_2,
   HA_HEADSHOT_STYLES,
   HA_SOCIAL_PROOF,
   HA_FAQS,

@@ -494,6 +494,9 @@ function LogoScrollView({
   // Duplicate array for seamless loop
   const doubled = [...features, ...features];
 
+  // Detect portrait mode: all features have images and no meaningful descriptions
+  const isPortrait = features.length > 0 && features.every(f => f.image?.src && (!f.description || f.description.trim() === ''));
+
   return (
     <div>
       {/* Heading */}
@@ -519,7 +522,7 @@ function LogoScrollView({
         <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-jhr-black to-transparent z-10 pointer-events-none" />
 
         <motion.div
-          className="flex items-center gap-12"
+          className={`flex items-center ${isPortrait ? 'gap-6' : 'gap-12'}`}
           animate={{ x: ['0%', '-50%'] }}
           transition={{
             x: {
@@ -536,12 +539,12 @@ function LogoScrollView({
               className="flex-shrink-0 flex flex-col items-center gap-2 group"
             >
               {feature.image?.src ? (
-                <div className="relative w-28 h-16 grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500">
+                <div className={`relative ${isPortrait ? 'w-36 h-48 rounded-lg' : 'w-28 h-16'} overflow-hidden ${isPortrait ? 'opacity-90 group-hover:opacity-100' : 'grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100'} transition-all duration-500`}>
                   <SmartImage
                     src={feature.image.src}
                     alt={feature.image.alt || feature.title}
                     fill
-                    className="object-contain"
+                    className={isPortrait ? 'object-cover' : 'object-contain'}
                   />
                 </div>
               ) : (
@@ -552,9 +555,11 @@ function LogoScrollView({
                   })()}
                 </div>
               )}
-              <span className="text-xs text-jhr-white-dim opacity-60 group-hover:opacity-100 whitespace-nowrap transition-opacity duration-500">
-                {feature.title}
-              </span>
+              {!isPortrait && (
+                <span className="text-xs text-jhr-white-dim opacity-60 group-hover:opacity-100 whitespace-nowrap transition-opacity duration-500">
+                  {feature.title}
+                </span>
+              )}
             </div>
           ))}
         </motion.div>
