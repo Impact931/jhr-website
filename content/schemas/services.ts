@@ -14,9 +14,10 @@
  * 0 (hero)   | Hero Banner                   | EditableHero              | services:hero
  * 1          | Discovery Pathways            | EditableFeatureGrid       | services:discovery-pathways
  * 2          | Not Sure? Reassurance CTA     | EditableCTA               | services:not-sure-cta
- * 3          | Guide Credibility             | EditableFeatureGrid       | services:guide-credibility
- * 4          | Quick Reference               | EditableFeatureGrid       | services:quick-reference
- * 5          | Final CTA                     | EditableCTA               | services:final-cta
+ * 3          | Stats Credibility Bar         | EditableStats             | services:stats
+ * 4          | Guide Credibility             | EditableFeatureGrid       | services:guide-credibility
+ * 5          | Quick Reference               | EditableFeatureGrid       | services:quick-reference
+ * 6          | Final CTA                     | EditableCTA               | services:final-cta
  *
  * ============================================================================
  * CONTENT KEY NAMING CONVENTION
@@ -30,6 +31,7 @@
  *   services:hero:description                - Hero lead paragraph
  *   services:discovery-pathways:features     - Pathway cards (JSON array)
  *   services:not-sure-cta:headline           - Not Sure CTA headline
+ *   services:stats:stats                     - Credibility metrics (JSON array)
  *   services:guide-credibility:features      - Credibility value blocks (JSON array)
  *   services:quick-reference:features        - Quick reference service links (JSON array)
  *   services:final-cta:headline              - Final CTA headline
@@ -40,6 +42,7 @@ import type {
   PageSectionContent,
   HeroSectionContent,
   FeatureGridSectionContent,
+  StatsSectionContent,
   CTASectionContent,
 } from '@/types/inline-editor';
 
@@ -50,7 +53,7 @@ import type {
 /**
  * Section 0: Hero Banner
  * Maps to: <PageHero> in /app/services/page.tsx
- * Component: EditableHero
+ * Component: EditableHero (split variant with image right)
  */
 export const SERVICES_HERO: HeroSectionContent = {
   id: 'hero',
@@ -61,8 +64,9 @@ export const SERVICES_HERO: HeroSectionContent = {
     sectionId: 'hero',
     dataSectionName: 'hero',
   },
-  variant: 'half-height',
-  title: 'The Right Media Partner for What You\'re Planning',
+  variant: 'split',
+  imagePosition: 'right',
+  title: 'The Right Media Partner <em class="text-jhr-gold not-italic">for What You\u2019re Planning</em>',
   subtitle: 'Our Services',
   description:
     'Every event has different pressures, different stakeholders, and different definitions of success. We\u2019ve structured our services around the situations event professionals actually face \u2014 so you can find exactly what you need without sorting through what you don\u2019t.',
@@ -78,7 +82,7 @@ export const SERVICES_HERO: HeroSectionContent = {
 /**
  * Section 1: Discovery Pathways ("What Are You Planning?")
  * Maps to: Pathway cards grid in /app/services/page.tsx
- * Component: EditableFeatureGrid (2 columns)
+ * Component: EditableFeatureGrid (alternating 2-col layout with images)
  *
  * Four pathway cards that guide visitors to the right service based on their situation.
  */
@@ -94,6 +98,7 @@ export const SERVICES_DISCOVERY_PATHWAYS: FeatureGridSectionContent = {
   heading: 'What Are You Planning?',
   subheading:
     'Select the scenario that\u2019s closest to your situation. We\u2019ll show you exactly how we support it.',
+  displayMode: 'alternating',
   columns: 2,
   features: [
     {
@@ -102,6 +107,7 @@ export const SERVICES_DISCOVERY_PATHWAYS: FeatureGridSectionContent = {
       title: 'You\u2019re running a multi-day conference and need media that actually gets used afterward.',
       description: '',
       link: { text: 'Learn More', href: '/services/corporate-event-coverage' },
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Multi-day conference media coverage' },
     },
     {
       id: 'discovery-pathways-card-1',
@@ -109,6 +115,7 @@ export const SERVICES_DISCOVERY_PATHWAYS: FeatureGridSectionContent = {
       title: 'You\u2019re exhibiting and need your booth to actually drive engagement \u2014 not just exist on the floor.',
       description: '',
       link: { text: 'Learn More', href: '/services/headshot-activation' },
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Trade show booth engagement activation' },
     },
     {
       id: 'discovery-pathways-card-2',
@@ -116,6 +123,7 @@ export const SERVICES_DISCOVERY_PATHWAYS: FeatureGridSectionContent = {
       title: 'Your leadership team needs updated headshots that actually represent the organization well.',
       description: '',
       link: { text: 'Learn More', href: '/services/executive-imaging' },
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Executive headshot photography session' },
     },
     {
       id: 'discovery-pathways-card-3',
@@ -123,6 +131,7 @@ export const SERVICES_DISCOVERY_PATHWAYS: FeatureGridSectionContent = {
       title: 'You need video content from your event that works for marketing, social, and leadership messaging.',
       description: '',
       link: { text: 'Learn More', href: '/services/event-video-systems' },
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Event video production and marketing content' },
     },
   ],
 };
@@ -154,16 +163,37 @@ export const SERVICES_NOT_SURE_CTA: CTASectionContent = {
 };
 
 /**
- * Section 3: Guide Credibility ("How We're Different")
+ * Section 3: Stats Credibility Bar
+ * Component: EditableStats (animated counter bar)
+ */
+export const SERVICES_STATS: StatsSectionContent = {
+  id: 'stats',
+  type: 'stats',
+  order: 3,
+  seo: {
+    ariaLabel: 'JHR Photography credibility metrics',
+    sectionId: 'stats',
+    dataSectionName: 'stats',
+  },
+  stats: [
+    { id: 'stat-0', value: 15, suffix: '+', label: 'Years Experience' },
+    { id: 'stat-1', value: 1000, suffix: '+', label: 'Events Covered' },
+    { id: 'stat-2', value: 12, suffix: '+', label: 'Nashville Venues' },
+    { id: 'stat-3', value: 100, suffix: '%', label: 'Client Satisfaction' },
+  ],
+};
+
+/**
+ * Section 4: Guide Credibility ("How We're Different")
  * Maps to: Value blocks grid in /app/services/page.tsx
- * Component: EditableFeatureGrid (2 columns)
+ * Component: EditableFeatureGrid (2 columns, glass card variant)
  *
  * Four value blocks explaining why event teams choose JHR.
  */
 export const SERVICES_GUIDE_CREDIBILITY: FeatureGridSectionContent = {
   id: 'guide-credibility',
   type: 'feature-grid',
-  order: 3,
+  order: 4,
   seo: {
     ariaLabel: 'Built for the way events actually work - why event teams choose JHR',
     sectionId: 'guide-credibility',
@@ -172,6 +202,7 @@ export const SERVICES_GUIDE_CREDIBILITY: FeatureGridSectionContent = {
   heading: 'Built for the Way Events Actually Work',
   subheading: 'Why Event Teams Choose JHR',
   columns: 2,
+  cardVariant: 'glass',
   features: [
     {
       id: 'guide-credibility-card-0',
@@ -205,16 +236,16 @@ export const SERVICES_GUIDE_CREDIBILITY: FeatureGridSectionContent = {
 };
 
 /**
- * Section 4: Quick Reference
+ * Section 5: Quick Reference
  * Maps to: Service links grid in /app/services/page.tsx
- * Component: EditableFeatureGrid (3 columns)
+ * Component: EditableFeatureGrid (3 columns, service-specific icons)
  *
  * Six service items with links to individual service pages.
  */
 export const SERVICES_QUICK_REFERENCE: FeatureGridSectionContent = {
   id: 'quick-reference',
   type: 'feature-grid',
-  order: 4,
+  order: 5,
   seo: {
     ariaLabel: 'Quick reference to all JHR Photography services',
     sectionId: 'quick-reference',
@@ -232,35 +263,35 @@ export const SERVICES_QUICK_REFERENCE: FeatureGridSectionContent = {
     },
     {
       id: 'quick-reference-card-1',
-      icon: 'Camera',
+      icon: 'Building',
       title: 'Convention Media Services\u2122',
       description: '',
       link: { text: 'Learn More', href: '/services/convention-media' },
     },
     {
       id: 'quick-reference-card-2',
-      icon: 'Camera',
+      icon: 'Sparkles',
       title: 'Headshot Activation\u2122',
       description: '',
       link: { text: 'Learn More', href: '/services/headshot-activation' },
     },
     {
       id: 'quick-reference-card-3',
-      icon: 'Camera',
+      icon: 'UserCircle',
       title: 'Executive Imaging\u2122',
       description: '',
       link: { text: 'Learn More', href: '/services/executive-imaging' },
     },
     {
       id: 'quick-reference-card-4',
-      icon: 'Camera',
+      icon: 'BarChart',
       title: 'Trade-Show Media Services\u2122',
       description: '',
       link: { text: 'Learn More', href: '/services/trade-show-media' },
     },
     {
       id: 'quick-reference-card-5',
-      icon: 'Camera',
+      icon: 'Video',
       title: 'Event Video Systems\u2122',
       description: '',
       link: { text: 'Learn More', href: '/services/event-video-systems' },
@@ -269,14 +300,14 @@ export const SERVICES_QUICK_REFERENCE: FeatureGridSectionContent = {
 };
 
 /**
- * Section 5: Final CTA
+ * Section 6: Final CTA
  * Maps to: Bottom CTA section in /app/services/page.tsx
- * Component: EditableCTA (image background variant)
+ * Component: EditableCTA (gradient background variant)
  */
 export const SERVICES_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 5,
+  order: 6,
   seo: {
     ariaLabel: 'Talk with JHR Photography about your event media needs',
     sectionId: 'final-cta',
@@ -285,8 +316,8 @@ export const SERVICES_FINAL_CTA: CTASectionContent = {
   headline: 'Every Event Deserves a Media Partner Who Gets It Right.',
   subtext:
     'Tell us what you\u2019re working on. We\u2019ll tell you exactly how we can help \u2014 and what it looks like when the media matches the event.',
-  backgroundType: 'image',
-  backgroundValue: '/images/generated/event-networking.jpg',
+  backgroundType: 'gradient',
+  backgroundValue: 'radial-gradient(circle at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 50%), linear-gradient(180deg, #0B0C0F 0%, #0B0C0F 100%)',
   primaryButton: {
     text: 'Talk With Our Team',
     href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
@@ -307,6 +338,7 @@ export const SERVICES_SECTIONS: PageSectionContent[] = [
   SERVICES_HERO,
   SERVICES_DISCOVERY_PATHWAYS,
   SERVICES_NOT_SURE_CTA,
+  SERVICES_STATS,
   SERVICES_GUIDE_CREDIBILITY,
   SERVICES_QUICK_REFERENCE,
   SERVICES_FINAL_CTA,

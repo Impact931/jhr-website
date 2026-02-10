@@ -18,8 +18,14 @@ import type {
 // ============================================================================
 
 const SECTION_CLASS_MAP: Record<string, string> = {
-  "whats-included": "section-padding bg-jhr-black-light",
-  "exhibitor-crossover": "section-padding bg-jhr-black-light",
+  "problem": "section-padding section-light",
+  "solution": "section-padding bg-[#0B0C0F]",
+  "whats-included": "section-padding section-light",
+  "video-pairing": "section-padding bg-[#0B0C0F]",
+  "exhibitor-crossover": "section-padding section-light",
+  "social-proof": "section-padding bg-[#0B0C0F]",
+  "faqs": "section-padding section-light",
+  "final-cta": "section-padding bg-[#0B0C0F]",
 };
 
 export default function TradeShowMediaPage() {

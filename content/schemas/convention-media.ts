@@ -12,13 +12,14 @@
  * Section #  | Page Section                  | Editable Component        | Content Key Prefix
  * -----------|-------------------------------|---------------------------|-------------------------------------------
  * 0 (hero)   | Hero Banner                   | EditableHero              | convention-media:hero
- * 1          | The Convention Media Challenge | EditableFeatureGrid       | convention-media:problem
- * 2          | How Convention Coverage Works  | EditableFeatureGrid       | convention-media:how-it-works
- * 3          | What's Included               | EditableFeatureGrid       | convention-media:whats-included
- * 4          | Convention Types We Cover      | EditableFeatureGrid       | convention-media:event-types
- * 5          | Social Proof                  | EditableTestimonials      | convention-media:social-proof
- * 6          | FAQs                          | EditableFAQ               | convention-media:faqs
- * 7          | Final CTA                     | EditableCTA               | convention-media:final-cta
+ * 1          | Stats Bar                     | EditableStats             | convention-media:stats
+ * 2          | The Convention Media Challenge | EditableTextBlock         | convention-media:problem
+ * 3          | How Convention Coverage Works  | EditableFeatureGrid       | convention-media:how-it-works
+ * 4          | What's Included               | EditableFeatureGrid       | convention-media:whats-included
+ * 5          | Convention Types We Cover      | EditableFeatureGrid       | convention-media:event-types
+ * 6          | Social Proof                  | EditableTestimonials      | convention-media:social-proof
+ * 7          | FAQs                          | EditableFAQ               | convention-media:faqs
+ * 8          | Final CTA                     | EditableCTA               | convention-media:final-cta
  *
  * ============================================================================
  * CONTENT KEY NAMING CONVENTION
@@ -31,6 +32,8 @@ import type {
   PageSchema,
   PageSectionContent,
   HeroSectionContent,
+  TextBlockSectionContent,
+  StatsSectionContent,
   FeatureGridSectionContent,
   TestimonialsSectionContent,
   FAQSectionContent,
@@ -54,7 +57,7 @@ export const CM_HERO: HeroSectionContent = {
     sectionId: 'hero',
     dataSectionName: 'hero',
   },
-  variant: 'half-height',
+  variant: 'full-height',
   title: 'Your Convention Deserves a Media Partner Who Gets the Scale',
   subtitle: 'Convention Media Services\u2122',
   description:
@@ -69,55 +72,56 @@ export const CM_HERO: HeroSectionContent = {
 };
 
 /**
- * Section 1: The Convention Media Challenge (Problem/Empathy)
- * Component: EditableFeatureGrid (3 columns)
+ * Section 1: Stats Bar
+ * Component: EditableStats
  */
-export const CM_PROBLEM: FeatureGridSectionContent = {
-  id: 'problem',
-  type: 'feature-grid',
+export const CM_STATS: StatsSectionContent = {
+  id: 'stats',
+  type: 'stats',
   order: 1,
+  seo: {
+    ariaLabel: 'Convention media coverage statistics and credentials',
+    sectionId: 'stats',
+    dataSectionName: 'stats',
+  },
+  stats: [
+    { id: 'stat-0', value: 500, suffix: '+', label: 'Conventions Covered' },
+    { id: 'stat-1', value: 50000, suffix: '+', label: 'Photos Delivered' },
+    { id: 'stat-2', value: 24, suffix: 'hr', label: 'Same-Day Turnaround' },
+    { id: 'stat-3', value: 12, suffix: '+', label: 'Nashville Venues' },
+  ],
+};
+
+/**
+ * Section 2: The Convention Media Challenge (Problem/Empathy)
+ * Component: EditableTextBlock (centered)
+ */
+export const CM_PROBLEM: TextBlockSectionContent = {
+  id: 'problem',
+  type: 'text-block',
+  order: 2,
   seo: {
     ariaLabel: 'The convention media challenge and why it matters',
     sectionId: 'problem',
     dataSectionName: 'problem',
   },
   heading: 'The Convention Media Challenge',
-  subheading:
-    'You\u2019ve invested months coordinating this event. The media coverage shouldn\u2019t be another thing to manage.',
-  columns: 3,
-  features: [
-    {
-      id: 'problem-card-0',
-      icon: 'Shield',
-      title: 'Scale Without Compromise',
-      description:
-        'Conventions have dozens of concurrent sessions, exhibit halls, networking events, and keynotes. You need a team that can cover it all without missing critical moments.',
-    },
-    {
-      id: 'problem-card-1',
-      icon: 'Clock',
-      title: 'Delivery That Matches Your Pace',
-      description:
-        'Sponsors want assets before the convention ends. Marketing needs social content in real-time. You can\u2019t wait weeks for your media.',
-    },
-    {
-      id: 'problem-card-2',
-      icon: 'Users',
-      title: 'Seamless Venue Integration',
-      description:
-        'Your media team should know the venue, the staff, and the logistics \u2014 so they integrate into your operation, not complicate it.',
-    },
-  ],
+  alignment: 'center',
+  content:
+    '<p>You\u2019ve invested months coordinating this event. The media coverage shouldn\u2019t be another thing to manage.</p>' +
+    '<p>Conventions have dozens of concurrent sessions, exhibit halls, networking events, and keynotes. You need a team that can cover it all without missing critical moments.</p>' +
+    '<p>Sponsors want assets before the convention ends. Marketing needs social content in real-time. You can\u2019t wait weeks for your media.</p>' +
+    '<p>Your media team should know the venue, the staff, and the logistics \u2014 so they integrate into your operation, not complicate it.</p>',
 };
 
 /**
- * Section 2: How Convention Coverage Works
- * Component: EditableFeatureGrid (3 columns)
+ * Section 3: How Convention Coverage Works
+ * Component: EditableFeatureGrid (alternating, 2 columns, numbered steps)
  */
 export const CM_HOW_IT_WORKS: FeatureGridSectionContent = {
   id: 'how-it-works',
   type: 'feature-grid',
-  order: 2,
+  order: 3,
   seo: {
     ariaLabel: 'How convention media coverage works with JHR Photography',
     sectionId: 'how-it-works',
@@ -125,7 +129,9 @@ export const CM_HOW_IT_WORKS: FeatureGridSectionContent = {
   },
   heading: 'How Convention Coverage Works',
   subheading: 'A proven process designed for multi-day, multi-venue events.',
-  columns: 3,
+  columns: 2,
+  displayMode: 'alternating',
+  showStepNumbers: true,
   features: [
     {
       id: 'how-it-works-card-0',
@@ -133,6 +139,7 @@ export const CM_HOW_IT_WORKS: FeatureGridSectionContent = {
       title: 'Pre-Convention Planning',
       description:
         'We review your event schedule, identify priority moments, coordinate with venue contacts, and create a comprehensive coverage plan.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Pre-convention planning and coordination' },
     },
     {
       id: 'how-it-works-card-1',
@@ -140,6 +147,7 @@ export const CM_HOW_IT_WORKS: FeatureGridSectionContent = {
       title: 'On-Site Execution',
       description:
         'Our team deploys across your convention \u2014 keynotes, breakouts, exhibit hall, networking events \u2014 with same-day highlight delivery.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'On-site convention photography coverage' },
     },
     {
       id: 'how-it-works-card-2',
@@ -147,18 +155,19 @@ export const CM_HOW_IT_WORKS: FeatureGridSectionContent = {
       title: 'Post-Convention Delivery',
       description:
         'Complete media library delivered within 5-7 business days. Same-day social highlights available throughout the event.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Post-convention media delivery and library' },
     },
   ],
 };
 
 /**
- * Section 3: What's Included
+ * Section 4: What's Included
  * Component: EditableFeatureGrid (2 columns)
  */
 export const CM_WHATS_INCLUDED: FeatureGridSectionContent = {
   id: 'whats-included',
   type: 'feature-grid',
-  order: 3,
+  order: 4,
   seo: {
     ariaLabel: 'What is included in convention media coverage',
     sectionId: 'whats-included',
@@ -200,13 +209,13 @@ export const CM_WHATS_INCLUDED: FeatureGridSectionContent = {
 };
 
 /**
- * Section 4: Convention Types We Cover
- * Component: EditableFeatureGrid (2 columns)
+ * Section 5: Convention Types We Cover
+ * Component: EditableFeatureGrid (horizontal, 2 columns)
  */
 export const CM_EVENT_TYPES: FeatureGridSectionContent = {
   id: 'event-types',
   type: 'feature-grid',
-  order: 4,
+  order: 5,
   seo: {
     ariaLabel: 'Convention and event types covered by JHR Photography',
     sectionId: 'event-types',
@@ -214,6 +223,7 @@ export const CM_EVENT_TYPES: FeatureGridSectionContent = {
   },
   heading: 'Convention Types We Cover',
   columns: 2,
+  displayMode: 'horizontal',
   features: [
     {
       id: 'event-types-card-0',
@@ -247,13 +257,13 @@ export const CM_EVENT_TYPES: FeatureGridSectionContent = {
 };
 
 /**
- * Section 5: Social Proof (Testimonials)
+ * Section 6: Social Proof (Testimonials)
  * Component: EditableTestimonials (grid layout)
  */
 export const CM_SOCIAL_PROOF: TestimonialsSectionContent = {
   id: 'social-proof',
   type: 'testimonials',
-  order: 5,
+  order: 6,
   seo: {
     ariaLabel: 'Testimonials from convention planners who trust JHR Photography',
     sectionId: 'social-proof',
@@ -276,17 +286,24 @@ export const CM_SOCIAL_PROOF: TestimonialsSectionContent = {
       authorName: 'Marketing Manager',
       authorTitle: 'Industry Convention',
     },
+    {
+      id: 'social-proof-2',
+      quote:
+        'The pre-convention planning was incredible. They mapped out every session, every venue area, and every critical moment. Nothing was left to chance.',
+      authorName: 'Event Coordinator',
+      authorTitle: 'Technology Convention',
+    },
   ],
 };
 
 /**
- * Section 6: FAQs
+ * Section 7: FAQs
  * Component: EditableFAQ
  */
 export const CM_FAQS: FAQSectionContent = {
   id: 'faqs',
   type: 'faq',
-  order: 6,
+  order: 7,
   seo: {
     ariaLabel: 'Frequently asked questions about convention media services',
     sectionId: 'faqs',
@@ -328,13 +345,13 @@ export const CM_FAQS: FAQSectionContent = {
 };
 
 /**
- * Section 7: Final CTA
- * Component: EditableCTA (image background variant)
+ * Section 8: Final CTA
+ * Component: EditableCTA (gradient background variant)
  */
 export const CM_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 7,
+  order: 8,
   seo: {
     ariaLabel: 'Schedule a conversation about convention media coverage',
     sectionId: 'final-cta',
@@ -343,8 +360,8 @@ export const CM_FINAL_CTA: CTASectionContent = {
   headline: 'Let\u2019s Plan Your Convention Coverage',
   subtext:
     'Tell us about your convention \u2014 dates, venue, and priorities. We\u2019ll create a coverage plan that ensures nothing gets missed.',
-  backgroundType: 'image',
-  backgroundValue: '/images/generated/venue-music-city-center.jpg',
+  backgroundType: 'gradient',
+  backgroundValue: 'radial-gradient(circle at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 50%), linear-gradient(180deg, #0B0C0F 0%, #0B0C0F 100%)',
   primaryButton: {
     text: 'Talk With Our Team',
     href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
@@ -358,6 +375,7 @@ export const CM_FINAL_CTA: CTASectionContent = {
 
 export const CM_SECTIONS: PageSectionContent[] = [
   CM_HERO,
+  CM_STATS,
   CM_PROBLEM,
   CM_HOW_IT_WORKS,
   CM_WHATS_INCLUDED,

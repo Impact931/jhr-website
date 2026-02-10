@@ -18,8 +18,15 @@ import type {
 // ============================================================================
 
 const SECTION_CLASS_MAP: Record<string, string> = {
-  "use-cases": "section-padding bg-jhr-black-light",
-  "whats-included": "section-padding bg-jhr-black-light",
+  "stats": "section-padding-sm bg-[#0B0C0F]",
+  "problem": "section-padding section-light",
+  "solution": "section-padding section-light",
+  "use-cases": "section-padding bg-[#0B0C0F]",
+  "whats-included": "section-padding section-light",
+  "video-pairing": "section-padding bg-[#0B0C0F]",
+  "social-proof": "section-padding bg-[#0B0C0F]",
+  "faqs": "section-padding section-light",
+  "final-cta": "section-padding bg-[#0B0C0F]",
 };
 
 export default function SocialNetworkingMediaPage() {

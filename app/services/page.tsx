@@ -17,6 +17,15 @@ import type {
 // Services Hub Page - Editable with inline CMS
 // ============================================================================
 
+const SECTION_CLASS_MAP: Record<string, string> = {
+  "discovery-pathways": "section-padding section-light",
+  "not-sure-cta": "section-padding bg-[#0B0C0F]",
+  "stats": "section-padding-sm bg-[#0B0C0F]",
+  "guide-credibility": "section-padding section-light",
+  "quick-reference": "section-padding bg-[#0B0C0F]",
+  "final-cta": "section-padding bg-[#0B0C0F]",
+};
+
 export default function ServicesPage() {
   const { isEditMode } = useEditMode();
   const {
@@ -91,6 +100,7 @@ export default function ServicesPage() {
           <SectionRenderer
             section={section}
             pageSlug="services"
+            sectionClassMap={SECTION_CLASS_MAP}
           />
         </SectionWrapper>
       ))}

@@ -189,6 +189,21 @@ function getIconComponent(name: string): LucideIcon {
   return ICON_MAP[name] || Star;
 }
 
+/** Convert YouTube URL (watch, short, or embed) → embeddable URL */
+function getYouTubeEmbedUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    // Already an embed URL
+    if (u.pathname.startsWith('/embed/')) return url;
+    // youtu.be short links
+    if (u.hostname === 'youtu.be') return `https://www.youtube.com/embed${u.pathname}`;
+    // Standard watch URL
+    const v = u.searchParams.get('v');
+    if (v) return `https://www.youtube.com/embed/${v}`;
+  } catch { /* fall through */ }
+  return url;
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -780,9 +795,17 @@ function AlternatingView({
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
             >
-              {/* Image side */}
+              {/* Image/Video side */}
               <div className="w-full md:w-1/2 min-h-[200px] md:min-h-[340px] relative rounded-xl overflow-hidden bg-[#1A1A1A]">
-                {feature.image?.src ? (
+                {feature.videoUrl ? (
+                  <iframe
+                    src={getYouTubeEmbedUrl(feature.videoUrl)}
+                    title={feature.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                  />
+                ) : feature.image?.src ? (
                   <SmartImage
                     src={feature.image.src}
                     alt={feature.image.alt || feature.title}
@@ -942,8 +965,18 @@ function DefaultCardView({
       transition={{ duration: 0.5, delay: staggerDelay, ease: 'easeOut' }}
       whileHover={{ y: isCheckCircle ? -2 : -4, transition: { duration: 0.2 } }}
     >
-      {/* Image or Icon */}
-      {feature.image?.src ? (
+      {/* Video, Image, or Icon */}
+      {feature.videoUrl ? (
+        <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4 bg-[#1A1A1A]">
+          <iframe
+            src={getYouTubeEmbedUrl(feature.videoUrl)}
+            title={feature.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-full h-full"
+          />
+        </div>
+      ) : feature.image?.src ? (
         <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-4 bg-[#1A1A1A]">
           <SmartImage
             src={feature.image.src}

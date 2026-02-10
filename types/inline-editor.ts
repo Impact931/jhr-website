@@ -159,6 +159,8 @@ export interface FeatureCard {
   link?: { text: string; href: string };
   /** Optional card image. When present, displayed instead of the icon. */
   image?: { src: string; alt: string };
+  /** Optional YouTube video URL. When present, renders an embedded player. */
+  videoUrl?: string;
 }
 
 /**

@@ -18,8 +18,14 @@ import type {
 // ============================================================================
 
 const SECTION_CLASS_MAP: Record<string, string> = {
-  "two-tiers": "section-padding bg-jhr-black-light",
-  "headshot-styles": "section-padding bg-jhr-black-light",
+  "problem": "section-padding section-light",
+  "solution": "section-padding section-light",
+  "two-tiers": "section-padding bg-[#0B0C0F]",
+  "event-pairing": "section-padding bg-[#0B0C0F]",
+  "headshot-styles": "section-padding section-light",
+  "social-proof": "section-padding bg-[#0B0C0F]",
+  "faqs": "section-padding section-light",
+  "final-cta": "section-padding bg-[#0B0C0F]",
 };
 
 export default function ExecutiveImagingPage() {

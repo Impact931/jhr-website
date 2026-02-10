@@ -18,8 +18,14 @@ import type {
 // ============================================================================
 
 const SECTION_CLASS_MAP: Record<string, string> = {
-  "services": "section-padding bg-jhr-black-light",
-  "process": "section-padding bg-jhr-black-light",
+  "value-prop": "section-padding section-light",
+  "services": "section-padding bg-[#0B0C0F]",
+  "use-cases": "section-padding section-light",
+  "process": "section-padding bg-[#0B0C0F]",
+  "gallery": "section-padding section-light",
+  "social-proof": "section-padding bg-[#0B0C0F]",
+  "faqs": "section-padding section-light",
+  "final-cta": "section-padding bg-[#0B0C0F]",
 };
 
 export default function EventVideoSystemsPage() {

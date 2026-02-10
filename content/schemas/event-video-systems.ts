@@ -17,8 +17,9 @@
  * 3          | Common Applications           | EditableFeatureGrid       | event-video-systems:use-cases
  * 4          | How We Work (Process)         | EditableFeatureGrid       | event-video-systems:process
  * 5          | Gallery                       | EditableImageGallery      | event-video-systems:gallery
- * 6          | FAQs                          | EditableFAQ               | event-video-systems:faqs
- * 7          | Final CTA                     | EditableCTA               | event-video-systems:final-cta
+ * 6          | Social Proof                  | EditableTestimonials      | event-video-systems:social-proof
+ * 7          | FAQs                          | EditableFAQ               | event-video-systems:faqs
+ * 8          | Final CTA                     | EditableCTA               | event-video-systems:final-cta
  *
  * ============================================================================
  * CONTENT KEY NAMING CONVENTION
@@ -33,6 +34,7 @@ import type {
   HeroSectionContent,
   FeatureGridSectionContent,
   ImageGallerySectionContent,
+  TestimonialsSectionContent,
   FAQSectionContent,
   CTASectionContent,
 } from '@/types/inline-editor';
@@ -54,7 +56,7 @@ export const EVS_HERO: HeroSectionContent = {
     sectionId: 'hero',
     dataSectionName: 'hero',
   },
-  variant: 'half-height',
+  variant: 'full-height',
   title: 'Your Event Deserves More Than Photos',
   subtitle: 'Event Video Systems\u2122',
   description:
@@ -71,7 +73,7 @@ export const EVS_HERO: HeroSectionContent = {
 /**
  * Section 1: Why Event Video Matters (Value Proposition)
  * Maps to: Left text + right video preview image with outcomes checklist
- * Component: EditableFeatureGrid (used for outcomes list)
+ * Component: EditableFeatureGrid (alternating 2-col layout with images)
  */
 export const EVS_VALUE_PROP: FeatureGridSectionContent = {
   id: 'value-prop',
@@ -85,6 +87,7 @@ export const EVS_VALUE_PROP: FeatureGridSectionContent = {
   heading: 'Why Event Video Matters',
   subheading:
     'You spend months planning an event. Attendees experience it for a few days. Then it\u2019s over. Video changes that equation.',
+  displayMode: 'alternating',
   columns: 2,
   features: [
     {
@@ -92,32 +95,36 @@ export const EVS_VALUE_PROP: FeatureGridSectionContent = {
       icon: 'CheckCircle',
       title: 'Extended Event ROI',
       description: 'Extended event ROI through lasting video content.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Extended event ROI through video content' },
     },
     {
       id: 'value-prop-card-1',
       icon: 'CheckCircle',
       title: 'Keynote Archives',
       description: 'Professional keynote archives for internal use.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Professional keynote recording archives' },
     },
     {
       id: 'value-prop-card-2',
       icon: 'CheckCircle',
       title: 'Promotional Material',
       description: 'Compelling promotional material for future events.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Event promotional video material' },
     },
     {
       id: 'value-prop-card-3',
       icon: 'CheckCircle',
       title: 'Authentic Testimonials',
       description: 'Authentic testimonials for marketing campaigns.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Authentic attendee testimonial capture' },
     },
   ],
 };
 
 /**
  * Section 2: Video Services
- * Maps to: 2x2 service cards grid
- * Component: EditableFeatureGrid (2 columns)
+ * Maps to: Horizontal service cards
+ * Component: EditableFeatureGrid (horizontal layout)
  */
 export const EVS_SERVICES: FeatureGridSectionContent = {
   id: 'services',
@@ -131,6 +138,7 @@ export const EVS_SERVICES: FeatureGridSectionContent = {
   heading: 'Video Services',
   subheading:
     'Each system can be added to any photography service or booked independently. One coordinated team handles everything.',
+  displayMode: 'horizontal',
   columns: 2,
   features: [
     {
@@ -167,7 +175,7 @@ export const EVS_SERVICES: FeatureGridSectionContent = {
 /**
  * Section 3: Common Applications (Use Cases)
  * Maps to: 3-column use case cards
- * Component: EditableFeatureGrid (3 columns)
+ * Component: EditableFeatureGrid (3 columns, default layout)
  */
 export const EVS_USE_CASES: FeatureGridSectionContent = {
   id: 'use-cases',
@@ -208,8 +216,8 @@ export const EVS_USE_CASES: FeatureGridSectionContent = {
 
 /**
  * Section 4: How We Work (Process)
- * Maps to: 4-step timeline
- * Component: EditableFeatureGrid (4 columns)
+ * Maps to: 4-step journey timeline
+ * Component: EditableFeatureGrid (journey layout, 4 columns)
  */
 export const EVS_PROCESS: FeatureGridSectionContent = {
   id: 'process',
@@ -221,6 +229,7 @@ export const EVS_PROCESS: FeatureGridSectionContent = {
     dataSectionName: 'process',
   },
   heading: 'How We Work',
+  displayMode: 'journey',
   columns: 4,
   features: [
     {
@@ -280,13 +289,50 @@ export const EVS_GALLERY: ImageGallerySectionContent = {
 };
 
 /**
- * Section 6: FAQs
+ * Section 6: Social Proof (Testimonials)
+ * Component: EditableTestimonials
+ */
+export const EVS_SOCIAL_PROOF: TestimonialsSectionContent = {
+  id: 'social-proof',
+  type: 'testimonials',
+  order: 6,
+  seo: {
+    ariaLabel: 'Testimonials from event organizers about video services',
+    sectionId: 'social-proof',
+    dataSectionName: 'social-proof',
+  },
+  heading: 'Event Organizers Trust JHR Video',
+  layout: 'grid',
+  testimonials: [
+    {
+      id: 'social-proof-0',
+      quote: 'The keynote capture was flawless. Multi-camera setup, perfect audio, and the edited version was ready in two weeks. Our training library just doubled in value.',
+      authorName: 'VP of Learning',
+      authorTitle: 'Enterprise Technology Company',
+    },
+    {
+      id: 'social-proof-1',
+      quote: 'Having one team handle both photography and video meant zero coordination headaches. They moved through the event like they\u2019d been part of our staff for years.',
+      authorName: 'Conference Director',
+      authorTitle: 'National Association',
+    },
+    {
+      id: 'social-proof-2',
+      quote: 'The highlight reel sold out next year\u2019s conference before we even opened registration. That\u2019s the ROI of professional event video.',
+      authorName: 'Marketing Director',
+      authorTitle: 'Industry Summit',
+    },
+  ],
+};
+
+/**
+ * Section 7: FAQs
  * Component: EditableFAQ
  */
 export const EVS_FAQS: FAQSectionContent = {
   id: 'faqs',
   type: 'faq',
-  order: 6,
+  order: 7,
   seo: {
     ariaLabel: 'Frequently asked questions about event video systems',
     sectionId: 'faqs',
@@ -328,13 +374,13 @@ export const EVS_FAQS: FAQSectionContent = {
 };
 
 /**
- * Section 7: Final CTA
- * Component: EditableCTA (image background variant)
+ * Section 8: Final CTA
+ * Component: EditableCTA (gradient background variant)
  */
 export const EVS_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 7,
+  order: 8,
   seo: {
     ariaLabel: 'Schedule a strategy call for event video services',
     sectionId: 'final-cta',
@@ -343,8 +389,8 @@ export const EVS_FINAL_CTA: CTASectionContent = {
   headline: 'Let\u2019s Discuss Your Video Needs',
   subtext:
     'Every event has different video requirements. Schedule a call and we\u2019ll discuss what makes sense for your goals and budget.',
-  backgroundType: 'image',
-  backgroundValue: '/images/generated/event-awards-ceremony.jpg',
+  backgroundType: 'gradient',
+  backgroundValue: 'radial-gradient(circle at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 50%), linear-gradient(180deg, #0B0C0F 0%, #0B0C0F 100%)',
   primaryButton: {
     text: 'Schedule a Strategy Call',
     href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
@@ -363,6 +409,7 @@ export const EVS_SECTIONS: PageSectionContent[] = [
   EVS_USE_CASES,
   EVS_PROCESS,
   EVS_GALLERY,
+  EVS_SOCIAL_PROOF,
   EVS_FAQS,
   EVS_FINAL_CTA,
 ];

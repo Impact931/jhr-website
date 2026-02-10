@@ -12,7 +12,7 @@
  * Section #  | Page Section                  | Editable Component        | Content Key Prefix
  * -----------|-------------------------------|---------------------------|-------------------------------------------
  * 0 (hero)   | Hero Banner                   | EditableHero              | trade-show-media:hero
- * 1          | The Trade Show Media Gap       | EditableFeatureGrid       | trade-show-media:problem
+ * 1          | The Trade Show Media Gap       | EditableTextBlock         | trade-show-media:problem
  * 2          | How JHR Covers Trade Shows    | EditableFeatureGrid       | trade-show-media:solution
  * 3          | What's Included               | EditableFeatureGrid       | trade-show-media:whats-included
  * 4          | Add Video CTA                 | EditableCTA               | trade-show-media:video-pairing
@@ -32,6 +32,7 @@ import type {
   PageSchema,
   PageSectionContent,
   HeroSectionContent,
+  TextBlockSectionContent,
   FeatureGridSectionContent,
   CTASectionContent,
   TestimonialsSectionContent,
@@ -55,8 +56,9 @@ export const TSM_HERO: HeroSectionContent = {
     sectionId: 'hero',
     dataSectionName: 'hero',
   },
-  variant: 'half-height',
-  title: 'Media That Proves the Investment Was Worth It',
+  variant: 'split',
+  imagePosition: 'left',
+  title: 'Media That Proves <em class="text-jhr-gold not-italic">the Investment</em> Was Worth It',
   subtitle: 'Trade-Show Media Services\u2122',
   description:
     'Trade shows are high-stakes, fast-moving environments. You need a media partner who understands exhibitor expectations, sponsor deliverables, and the energy of the show floor \u2014 and delivers assets that justify the investment.',
@@ -71,12 +73,11 @@ export const TSM_HERO: HeroSectionContent = {
 
 /**
  * Section 1: The Trade Show Media Gap (Problem)
- * Maps to: 3 problem cards in 3-column grid
- * Component: EditableFeatureGrid (3 columns)
+ * Component: EditableTextBlock (centered)
  */
-export const TSM_PROBLEM: FeatureGridSectionContent = {
+export const TSM_PROBLEM: TextBlockSectionContent = {
   id: 'problem',
-  type: 'feature-grid',
+  type: 'text-block',
   order: 1,
   seo: {
     ariaLabel: 'The trade show media gap that exhibitors and organizers face',
@@ -84,38 +85,17 @@ export const TSM_PROBLEM: FeatureGridSectionContent = {
     dataSectionName: 'problem',
   },
   heading: 'The Trade Show Media Gap',
-  subheading:
-    'Exhibitors expect assets. Sponsors want proof of engagement. Marketing needs content that performs. And you\u2019re trying to coordinate all of it during the busiest week of your year.',
-  columns: 3,
-  features: [
-    {
-      id: 'problem-card-0',
-      icon: 'Shield',
-      title: 'Sponsor & Exhibitor Deliverables',
-      description:
-        'Sponsors and exhibitors expect professional documentation of their presence. Without it, renewals become harder and relationships weaken.',
-    },
-    {
-      id: 'problem-card-1',
-      icon: 'Clock',
-      title: 'Real-Time Content Needs',
-      description:
-        'Social media, press releases, and sponsor communications all need content during the show \u2014 not weeks after it ends.',
-    },
-    {
-      id: 'problem-card-2',
-      icon: 'BarChart',
-      title: 'Proving Event ROI',
-      description:
-        'A comprehensive media library is the most tangible proof of your show\u2019s value to exhibitors, sponsors, and stakeholders.',
-    },
-  ],
+  alignment: 'center',
+  content:
+    '<p>Exhibitors expect assets. Sponsors want proof of engagement. Marketing needs content that performs. And you\u2019re trying to coordinate all of it during the busiest week of your year.</p>' +
+    '<p>Sponsors and exhibitors expect professional documentation of their presence. Without it, renewals become harder and relationships weaken.</p>' +
+    '<p>Social media, press releases, and sponsor communications all need content during the show \u2014 not weeks after it ends.</p>' +
+    '<p>A comprehensive media library is the most tangible proof of your show\u2019s value to exhibitors, sponsors, and stakeholders.</p>',
 };
 
 /**
  * Section 2: How JHR Covers Trade Shows (Solution)
- * Maps to: 4 solution cards in 2-column grid
- * Component: EditableFeatureGrid (2 columns)
+ * Component: EditableFeatureGrid (alternating, 2 columns)
  */
 export const TSM_SOLUTION: FeatureGridSectionContent = {
   id: 'solution',
@@ -130,6 +110,7 @@ export const TSM_SOLUTION: FeatureGridSectionContent = {
   subheading:
     'We deploy as an integrated media team \u2014 covering the show floor, exhibitor booths, keynotes, and networking events with same-day delivery.',
   columns: 2,
+  displayMode: 'alternating',
   features: [
     {
       id: 'solution-card-0',
@@ -137,6 +118,7 @@ export const TSM_SOLUTION: FeatureGridSectionContent = {
       title: 'Show Floor Coverage',
       description:
         'Comprehensive documentation of exhibitor booths, attendee engagement, sponsor activations, and the overall energy of the trade show floor.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Show floor photography coverage' },
     },
     {
       id: 'solution-card-1',
@@ -144,6 +126,7 @@ export const TSM_SOLUTION: FeatureGridSectionContent = {
       title: 'Same-Day Highlights',
       description:
         'Edited highlight images delivered daily for social media, exhibitor communications, and real-time marketing during the show.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Same-day highlight image delivery' },
     },
     {
       id: 'solution-card-2',
@@ -151,6 +134,7 @@ export const TSM_SOLUTION: FeatureGridSectionContent = {
       title: 'Exhibitor Asset Packages',
       description:
         'Customized photo packages for individual exhibitors and sponsors \u2014 ready-to-use assets that support their post-show marketing.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Exhibitor photo asset packages' },
     },
     {
       id: 'solution-card-3',
@@ -158,13 +142,13 @@ export const TSM_SOLUTION: FeatureGridSectionContent = {
       title: 'Complete Show Documentation',
       description:
         'Full media library organized by exhibitor, session, and event type. Professional post-show content for stakeholder reports and future promotion.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Complete trade show documentation' },
     },
   ],
 };
 
 /**
  * Section 3: What's Included in Trade-Show Coverage
- * Maps to: 4 inclusion cards in 2-column grid
  * Component: EditableFeatureGrid (2 columns)
  */
 export const TSM_WHATS_INCLUDED: FeatureGridSectionContent = {
@@ -237,8 +221,7 @@ export const TSM_VIDEO_PAIRING: CTASectionContent = {
 
 /**
  * Section 5: Pair With Headshot Activation (Exhibitor Crossover)
- * Maps to: 2 crossover cards in 2-column grid
- * Component: EditableFeatureGrid (2 columns)
+ * Component: EditableFeatureGrid (horizontal, 2 columns)
  */
 export const TSM_EXHIBITOR_CROSSOVER: FeatureGridSectionContent = {
   id: 'exhibitor-crossover',
@@ -253,6 +236,7 @@ export const TSM_EXHIBITOR_CROSSOVER: FeatureGridSectionContent = {
   subheading:
     'Add a Headshot Activation to your trade show and turn your booth into the must-visit destination on the floor.',
   columns: 2,
+  displayMode: 'horizontal',
   features: [
     {
       id: 'exhibitor-crossover-card-0',
@@ -301,6 +285,13 @@ export const TSM_SOCIAL_PROOF: TestimonialsSectionContent = {
         'Having professional same-day content during the show transformed our social media presence and sponsor communications.',
       authorName: 'Event Manager',
       authorTitle: 'National Conference',
+    },
+    {
+      id: 'social-proof-2',
+      quote:
+        'The exhibitor packages were a game-changer for renewals. Every sponsor got professional documentation of their booth and engagement \u2014 it made the value conversation so much easier.',
+      authorName: 'Sponsorship Director',
+      authorTitle: 'Regional Trade Show',
     },
   ],
 };
@@ -355,7 +346,7 @@ export const TSM_FAQS: FAQSectionContent = {
 
 /**
  * Section 8: Final CTA
- * Component: EditableCTA (image background variant)
+ * Component: EditableCTA (gradient background variant)
  */
 export const TSM_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
@@ -369,8 +360,8 @@ export const TSM_FINAL_CTA: CTASectionContent = {
   headline: 'Let\u2019s Plan Your Trade Show Coverage',
   subtext:
     'Tell us about your show \u2014 dates, venue, exhibitor count, and priorities. We\u2019ll build a coverage plan that delivers for every stakeholder.',
-  backgroundType: 'image',
-  backgroundValue: '/images/generated/event-trade-show.jpg',
+  backgroundType: 'gradient',
+  backgroundValue: 'radial-gradient(circle at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 50%), linear-gradient(180deg, #0B0C0F 0%, #0B0C0F 100%)',
   primaryButton: {
     text: 'Talk With Our Team',
     href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',

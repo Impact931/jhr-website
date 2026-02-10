@@ -10,15 +10,15 @@
  *
  * Section #  | Page Section                  | Editable Component        | Content Key Prefix
  * -----------|-------------------------------|---------------------------|-------------------------------------------
- * 0 (hero)   | Hero Banner                   | EditableHero              | executive-imaging:hero
- * 1          | Problem (DIY Headshots)        | EditableFeatureGrid       | executive-imaging:problem
+ * 0 (hero)   | Hero Banner (split, right)    | EditableHero              | executive-imaging:hero
+ * 1          | Problem (DIY Headshots)        | EditableTextBlock         | executive-imaging:problem
  * 2          | Solution (Professional)        | EditableFeatureGrid       | executive-imaging:solution
- * 3          | Two Tiers                      | EditableFeatureGrid       | executive-imaging:two-tiers
+ * 3          | Two Tiers (glass cards)        | EditableFeatureGrid       | executive-imaging:two-tiers
  * 4          | Event Pairing CTA              | EditableCTA               | executive-imaging:event-pairing
  * 5          | Headshot Styles                | EditableFeatureGrid       | executive-imaging:headshot-styles
  * 6          | Social Proof (Testimonials)    | EditableTestimonials      | executive-imaging:social-proof
  * 7          | FAQs                           | EditableFAQ               | executive-imaging:faqs
- * 8          | Final CTA                      | EditableCTA               | executive-imaging:final-cta
+ * 8          | Final CTA (gradient)           | EditableCTA               | executive-imaging:final-cta
  *
  * ============================================================================
  * CONTENT KEY NAMING CONVENTION
@@ -31,6 +31,7 @@ import type {
   PageSchema,
   PageSectionContent,
   HeroSectionContent,
+  TextBlockSectionContent,
   FeatureGridSectionContent,
   CTASectionContent,
   TestimonialsSectionContent,
@@ -42,7 +43,7 @@ import type {
 // ============================================================================
 
 /**
- * Section 0: Hero Banner
+ * Section 0: Hero Banner (split variant, image right)
  * Component: EditableHero
  */
 export const EI_HERO: HeroSectionContent = {
@@ -54,8 +55,9 @@ export const EI_HERO: HeroSectionContent = {
     sectionId: 'hero',
     dataSectionName: 'hero',
   },
-  variant: 'half-height',
-  title: 'Your Leadership Team, Represented the Right Way',
+  variant: 'split',
+  imagePosition: 'right',
+  title: 'Your Leadership Team, <em class="text-jhr-gold not-italic">Represented the Right Way</em>',
   subtitle: 'Executive Imaging\u2122',
   description:
     'Outdated headshots undermine credibility. Inconsistent photos fragment your brand. We bring professional imaging to your location \u2014 on your schedule, aligned to your brand standards, and delivered with the efficiency your team expects.',
@@ -70,11 +72,11 @@ export const EI_HERO: HeroSectionContent = {
 
 /**
  * Section 1: Problem (The Problem with DIY Headshots)
- * Component: EditableFeatureGrid (3 columns)
+ * Component: EditableTextBlock (centered)
  */
-export const EI_PROBLEM: FeatureGridSectionContent = {
+export const EI_PROBLEM: TextBlockSectionContent = {
   id: 'problem',
-  type: 'feature-grid',
+  type: 'text-block',
   order: 1,
   seo: {
     ariaLabel: 'The problem with DIY headshots for executive teams',
@@ -82,37 +84,14 @@ export const EI_PROBLEM: FeatureGridSectionContent = {
     dataSectionName: 'problem',
   },
   heading: 'The Problem with DIY Headshots',
-  subheading:
-    'Half your team has photos from 2018. Some used their phone camera. Others cropped vacation photos. First impressions matter \u2014 inconsistent headshots signal disorganization.',
-  columns: 3,
-  features: [
-    {
-      id: 'problem-card-0',
-      icon: 'AlertCircle',
-      title: 'Inconsistent Brand Image',
-      description:
-        'Different backgrounds, lighting, and quality across your team\u2019s headshots creates a fragmented professional presence.',
-    },
-    {
-      id: 'problem-card-1',
-      icon: 'Clock',
-      title: 'Time and Coordination Burden',
-      description:
-        'Sending team members to individual photo sessions means lost productivity and scheduling headaches.',
-    },
-    {
-      id: 'problem-card-2',
-      icon: 'Shield',
-      title: 'Quality That Doesn\u2019t Match Your Brand',
-      description:
-        'DIY solutions and phone camera headshots don\u2019t represent the caliber of your organization or your people.',
-    },
-  ],
+  alignment: 'center',
+  content:
+    '<p>Half your team has photos from 2018. Some used their phone camera. Others cropped vacation photos. First impressions matter \u2014 inconsistent headshots signal disorganization.</p><p>Different backgrounds, lighting, and quality across your team\u2019s headshots creates a fragmented professional presence. Sending team members to individual sessions means lost productivity and scheduling headaches. And DIY solutions simply don\u2019t represent the caliber of your organization.</p>',
 };
 
 /**
  * Section 2: Solution (Professional Imaging, Simplified)
- * Component: EditableFeatureGrid (2 columns)
+ * Component: EditableFeatureGrid (alternating with step numbers)
  */
 export const EI_SOLUTION: FeatureGridSectionContent = {
   id: 'solution',
@@ -126,6 +105,8 @@ export const EI_SOLUTION: FeatureGridSectionContent = {
   heading: 'Professional Imaging, Simplified',
   subheading:
     'We bring the setup, the direction, and the experience to you \u2014 so your team gets consistent, brand-aligned headshots without the production hassle.',
+  displayMode: 'alternating',
+  showStepNumbers: true,
   columns: 2,
   features: [
     {
@@ -134,6 +115,7 @@ export const EI_SOLUTION: FeatureGridSectionContent = {
       title: 'On-Site Convenience',
       description:
         'We bring our complete studio setup to your location. Minimal disruption, maximum participation.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'On-site studio setup at a corporate office' },
     },
     {
       id: 'solution-card-1',
@@ -141,6 +123,7 @@ export const EI_SOLUTION: FeatureGridSectionContent = {
       title: 'Scalable for Any Team',
       description:
         'From executive teams of 5 to organizations of 50+. Same quality, same consistency, regardless of size.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Team headshot session with multiple professionals' },
     },
     {
       id: 'solution-card-2',
@@ -148,6 +131,7 @@ export const EI_SOLUTION: FeatureGridSectionContent = {
       title: 'AI-Enhanced Processing',
       description:
         'Professional retouching applied to every image. Consistent quality across your entire team.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'AI-enhanced headshot retouching process' },
     },
     {
       id: 'solution-card-3',
@@ -155,13 +139,14 @@ export const EI_SOLUTION: FeatureGridSectionContent = {
       title: 'Fast, Organized Delivery',
       description:
         'Edited headshots delivered within 5-7 business days. All images formatted and ready for use across platforms.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Organized delivery of professional headshots' },
     },
   ],
 };
 
 /**
- * Section 3: Two Programs, One Standard of Quality
- * Component: EditableFeatureGrid (2 columns)
+ * Section 3: Two Programs, One Standard of Quality (glass cards)
+ * Component: EditableFeatureGrid (2 columns, glass variant)
  */
 export const EI_TWO_TIERS: FeatureGridSectionContent = {
   id: 'two-tiers',
@@ -176,6 +161,7 @@ export const EI_TWO_TIERS: FeatureGridSectionContent = {
   subheading:
     'Whether you need headshots for a small leadership team or an entire department, we have a program designed for your scale.',
   columns: 2,
+  cardVariant: 'glass',
   features: [
     {
       id: 'two-tiers-card-0',
@@ -222,7 +208,7 @@ export const EI_EVENT_PAIRING: CTASectionContent = {
 };
 
 /**
- * Section 5: Headshot Styles
+ * Section 5: Headshot Styles (with images)
  * Component: EditableFeatureGrid (3 columns)
  */
 export const EI_HEADSHOT_STYLES: FeatureGridSectionContent = {
@@ -245,6 +231,7 @@ export const EI_HEADSHOT_STYLES: FeatureGridSectionContent = {
       title: 'Classic Corporate',
       description:
         'Clean, professional look with solid background. The standard for corporate websites, LinkedIn profiles, and marketing materials.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Classic corporate headshot example' },
     },
     {
       id: 'headshot-styles-card-1',
@@ -252,6 +239,7 @@ export const EI_HEADSHOT_STYLES: FeatureGridSectionContent = {
       title: 'Environmental Portrait',
       description:
         'Natural setting that shows personality while maintaining professionalism. Great for about pages and thought leadership content.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Environmental portrait headshot example' },
     },
     {
       id: 'headshot-styles-card-2',
@@ -259,6 +247,7 @@ export const EI_HEADSHOT_STYLES: FeatureGridSectionContent = {
       title: 'Studio Editorial',
       description:
         'Elevated, magazine-quality portraits for executive teams, board members, and leadership communications.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Studio editorial headshot example' },
     },
   ],
 };
@@ -292,6 +281,13 @@ export const EI_SOCIAL_PROOF: TestimonialsSectionContent = {
         'The efficiency was remarkable. Each session took 10 minutes, and the results were better than any studio we\u2019ve used before.',
       authorName: 'Marketing Manager',
       authorTitle: 'Professional Services Firm',
+    },
+    {
+      id: 'social-proof-2',
+      quote:
+        'The consistency across our entire leadership team was exactly what we needed for the rebrand. Every headshot looks like it belongs together.',
+      authorName: 'Brand Director',
+      authorTitle: 'Financial Services Company',
     },
   ],
 };
@@ -345,8 +341,8 @@ export const EI_FAQS: FAQSectionContent = {
 };
 
 /**
- * Section 8: Final CTA
- * Component: EditableCTA (image background variant)
+ * Section 8: Final CTA (gradient background)
+ * Component: EditableCTA
  */
 export const EI_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
@@ -360,8 +356,8 @@ export const EI_FINAL_CTA: CTASectionContent = {
   headline: 'Ready to Update Your Team\u2019s Image?',
   subtext:
     'Let\u2019s discuss your organization\u2019s needs. We\u2019ll create a custom plan that fits your schedule and delivers consistent, professional results.',
-  backgroundType: 'image',
-  backgroundValue: '/images/generated/service-corporate-headshots.jpg',
+  backgroundType: 'gradient',
+  backgroundValue: 'radial-gradient(circle at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 50%), linear-gradient(180deg, #0B0C0F 0%, #0B0C0F 100%)',
   primaryButton: {
     text: 'Talk With Our Team',
     href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
