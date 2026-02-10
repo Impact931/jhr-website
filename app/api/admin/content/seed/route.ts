@@ -83,10 +83,15 @@ function mergeSectionImages(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const m = merged as any;
       if (existing.images && m.images) {
-        m.images = m.images.map((img: { id: string; src?: string; alt?: string }, i: number) => {
-          const existingImg =
-            existing.images.find((ei: { id: string }) => ei.id === img.id) ||
-            existing.images[i];
+        m.images = m.images.map((img: { id?: string; src?: string; alt?: string }, i: number) => {
+          // Match by ID only when both sides have defined IDs; otherwise use positional match
+          let existingImg = null;
+          if (img.id) {
+            existingImg = existing.images.find((ei: { id?: string }) => ei.id && ei.id === img.id);
+          }
+          if (!existingImg) {
+            existingImg = existing.images[i];
+          }
           if (existingImg?.src) {
             return { ...img, src: existingImg.src, alt: existingImg.alt || img.alt };
           }
@@ -97,6 +102,14 @@ function mergeSectionImages(
     }
 
     // text-block, faq, stats, columns, testimonials — no user-uploadable images to preserve
+  }
+
+  // Preserve backgroundVideo on any section type (YouTube embeds, uploaded videos, etc.)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const existingBgVideo = (existingSection as any).backgroundVideo;
+  if (existingBgVideo) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (merged as any).backgroundVideo = existingBgVideo;
   }
 
   return merged;
