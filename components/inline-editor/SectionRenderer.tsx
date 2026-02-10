@@ -348,13 +348,15 @@ export function SectionRenderer({
       if (isNested) {
         return (
           <div className="h-full flex items-center">
-            <EditableImageGallery
-              contentKeyPrefix={prefix}
-              heading={gallery.heading}
-              layout={gallery.layout}
-              images={gallery.images}
-              singleImageFit={gallery.singleImageFit}
-            />
+            <div className="w-full">
+              <EditableImageGallery
+                contentKeyPrefix={prefix}
+                heading={gallery.heading}
+                layout={gallery.layout}
+                images={gallery.images}
+                singleImageFit={gallery.singleImageFit}
+              />
+            </div>
           </div>
         );
       }
