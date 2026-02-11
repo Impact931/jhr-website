@@ -1528,18 +1528,31 @@ export function EditableFeatureGrid({
                       className="object-cover"
                     />
                     {canEdit && (
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setImagePickerCardId(feature.id)}
+                            className="px-3 py-1.5 bg-[#C9A227] text-black text-xs font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
+                          >
+                            Replace
+                          </button>
+                          <button
+                            onClick={() => handleRemoveImage(feature.id)}
+                            className="px-3 py-1.5 bg-red-900/70 text-red-300 text-xs font-medium rounded-lg hover:bg-red-900 transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
                         <button
-                          onClick={() => setImagePickerCardId(feature.id)}
-                          className="px-3 py-1.5 bg-[#C9A227] text-black text-xs font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
+                          onClick={() => {
+                            handleRemoveImage(feature.id);
+                            setVideoUrlInput('');
+                            setVideoUrlCardId(feature.id);
+                          }}
+                          className="px-3 py-1.5 bg-[#2A2A2A] text-white text-xs font-medium rounded-lg hover:bg-[#333] transition-colors flex items-center gap-1"
                         >
-                          Replace
-                        </button>
-                        <button
-                          onClick={() => handleRemoveImage(feature.id)}
-                          className="px-3 py-1.5 bg-red-900/70 text-red-300 text-xs font-medium rounded-lg hover:bg-red-900 transition-colors"
-                        >
-                          Remove
+                          <Video className="w-3 h-3" />
+                          Switch to Video
                         </button>
                       </div>
                     )}
