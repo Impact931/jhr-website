@@ -796,6 +796,8 @@ export function EditableTeamGrid({
   const sectionId = contentKeyPrefix.split(':')[1];
 
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [flippedId, setFlippedId] = useState<string | null>(null);
+  const [lockedId, setLockedId] = useState<string | null>(null);
 
   const updateMembers = useCallback(
     (newMembers: TeamMember[]) => {
@@ -974,11 +976,6 @@ export function EditableTeamGrid({
   }
 
   // ---- View Mode ----
-
-  // Lift flip state: only one card flipped/locked at a time
-  const [flippedId, setFlippedId] = useState<string | null>(null);
-  const [lockedId, setLockedId] = useState<string | null>(null);
-
   return (
     <div>
       {/* Heading */}
