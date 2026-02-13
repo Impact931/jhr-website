@@ -19,8 +19,8 @@ import type {
 
 const SECTION_CLASS_MAP: Record<string, string> = {
   "guide": "section-padding bg-jhr-black",
-  "values": "section-padding bg-jhr-black-light",
-  "why-jhr": "section-padding bg-jhr-black",
+  "why-jhr": "section-padding bg-jhr-black-light",
+  "operator-program": "section-padding bg-jhr-black",
   "stats": "section-padding bg-jhr-black-light",
   "team": "section-padding bg-jhr-black",
 };

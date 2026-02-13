@@ -9,15 +9,15 @@
  * SECTION MAP: About Page Sections -> Editable Components
  * ============================================================================
  *
- * Section #  | Page Section                  | Editable Component        | Content Key Prefix
- * -----------|-------------------------------|---------------------------|----------------------------
- * 0 (hero)   | Hero Banner                   | EditableHero              | about:hero
- * 1          | Meet Jayson Rivas (Guide)      | EditableTextBlock          | about:guide
- * 2          | How We Operate (Values)        | EditableFeatureGrid       | about:values
- * 3          | Why Event Pros Choose JHR      | EditableFeatureGrid       | about:why-jhr
- * 4          | Stats Section                  | EditableStats             | about:stats
- * 5          | Certified Media Operators      | EditableTeamGrid          | about:team
- * 6          | Final CTA                      | EditableCTA               | about:final-cta
+ * Section #  | Page Section                        | Editable Component        | Content Key Prefix
+ * -----------|-------------------------------------|---------------------------|----------------------------
+ * 0 (hero)   | Hero Banner (split)                 | EditableHero              | about:hero
+ * 1          | Meet Jayson Rivas (Guide)            | EditableTextBlock          | about:guide
+ * 2          | Why Event Pros Choose JHR            | EditableFeatureGrid       | about:why-jhr
+ * 3          | How We Build Certified Operators     | EditableFeatureGrid       | about:operator-program
+ * 4          | Stats Section                        | EditableStats             | about:stats
+ * 5          | Meet the Team                        | EditableTeamGrid          | about:team
+ * 6          | Final CTA                            | EditableCTA               | about:final-cta
  *
  * ============================================================================
  * CONTENT KEY NAMING CONVENTION
@@ -30,10 +30,10 @@
  *   about:hero:subtitle           - Hero subtitle text
  *   about:guide:heading           - Guide section heading
  *   about:guide:content           - Guide section rich text
- *   about:values:heading          - Values section heading
- *   about:values:features         - Values feature cards (JSON array)
  *   about:why-jhr:heading         - Why JHR section heading
  *   about:why-jhr:features        - Why JHR feature cards (JSON array)
+ *   about:operator-program:heading   - Operator program heading
+ *   about:operator-program:features  - Operator program cards (JSON array)
  *   about:stats:features          - Stats grid (JSON array)
  *   about:final-cta:headline      - Final CTA headline
  */
@@ -67,7 +67,8 @@ export const ABOUT_HERO: HeroSectionContent = {
     sectionId: 'hero',
     dataSectionName: 'hero',
   },
-  variant: 'half-height',
+  variant: 'split',
+  imagePosition: 'right',
   title: 'We Understand the Pressure You\'re Under',
   subtitle: 'About JHR Photography',
   description:
@@ -108,52 +109,7 @@ export const ABOUT_GUIDE: TextBlockSectionContent = {
 };
 
 /**
- * Section 2: How We Operate (Values)
- * Maps to: Values grid in /app/about/page.tsx
- * Component: EditableFeatureGrid (3 columns)
- *
- * Three value cards: Reliability First, Empathy Driven, Outcomes Over Process.
- */
-export const ABOUT_VALUES: FeatureGridSectionContent = {
-  id: 'values',
-  type: 'feature-grid',
-  order: 2,
-  seo: {
-    ariaLabel: 'JHR Photography core values and operating principles',
-    sectionId: 'values',
-    dataSectionName: 'values',
-  },
-  heading: 'How We Operate',
-  subheading:
-    'Our approach is shaped by military discipline and a deep respect for the professionals we serve.',
-  columns: 3,
-  features: [
-    {
-      id: 'values-card-0',
-      icon: 'Shield',
-      title: 'Reliability First',
-      description:
-        'We show up prepared, on time, every time. No excuses. Our logistics are planned to the minute, and we build in redundancy for everything that matters.',
-    },
-    {
-      id: 'values-card-1',
-      icon: 'Heart',
-      title: 'Empathy Driven',
-      description:
-        'We know you\'re juggling a thousand details. We don\'t add to your stress\u2014we remove it. Our job is to make your job easier, not to showcase our creative ego.',
-    },
-    {
-      id: 'values-card-2',
-      icon: 'Zap',
-      title: 'Outcomes Over Process',
-      description:
-        'We don\'t talk about gear, hours, or creative vision. We talk about what you need to achieve and how we deliver it. Your success is our only metric.',
-    },
-  ],
-};
-
-/**
- * Section 3: Why Event Professionals Choose JHR
+ * Section 2: Why Event Professionals Choose JHR
  * Maps to: "Why JHR" section in /app/about/page.tsx
  * Component: EditableFeatureGrid (single column, stacked cards)
  *
@@ -163,7 +119,7 @@ export const ABOUT_VALUES: FeatureGridSectionContent = {
 export const ABOUT_WHY_JHR: FeatureGridSectionContent = {
   id: 'why-jhr',
   type: 'feature-grid',
-  order: 3,
+  order: 2,
   seo: {
     ariaLabel: 'Why event professionals choose JHR Photography',
     sectionId: 'why-jhr',
@@ -192,6 +148,60 @@ export const ABOUT_WHY_JHR: FeatureGridSectionContent = {
       title: 'We Deliver Without Drama',
       description:
         'Our team arrives in uniform, on schedule, with backup equipment and clear communication protocols. When the event is over, you get your assets fast\u2014not excuses about editing timelines.',
+    },
+  ],
+};
+
+/**
+ * Section 3: How We Build Certified Media Operators
+ * Component: EditableFeatureGrid (alternating layout with step numbers)
+ *
+ * Four-step process describing how JHR recruits, trains, deploys, and holds
+ * operators accountable.
+ */
+export const ABOUT_OPERATOR_PROGRAM: FeatureGridSectionContent = {
+  id: 'operator-program',
+  type: 'feature-grid',
+  order: 3,
+  seo: {
+    ariaLabel: 'How JHR Photography builds certified media operators',
+    sectionId: 'operator-program',
+    dataSectionName: 'operator-program',
+  },
+  heading: 'How We Build Certified Media Operators',
+  subheading:
+    'Your event deserves more than whoever\'s available. Here\'s how we make sure every operator who shows up is ready to perform.',
+  columns: 2,
+  displayMode: 'alternating',
+  showStepNumbers: true,
+  features: [
+    {
+      id: 'op-card-0',
+      icon: 'Users',
+      title: 'Recruited, Not Hired Off a Board',
+      description:
+        'We don\'t post on staffing marketplaces. Every operator comes through referral, military and first-responder networks, or direct vetting. We look for discipline and professionalism first\u2014camera skills can be sharpened.',
+    },
+    {
+      id: 'op-card-1',
+      icon: 'Award',
+      title: 'Trained to Our Standard',
+      description:
+        'Before they step on-site, operators complete JHR\'s certification program: venue protocols, equipment redundancy, client communication standards, and delivery timelines. The bar is high because your reputation depends on it.',
+    },
+    {
+      id: 'op-card-2',
+      icon: 'FileText',
+      title: 'Deployed With a Mission Brief',
+      description:
+        'Every assignment starts with a detailed brief\u2014shot list, venue map, client expectations, timeline, and escalation contacts. No one shows up guessing. No one wings it.',
+    },
+    {
+      id: 'op-card-3',
+      icon: 'ClipboardCheck',
+      title: 'Held Accountable After Every Event',
+      description:
+        'Post-event reviews evaluate delivery speed, asset quality, professionalism, and client feedback. Operators who don\'t meet the standard don\'t get the next assignment. It\'s that simple.',
     },
   ],
 };
@@ -234,7 +244,7 @@ export const ABOUT_TEAM: TeamGridSectionContent = {
     sectionId: 'team',
     dataSectionName: 'team',
   },
-  heading: 'Certified Media Operators',
+  heading: 'Meet the Team',
   subheading: 'Every JHR operator is vetted, trained, and certified to our standard. No freelancers. No surprises. Just professionals who deliver.',
   columns: 3,
   showRecruitmentCTA: true,
@@ -378,7 +388,7 @@ export const ABOUT_TEAM: TeamGridSectionContent = {
 };
 
 /**
- * Section 5: Final CTA
+ * Section 6: Final CTA
  * Maps to: Bottom CTA in /app/about/page.tsx
  * Component: EditableCTA (image background variant)
  */
@@ -410,8 +420,8 @@ export const ABOUT_FINAL_CTA: CTASectionContent = {
 export const ABOUT_SECTIONS: PageSectionContent[] = [
   ABOUT_HERO,
   ABOUT_GUIDE,
-  ABOUT_VALUES,
   ABOUT_WHY_JHR,
+  ABOUT_OPERATOR_PROGRAM,
   ABOUT_STATS,
   ABOUT_TEAM,
   ABOUT_FINAL_CTA,

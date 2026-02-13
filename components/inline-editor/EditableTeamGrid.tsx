@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Pencil,
@@ -98,25 +98,38 @@ interface EditableTeamGridProps {
 
 function TeamMemberCard({ member }: { member: TeamMember }) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
 
-  useEffect(() => {
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
-
-  const handleFlip = useCallback(() => {
-    if (isTouchDevice) {
-      setIsFlipped((prev) => !prev);
+  const handleClick = useCallback(() => {
+    if (isLocked) {
+      // Unlock and unflip
+      setIsLocked(false);
+      setIsFlipped(false);
+    } else if (isFlipped) {
+      // Card is flipped (via hover or tap) — lock it open
+      setIsLocked(true);
+    } else {
+      // Card is not flipped — flip and lock it
+      setIsFlipped(true);
+      setIsLocked(true);
     }
-  }, [isTouchDevice]);
+  }, [isFlipped, isLocked]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (!isLocked) setIsFlipped(true);
+  }, [isLocked]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (!isLocked) setIsFlipped(false);
+  }, [isLocked]);
 
   return (
     <div
       className="group/card relative cursor-pointer"
       style={{ perspective: '1000px' }}
-      onClick={handleFlip}
-      onMouseEnter={() => !isTouchDevice && setIsFlipped(true)}
-      onMouseLeave={() => !isTouchDevice && setIsFlipped(false)}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Card Container - 3:4 aspect ratio */}
       <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
@@ -124,7 +137,7 @@ function TeamMemberCard({ member }: { member: TeamMember }) {
           className="absolute inset-0"
           style={{ transformStyle: 'preserve-3d' }}
           animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+          transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         >
           {/* FRONT FACE */}
           <div
@@ -173,12 +186,10 @@ function TeamMemberCard({ member }: { member: TeamMember }) {
               )}
             </div>
 
-            {/* Tap to flip hint (mobile) */}
-            {isTouchDevice && (
-              <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm text-[10px] text-white/60 z-10">
-                Tap to flip
-              </div>
-            )}
+            {/* Click hint */}
+            <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm text-[10px] text-white/60 z-10 opacity-0 group-hover/card:opacity-100 transition-opacity">
+              Click to keep open
+            </div>
           </div>
 
           {/* BACK FACE */}
