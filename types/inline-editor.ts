@@ -29,7 +29,8 @@ export type InlineSectionType =
   | 'faq'
   | 'columns'
   | 'stats'
-  | 'tabbed-content';
+  | 'tabbed-content'
+  | 'team-grid';
 
 /**
  * Variant options for hero sections.
@@ -202,6 +203,46 @@ export interface FAQItem {
   question: string;
   /** The answer. Supports rich text HTML. Max 1000 characters. */
   answer: string;
+}
+
+// ============================================================================
+// Team Member Types (for team-grid section)
+// ============================================================================
+
+/**
+ * Social link for a team member.
+ */
+export interface TeamMemberSocialLink {
+  platform: 'instagram' | 'website' | 'linkedin' | 'twitter' | 'tiktok' | 'other';
+  url: string;
+  label?: string;
+}
+
+/**
+ * Badge for a team member (venue, performance, certification, specialty).
+ */
+export interface TeamMemberBadge {
+  id: string;
+  label: string;
+  category: 'venue' | 'performance' | 'certification' | 'specialty';
+  icon?: string;
+}
+
+/**
+ * A team member in the team grid section.
+ * AI constraint: name max 60 chars, role max 80 chars, bio max 500 chars.
+ */
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  photo?: EditableImageField;
+  specialties: string[];
+  badges: TeamMemberBadge[];
+  socialLinks: TeamMemberSocialLink[];
+  profilePageHref?: string;
+  order: number;
 }
 
 // ============================================================================
@@ -452,6 +493,33 @@ export interface TabbedContentSectionContent extends BaseSectionContent {
 }
 
 /**
+ * Team grid section content.
+ * Interactive "baseball card" team member profiles with flip animation.
+ *
+ * AI hint: heading max 100 characters, subheading max 200 characters.
+ * Members are displayed as flip cards showing photo/name on front, bio/badges on back.
+ */
+export interface TeamGridSectionContent extends BaseSectionContent {
+  type: 'team-grid';
+  /** Section heading. Rendered as h2. Max 100 characters. */
+  heading?: string;
+  /** Section subheading. Rendered as p. Max 200 characters. */
+  subheading?: string;
+  /** Team members. */
+  members: TeamMember[];
+  /** Number of columns on desktop. */
+  columns?: 2 | 3 | 4;
+  /** Show recruitment CTA as final grid card. */
+  showRecruitmentCTA?: boolean;
+  /** Recruitment CTA heading. */
+  recruitmentHeading?: string;
+  /** Recruitment CTA description. */
+  recruitmentDescription?: string;
+  /** Recruitment CTA button. */
+  recruitmentButton?: CTAButton;
+}
+
+/**
  * Columns section content.
  * A multi-column layout container that holds child sections side-by-side.
  * Columns collapse to single column on mobile.
@@ -481,7 +549,8 @@ export type PageSectionContent =
   | FAQSectionContent
   | ColumnsSectionContent
   | StatsSectionContent
-  | TabbedContentSectionContent;
+  | TabbedContentSectionContent
+  | TeamGridSectionContent;
 
 // ============================================================================
 // Page Schema
@@ -709,6 +778,28 @@ export function createDefaultSection(
         ],
         variant: 'dark',
       };
+    case 'team-grid':
+      return {
+        id,
+        type: 'team-grid',
+        order,
+        seo: baseSeo,
+        heading: 'Our Team',
+        subheading: 'Meet the people behind the lens.',
+        columns: 3,
+        members: [
+          {
+            id: `${id}-member-0`,
+            name: 'Team Member',
+            role: 'Photographer',
+            bio: 'Add a bio for this team member.',
+            specialties: ['Event Photography'],
+            badges: [],
+            socialLinks: [],
+            order: 0,
+          },
+        ],
+      };
   }
 }
 
@@ -737,6 +828,11 @@ export const FIELD_CONSTRAINTS: Record<string, { maxLength?: number; allowedTags
   'testimonial.authorTitle': { maxLength: 80, description: 'Author title/role and company.' },
   'faq.question': { maxLength: 150, description: 'FAQ question in natural language.' },
   'faq.answer': { maxLength: 1000, allowedTags: ['p', 'ul', 'ol', 'li', 'a', 'strong', 'em'], description: 'FAQ answer with basic rich text formatting.' },
+  'team-member.name': { maxLength: 60, description: 'Team member full name.' },
+  'team-member.role': { maxLength: 80, description: 'Team member role or title.' },
+  'team-member.bio': { maxLength: 500, description: 'Team member biography text.' },
+  'team-grid.heading': { maxLength: 100, description: 'Team section heading. Rendered as h2.' },
+  'team-grid.subheading': { maxLength: 200, description: 'Team section subheading text.' },
   'seo.ariaLabel': { maxLength: 120, description: 'Accessible label describing section purpose.' },
   'seo.pageTitle': { maxLength: 60, description: 'Page title for browser tab and search results.' },
   'seo.metaDescription': { maxLength: 160, description: 'Page meta description for search results.' },
@@ -757,6 +853,7 @@ export const SECTION_TYPE_META: Record<InlineSectionType, { label: string; descr
   'columns': { label: 'Columns', description: 'Multi-column layout with side-by-side content sections', icon: 'Columns' },
   'stats': { label: 'Stats Counter', description: 'Animated statistics with count-up effect on scroll', icon: 'BarChart' },
   'tabbed-content': { label: 'Tabbed Content', description: 'Tabbed section with 2-3 content pathways, each with text and image', icon: 'PanelTop' },
+  'team-grid': { label: 'Team Grid', description: 'Interactive team member cards with flip animation, badges, and social links', icon: 'Users' },
 };
 
 // ============================================================================

@@ -20,6 +20,7 @@ const EditableTextBlock = dynamic(() => import('./EditableTextBlock').then(m => 
 const EditableColumns = dynamic(() => import('./EditableColumns').then(m => ({ default: m.EditableColumns })));
 const EditableStats = dynamic(() => import('./EditableStats').then(m => ({ default: m.EditableStats })));
 const EditableTabbedContent = dynamic(() => import('./EditableTabbedContent').then(m => ({ default: m.EditableTabbedContent })));
+const EditableTeamGrid = dynamic(() => import('./EditableTeamGrid').then(m => ({ default: m.EditableTeamGrid })));
 import type {
   PageSectionContent,
   HeroSectionContent,
@@ -32,6 +33,7 @@ import type {
   ColumnsSectionContent,
   StatsSectionContent,
   TabbedContentSectionContent,
+  TeamGridSectionContent,
 } from '@/types/inline-editor';
 
 // ============================================================================
@@ -95,6 +97,7 @@ const DEFAULT_SECTION_CLASSES: Record<string, string> = {
   'columns': 'section-padding bg-jhr-black',
   'stats': 'section-padding bg-jhr-black-light',
   'tabbed-content': 'section-padding bg-[#0B0C0F]',
+  'team-grid': 'section-padding bg-jhr-black',
 };
 
 // ============================================================================
@@ -276,6 +279,8 @@ function AnimatedSection({
     case 'stats':
       return <FadeUp once>{children}</FadeUp>;
     case 'tabbed-content':
+      return <FadeUp once>{children}</FadeUp>;
+    case 'team-grid':
       return <FadeUp once>{children}</FadeUp>;
     case 'image-gallery':
       return <FadeIn once>{children}</FadeIn>;
@@ -504,6 +509,27 @@ export function SectionRenderer({
               sectionLabel={tabbed.sectionLabel}
               tabs={tabbed.tabs}
               variant={tabbed.variant}
+            />
+          </SectionShell>
+        </AnimatedSection>
+      );
+    }
+
+    case 'team-grid': {
+      const team = section as TeamGridSectionContent;
+      return (
+        <AnimatedSection type="team-grid" isEditMode={isEditMode}>
+          <SectionShell className={sectionClass} sectionId={section.id}>
+            <EditableTeamGrid
+              contentKeyPrefix={prefix}
+              heading={team.heading}
+              subheading={team.subheading}
+              members={team.members}
+              columns={team.columns}
+              showRecruitmentCTA={team.showRecruitmentCTA}
+              recruitmentHeading={team.recruitmentHeading}
+              recruitmentDescription={team.recruitmentDescription}
+              recruitmentButton={team.recruitmentButton}
             />
           </SectionShell>
         </AnimatedSection>

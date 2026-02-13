@@ -13,6 +13,7 @@ import {
   Columns,
   BarChart,
   PanelTop,
+  Users,
   ChevronRight,
   ArrowLeft,
   Check,
@@ -36,6 +37,7 @@ const SECTION_ICON_MAP: Record<string, React.ComponentType<{ className?: string 
   Columns,
   BarChart,
   PanelTop,
+  Users,
 };
 
 function getSectionIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -376,6 +378,47 @@ const SECTION_VARIANTS: Record<InlineSectionType, LayoutVariant[]> = {
       ],
     },
   ],
+  'team-grid': [
+    {
+      id: 'team-3col',
+      label: '3 Columns',
+      description: 'Three-column team grid, ideal for 6-12 members',
+      previewBlocks: [
+        { type: 'image', width: 0.28, height: 55, x: 0.04, y: 15 },
+        { type: 'image', width: 0.28, height: 55, x: 0.36, y: 15 },
+        { type: 'image', width: 0.28, height: 55, x: 0.68, y: 15 },
+        { type: 'text', width: 0.2, height: 6, x: 0.08, y: 74 },
+        { type: 'text', width: 0.2, height: 6, x: 0.4, y: 74 },
+        { type: 'text', width: 0.2, height: 6, x: 0.72, y: 74 },
+      ],
+    },
+    {
+      id: 'team-2col',
+      label: '2 Columns',
+      description: 'Two-column team grid for larger cards',
+      previewBlocks: [
+        { type: 'image', width: 0.44, height: 60, x: 0.04, y: 15 },
+        { type: 'image', width: 0.44, height: 60, x: 0.52, y: 15 },
+        { type: 'text', width: 0.3, height: 6, x: 0.11, y: 78 },
+        { type: 'text', width: 0.3, height: 6, x: 0.59, y: 78 },
+      ],
+    },
+    {
+      id: 'team-4col',
+      label: '4 Columns',
+      description: 'Four-column team grid for compact display',
+      previewBlocks: [
+        { type: 'image', width: 0.2, height: 50, x: 0.04, y: 15 },
+        { type: 'image', width: 0.2, height: 50, x: 0.28, y: 15 },
+        { type: 'image', width: 0.2, height: 50, x: 0.52, y: 15 },
+        { type: 'image', width: 0.2, height: 50, x: 0.76, y: 15 },
+        { type: 'text', width: 0.14, height: 5, x: 0.07, y: 68 },
+        { type: 'text', width: 0.14, height: 5, x: 0.31, y: 68 },
+        { type: 'text', width: 0.14, height: 5, x: 0.55, y: 68 },
+        { type: 'text', width: 0.14, height: 5, x: 0.79, y: 68 },
+      ],
+    },
+  ],
   columns: [
     {
       id: 'columns-equal-2',
@@ -596,6 +639,12 @@ function applyVariantToSection(
       if (variantId === 'columns-equal-2') return { ...section, layout: 'equal-2', columns: [{ sections: [] }, { sections: [] }] };
       if (variantId === 'columns-asymmetric') return { ...section, layout: '1/3-2/3', columns: [{ sections: [] }, { sections: [] }] };
       if (variantId === 'columns-equal-3') return { ...section, layout: 'equal-3', columns: [{ sections: [] }, { sections: [] }, { sections: [] }] };
+      return section;
+    }
+    case 'team-grid': {
+      if (variantId === 'team-2col') return { ...section, columns: 2 };
+      if (variantId === 'team-3col') return { ...section, columns: 3 };
+      if (variantId === 'team-4col') return { ...section, columns: 4 };
       return section;
     }
     default:

@@ -166,6 +166,26 @@ function mergeSectionImages(
       break;
     }
 
+    case 'team-grid': {
+      // Preserve user-uploaded team member photos
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existing = existingSection as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const m = merged as any;
+      if (existing.members && m.members) {
+        m.members = m.members.map((member: { id: string; photo?: { src?: string } }) => {
+          const existingMember = existing.members.find(
+            (em: { id: string }) => em.id === member.id
+          );
+          if (existingMember?.photo?.src) {
+            return { ...member, photo: existingMember.photo };
+          }
+          return member;
+        });
+      }
+      break;
+    }
+
     // text-block, faq, stats — no user-uploadable images to preserve
   }
 
