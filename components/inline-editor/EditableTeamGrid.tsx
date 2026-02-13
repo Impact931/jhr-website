@@ -96,36 +96,45 @@ interface EditableTeamGridProps {
 // Team Member Card (View Mode - Baseball Card with Flip)
 // ============================================================================
 
-function TeamMemberCard({ member }: { member: TeamMember }) {
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
-
+function TeamMemberCard({
+  member,
+  isFlipped,
+  isLocked,
+  onFlip,
+  onLock,
+  onUnlock,
+  onUnflip,
+}: {
+  member: TeamMember;
+  isFlipped: boolean;
+  isLocked: boolean;
+  onFlip: () => void;
+  onLock: () => void;
+  onUnlock: () => void;
+  onUnflip: () => void;
+}) {
   const handleClick = useCallback(() => {
     if (isLocked) {
-      // Unlock and unflip
-      setIsLocked(false);
-      setIsFlipped(false);
+      onUnlock();
     } else if (isFlipped) {
-      // Card is flipped (via hover or tap) — lock it open
-      setIsLocked(true);
+      onLock();
     } else {
-      // Card is not flipped — flip and lock it
-      setIsFlipped(true);
-      setIsLocked(true);
+      onFlip();
+      onLock();
     }
-  }, [isFlipped, isLocked]);
+  }, [isFlipped, isLocked, onFlip, onLock, onUnlock]);
 
   const handleMouseEnter = useCallback(() => {
-    if (!isLocked) setIsFlipped(true);
-  }, [isLocked]);
+    if (!isLocked) onFlip();
+  }, [isLocked, onFlip]);
 
   const handleMouseLeave = useCallback(() => {
-    if (!isLocked) setIsFlipped(false);
-  }, [isLocked]);
+    if (!isLocked) onUnflip();
+  }, [isLocked, onUnflip]);
 
   return (
     <div
-      className="group/card relative cursor-pointer"
+      className={`group/card relative cursor-pointer ${isFlipped ? 'z-10' : 'z-0'}`}
       style={{ perspective: '1000px' }}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
@@ -965,6 +974,11 @@ export function EditableTeamGrid({
   }
 
   // ---- View Mode ----
+
+  // Lift flip state: only one card flipped/locked at a time
+  const [flippedId, setFlippedId] = useState<string | null>(null);
+  const [lockedId, setLockedId] = useState<string | null>(null);
+
   return (
     <div>
       {/* Heading */}
@@ -984,7 +998,16 @@ export function EditableTeamGrid({
       {/* Team Grid */}
       <div className={`grid ${gridColClass} gap-6`}>
         {members.map((member) => (
-          <TeamMemberCard key={member.id} member={member} />
+          <TeamMemberCard
+            key={member.id}
+            member={member}
+            isFlipped={flippedId === member.id}
+            isLocked={lockedId === member.id}
+            onFlip={() => setFlippedId(member.id)}
+            onUnflip={() => { if (flippedId === member.id) setFlippedId(null); }}
+            onLock={() => { setLockedId(member.id); setFlippedId(member.id); }}
+            onUnlock={() => { setLockedId(null); setFlippedId(null); }}
+          />
         ))}
 
         {/* Recruitment CTA Card */}
