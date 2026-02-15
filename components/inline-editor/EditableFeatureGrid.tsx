@@ -225,6 +225,10 @@ interface EditableFeatureGridProps {
   showStepNumbers?: boolean;
   /** Card variant: 'default' = solid bg, 'glass' = frosted glass effect. */
   cardVariant?: 'default' | 'glass';
+  /** Scroll speed multiplier for logo-scroll mode. */
+  scrollSpeed?: number;
+  /** Scroll direction for logo-scroll mode. */
+  scrollDirection?: 'left' | 'right';
   /** Callback when features array changes (for parent state management). */
   onFeaturesChange?: (features: FeatureCard[]) => void;
   /** Callback when columns change. */
@@ -503,16 +507,23 @@ function LogoScrollView({
   heading,
   subheading,
   features,
+  scrollSpeed = 1,
+  scrollDirection = 'left',
 }: {
   heading?: string;
   subheading?: string;
   features: FeatureCard[];
+  scrollSpeed?: number;
+  scrollDirection?: 'left' | 'right';
 }) {
   // Duplicate array for seamless loop
   const doubled = [...features, ...features];
 
   // Detect portrait mode: all features have images and no meaningful descriptions
   const isPortrait = features.length > 0 && features.every(f => f.image?.src && (!f.description || f.description.trim() === ''));
+
+  const duration = (features.length * 4) / (scrollSpeed || 1);
+  const animateX: [string, string] = scrollDirection === 'right' ? ['-50%', '0%'] : ['0%', '-50%'];
 
   return (
     <div>
@@ -540,12 +551,12 @@ function LogoScrollView({
 
         <motion.div
           className={`flex items-center ${isPortrait ? 'gap-6' : 'gap-12'}`}
-          animate={{ x: ['0%', '-50%'] }}
+          animate={{ x: animateX }}
           transition={{
             x: {
               repeat: Infinity,
               repeatType: 'loop',
-              duration: features.length * 4,
+              duration,
               ease: 'linear',
             },
           }}
@@ -556,16 +567,25 @@ function LogoScrollView({
               className="flex-shrink-0 flex flex-col items-center gap-2 group"
             >
               {feature.image?.src ? (
-                <div className={`relative ${isPortrait ? 'w-36 h-48 rounded-lg' : 'w-28 h-16'} overflow-hidden ${isPortrait ? 'opacity-90 group-hover:opacity-100' : 'grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100'} transition-all duration-500`}>
-                  <SmartImage
+                isPortrait ? (
+                  <div className="relative w-36 h-48 rounded-lg overflow-hidden opacity-90 group-hover:opacity-100 transition-all duration-500">
+                    <SmartImage
+                      src={feature.image.src}
+                      alt={feature.image.alt || feature.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
                     src={feature.image.src}
                     alt={feature.image.alt || feature.title}
-                    fill
-                    className={isPortrait ? 'object-cover' : 'object-contain'}
+                    className="h-12 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
                   />
-                </div>
+                )
               ) : (
-                <div className="w-28 h-16 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="h-12 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-500">
                   {(() => {
                     const IconComp = getIconComponent(feature.icon);
                     return <IconComp className="w-10 h-10 text-jhr-white-dim group-hover:text-jhr-gold transition-colors duration-500" />;
@@ -1033,6 +1053,8 @@ export function EditableFeatureGrid({
   displayMode = 'default',
   showStepNumbers,
   cardVariant: initialCardVariant = 'default',
+  scrollSpeed: initialScrollSpeed = 1,
+  scrollDirection: initialScrollDirection = 'left',
   onFeaturesChange,
   onColumnsChange,
   children,
@@ -1045,6 +1067,8 @@ export function EditableFeatureGrid({
   const [currentColumns, setCurrentColumns] = useState<FeatureGridColumns>(columns);
   const [currentDisplayMode, setCurrentDisplayMode] = useState<FeatureGridDisplayMode>(displayMode);
   const [currentCardVariant, setCurrentCardVariant] = useState<'default' | 'glass'>(initialCardVariant);
+  const [currentScrollSpeed, setCurrentScrollSpeed] = useState(initialScrollSpeed);
+  const [currentScrollDirection, setCurrentScrollDirection] = useState<'left' | 'right'>(initialScrollDirection);
 
   // Modal states
   const [iconSelectorCardId, setIconSelectorCardId] = useState<string | null>(null);
@@ -1114,6 +1138,24 @@ export function EditableFeatureGrid({
         variant,
         'text'
       );
+    },
+    [contentKeyPrefix, updateContent]
+  );
+
+  // Handle scroll speed change
+  const handleScrollSpeedChange = useCallback(
+    (speed: number) => {
+      setCurrentScrollSpeed(speed);
+      updateContent(`${contentKeyPrefix}:scrollSpeed`, String(speed), 'text');
+    },
+    [contentKeyPrefix, updateContent]
+  );
+
+  // Handle scroll direction change
+  const handleScrollDirectionChange = useCallback(
+    (dir: 'left' | 'right') => {
+      setCurrentScrollDirection(dir);
+      updateContent(`${contentKeyPrefix}:scrollDirection`, dir, 'text');
     },
     [contentKeyPrefix, updateContent]
   );
@@ -1279,6 +1321,8 @@ export function EditableFeatureGrid({
             heading={displayHeading}
             subheading={displaySubheading}
             features={features}
+            scrollSpeed={currentScrollSpeed}
+            scrollDirection={currentScrollDirection}
           />
           {children}
         </div>
@@ -1422,6 +1466,41 @@ export function EditableFeatureGrid({
         {canEdit && (
           <div className="flex flex-col gap-3 mb-6">
             <DisplayModeSelector mode={currentDisplayMode} onChange={handleDisplayModeChange} />
+            {currentDisplayMode === 'logo-scroll' && (
+              <div className="flex items-center gap-6">
+                {/* Speed slider */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 uppercase tracking-wider">Speed:</span>
+                  <input
+                    type="range"
+                    min="0.25"
+                    max="4"
+                    step="0.25"
+                    value={currentScrollSpeed}
+                    onChange={(e) => handleScrollSpeedChange(parseFloat(e.target.value))}
+                    className="w-24 accent-[#C9A227]"
+                  />
+                  <span className="text-xs text-white font-medium w-8">{currentScrollSpeed}x</span>
+                </div>
+                {/* Direction toggle */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 uppercase tracking-wider">Direction:</span>
+                  {(['left', 'right'] as const).map((dir) => (
+                    <button
+                      key={dir}
+                      onClick={() => handleScrollDirectionChange(dir)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize ${
+                        currentScrollDirection === dir
+                          ? 'bg-[#C9A227] text-black'
+                          : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#333]'
+                      }`}
+                    >
+                      {dir}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <ColumnSelector columns={currentColumns} onChange={handleColumnsChange} />

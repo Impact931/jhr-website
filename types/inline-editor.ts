@@ -327,6 +327,10 @@ export interface FeatureGridSectionContent extends BaseSectionContent {
   showStepNumbers?: boolean;
   /** Card visual variant. 'glass' = frosted glass effect over video/backgrounds. */
   cardVariant?: 'default' | 'glass';
+  /** Scroll speed multiplier for logo-scroll mode. Default 1. Range 0.25–4. */
+  scrollSpeed?: number;
+  /** Scroll direction for logo-scroll mode. Default 'left'. */
+  scrollDirection?: 'left' | 'right';
 }
 
 /**

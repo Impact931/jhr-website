@@ -349,6 +349,8 @@ export function SectionRenderer({
               displayMode={grid.displayMode}
               showStepNumbers={grid.showStepNumbers}
               cardVariant={grid.cardVariant}
+              scrollSpeed={grid.scrollSpeed}
+              scrollDirection={grid.scrollDirection}
             />
           </SectionShell>
         </AnimatedSection>
