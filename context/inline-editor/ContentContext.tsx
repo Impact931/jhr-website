@@ -127,6 +127,26 @@ function sanitizeSections(sections: PageSectionContent[]): PageSectionContent[] 
       }
     }
 
+    // Strip from tabbed-content tabs
+    if (section.type === 'tabbed-content' && Array.isArray(s.tabs)) {
+      for (const tab of s.tabs) {
+        if (typeof tab?.heading === 'string' && tab.heading.includes('<'))
+          tab.heading = cleanInlineHtml(tab.heading);
+        if (Array.isArray(tab.bodyParagraphs)) {
+          tab.bodyParagraphs = tab.bodyParagraphs.map((p: string) =>
+            typeof p === 'string' && p.includes('<') ? stripAllHtml(p) : p
+          );
+        }
+        if (Array.isArray(tab.listItems)) {
+          tab.listItems = tab.listItems.map((item: string) =>
+            typeof item === 'string' && item.includes('<') ? stripAllHtml(item) : item
+          );
+        }
+        if (typeof tab?.tags === 'string' && tab.tags.includes('<'))
+          tab.tags = stripAllHtml(tab.tags);
+      }
+    }
+
     // Recurse into columns children
     if (section.type === 'columns' && Array.isArray(s.columns)) {
       for (const col of s.columns) {

@@ -10,7 +10,9 @@ import {
   TrendingUp,
   CheckCircle,
   ArrowRight,
+  Settings,
 } from "lucide-react";
+import { useEditMode } from "@/context/inline-editor/EditModeContext";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -34,18 +36,32 @@ export function ROICalculator({
   ctaText = "Schedule a Strategy Call",
   ctaHref = "/schedule",
 }: ROICalculatorProps) {
+  const { isEditMode, canEdit } = useEditMode();
+  const showEditControls = canEdit && isEditMode;
+
   const [attendees, setAttendees] = useState(500);
   const [leadValue, setLeadValue] = useState(50);
-  const [participationRate] = useState(0.4); // 40% participation rate assumption
+
+  // Editable parameters
+  const [showParams, setShowParams] = useState(false);
+  const [participationRate, setParticipationRate] = useState(0.4);
+  const [dwellMinPerPerson, setDwellMinPerPerson] = useState(5);
+  const [engagementValuePerMin, setEngagementValuePerMin] = useState(0.5);
+  const [attendeesMin, setAttendeesMin] = useState(100);
+  const [attendeesMax, setAttendeesMax] = useState(2000);
+  const [attendeesStep, setAttendeesStep] = useState(50);
+  const [leadValueMin, setLeadValueMin] = useState(10);
+  const [leadValueMax, setLeadValueMax] = useState(200);
+  const [leadValueStep, setLeadValueStep] = useState(5);
 
   // Calculations
   const estimatedParticipants = Math.round(attendees * participationRate);
   const leadsCapture = estimatedParticipants;
   const leadsCaptureValue = leadsCapture * leadValue;
 
-  // Dwell time value: ~5 min per participant at booth = brand exposure
-  const dwellTimeMinutes = estimatedParticipants * 5;
-  const dwellTimeValue = Math.round(dwellTimeMinutes * 0.5); // ~$0.50/min of engagement value
+  // Dwell time value
+  const dwellTimeMinutes = estimatedParticipants * dwellMinPerPerson;
+  const dwellTimeValue = Math.round(dwellTimeMinutes * engagementValuePerMin);
 
   // Total ROI
   const totalValue = leadsCaptureValue + dwellTimeValue;
@@ -73,6 +89,71 @@ export function ROICalculator({
         </p>
       </div>
 
+      {/* Edit mode: parameter controls */}
+      {showEditControls && (
+        <div className="mb-6">
+          <button
+            onClick={() => setShowParams(!showParams)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#C9A227]/20 border border-[#C9A227]/40 rounded-lg text-xs font-medium text-[#C9A227] hover:bg-[#C9A227]/30 transition-colors"
+          >
+            <Settings size={14} />
+            {showParams ? "Hide" : "Edit"} Calculator Parameters
+          </button>
+          {showParams && (
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-black/30 border border-[#C9A227]/30 rounded-xl">
+              <div>
+                <label className="block text-[10px] text-[#C9A227] uppercase tracking-wider mb-1">Attendees Min</label>
+                <input type="number" value={attendeesMin} onChange={(e) => setAttendeesMin(Number(e.target.value))}
+                  className="w-full px-2 py-1 bg-black/50 border border-gray-700 rounded text-sm text-white focus:outline-none focus:border-[#C9A227]" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-[#C9A227] uppercase tracking-wider mb-1">Attendees Max</label>
+                <input type="number" value={attendeesMax} onChange={(e) => setAttendeesMax(Number(e.target.value))}
+                  className="w-full px-2 py-1 bg-black/50 border border-gray-700 rounded text-sm text-white focus:outline-none focus:border-[#C9A227]" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-[#C9A227] uppercase tracking-wider mb-1">Attendees Step</label>
+                <input type="number" value={attendeesStep} onChange={(e) => setAttendeesStep(Number(e.target.value))}
+                  className="w-full px-2 py-1 bg-black/50 border border-gray-700 rounded text-sm text-white focus:outline-none focus:border-[#C9A227]" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-[#C9A227] uppercase tracking-wider mb-1">Lead Value Min ($)</label>
+                <input type="number" value={leadValueMin} onChange={(e) => setLeadValueMin(Number(e.target.value))}
+                  className="w-full px-2 py-1 bg-black/50 border border-gray-700 rounded text-sm text-white focus:outline-none focus:border-[#C9A227]" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-[#C9A227] uppercase tracking-wider mb-1">Lead Value Max ($)</label>
+                <input type="number" value={leadValueMax} onChange={(e) => setLeadValueMax(Number(e.target.value))}
+                  className="w-full px-2 py-1 bg-black/50 border border-gray-700 rounded text-sm text-white focus:outline-none focus:border-[#C9A227]" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-[#C9A227] uppercase tracking-wider mb-1">Lead Value Step ($)</label>
+                <input type="number" value={leadValueStep} onChange={(e) => setLeadValueStep(Number(e.target.value))}
+                  className="w-full px-2 py-1 bg-black/50 border border-gray-700 rounded text-sm text-white focus:outline-none focus:border-[#C9A227]" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-[#C9A227] uppercase tracking-wider mb-1">Participation Rate (%)</label>
+                <input type="number" value={Math.round(participationRate * 100)} onChange={(e) => setParticipationRate(Number(e.target.value) / 100)}
+                  min={1} max={100}
+                  className="w-full px-2 py-1 bg-black/50 border border-gray-700 rounded text-sm text-white focus:outline-none focus:border-[#C9A227]" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-[#C9A227] uppercase tracking-wider mb-1">Dwell Min/Person</label>
+                <input type="number" value={dwellMinPerPerson} onChange={(e) => setDwellMinPerPerson(Number(e.target.value))}
+                  min={1}
+                  className="w-full px-2 py-1 bg-black/50 border border-gray-700 rounded text-sm text-white focus:outline-none focus:border-[#C9A227]" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-[#C9A227] uppercase tracking-wider mb-1">$/Min Engagement</label>
+                <input type="number" value={engagementValuePerMin} step={0.1} onChange={(e) => setEngagementValuePerMin(Number(e.target.value))}
+                  min={0.1}
+                  className="w-full px-2 py-1 bg-black/50 border border-gray-700 rounded text-sm text-white focus:outline-none focus:border-[#C9A227]" />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 gap-8 mb-10">
         {/* Attendees Slider */}
         <div>
@@ -91,9 +172,9 @@ export function ROICalculator({
           </div>
           <input
             type="range"
-            min="100"
-            max="2000"
-            step="50"
+            min={attendeesMin}
+            max={attendeesMax}
+            step={attendeesStep}
             value={attendees}
             onChange={(e) => setAttendees(Number(e.target.value))}
             className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-jhr-gold ${isDark ? 'bg-jhr-black-lighter' : 'bg-gray-200'}`}
@@ -103,8 +184,8 @@ export function ROICalculator({
               isDark ? "text-jhr-white-dim" : "text-jhr-light-text-muted"
             }`}
           >
-            <span>100</span>
-            <span>2,000</span>
+            <span>{attendeesMin.toLocaleString()}</span>
+            <span>{attendeesMax.toLocaleString()}</span>
           </div>
         </div>
 
@@ -125,9 +206,9 @@ export function ROICalculator({
           </div>
           <input
             type="range"
-            min="10"
-            max="200"
-            step="5"
+            min={leadValueMin}
+            max={leadValueMax}
+            step={leadValueStep}
             value={leadValue}
             onChange={(e) => setLeadValue(Number(e.target.value))}
             className={`w-full h-2 rounded-lg appearance-none cursor-pointer accent-jhr-gold ${isDark ? 'bg-jhr-black-lighter' : 'bg-gray-200'}`}
@@ -137,8 +218,8 @@ export function ROICalculator({
               isDark ? "text-jhr-white-dim" : "text-jhr-light-text-muted"
             }`}
           >
-            <span>$10</span>
-            <span>$200</span>
+            <span>${leadValueMin}</span>
+            <span>${leadValueMax}</span>
           </div>
         </div>
       </div>

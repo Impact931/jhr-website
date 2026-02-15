@@ -10,6 +10,20 @@ import { useContent } from '@/context/inline-editor/ContentContext';
 import { EditableText } from './EditableText';
 import type { TabItem } from '@/types/inline-editor';
 
+/** Strip all HTML tags from a string for safe plain-text rendering. */
+function stripHtml(html: string): string {
+  if (!html.includes('<')) return html;
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .trim();
+}
+
 // ============================================================================
 // Props
 // ============================================================================
@@ -169,7 +183,7 @@ export function EditableTabbedContent({
                 {p}
               </EditableText>
             ) : (
-              p
+              stripHtml(p)
             )}
           </p>
         ))}
@@ -206,7 +220,7 @@ export function EditableTabbedContent({
                   {item}
                 </EditableText>
               ) : (
-                <span>{item}</span>
+                <span>{stripHtml(item)}</span>
               )}
             </li>
           ))}
