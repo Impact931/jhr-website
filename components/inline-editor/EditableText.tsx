@@ -56,6 +56,7 @@ export function EditableText({
   const { updateContent, pendingChanges } = useContent();
   const [isFocused, setIsFocused] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const lastEditTimestamp = useRef(0);
 
   // Determine the editor variant based on props
   const editorVariant: EditorVariant = variant ?? (multiline ? 'rich' : 'simple');
@@ -81,6 +82,7 @@ export function EditableText({
       editable: canEdit,
       immediatelyRender: false,
       onUpdate: ({ editor: ed }) => {
+        lastEditTimestamp.current = Date.now();
         const html = ed.getHTML();
         updateContent(contentKey, html, 'text');
         // Call optional onChange callback for external state management
@@ -109,12 +111,16 @@ export function EditableText({
   );
 
   // Sync content when external changes arrive (e.g. pending change cleared after save)
+  // Grace period prevents reverting user edits when autosave clears pendingChanges
+  // before the parent component's state has propagated the merged values.
   const lastContentRef = useRef(initialContent);
   useEffect(() => {
     if (!editor) return;
     if (initialContent !== lastContentRef.current) {
-      // Only update if the editor is not focused (avoid overwriting user edits)
-      if (!editor.isFocused) {
+      // Only update if the editor is not focused AND user hasn't edited recently.
+      // The 5s grace period covers the autosave debounce (2s) + React state propagation.
+      const timeSinceLastEdit = Date.now() - lastEditTimestamp.current;
+      if (!editor.isFocused && timeSinceLastEdit > 5000) {
         editor.commands.setContent(initialContent, { emitUpdate: false });
       }
       lastContentRef.current = initialContent;

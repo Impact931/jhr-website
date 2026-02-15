@@ -1070,6 +1070,17 @@ export function EditableFeatureGrid({
   const [currentScrollSpeed, setCurrentScrollSpeed] = useState(initialScrollSpeed);
   const [currentScrollDirection, setCurrentScrollDirection] = useState<'left' | 'right'>(initialScrollDirection);
 
+  // Sync local state with parent props after autosave merges edits back into sections.
+  // Without this, local state stays stale after pendingChanges are cleared, causing
+  // EditableText children to revert to old prop values.
+  const featuresKey = useMemo(() => JSON.stringify(initialFeatures), [initialFeatures]);
+  useEffect(() => { setFeatures(initialFeatures); }, [featuresKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setCurrentColumns(columns); }, [columns]);
+  useEffect(() => { setCurrentDisplayMode(displayMode); }, [displayMode]);
+  useEffect(() => { setCurrentCardVariant(initialCardVariant); }, [initialCardVariant]);
+  useEffect(() => { setCurrentScrollSpeed(initialScrollSpeed); }, [initialScrollSpeed]);
+  useEffect(() => { setCurrentScrollDirection(initialScrollDirection); }, [initialScrollDirection]);
+
   // Modal states
   const [iconSelectorCardId, setIconSelectorCardId] = useState<string | null>(null);
   const [linkEditorCardId, setLinkEditorCardId] = useState<string | null>(null);
