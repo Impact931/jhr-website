@@ -568,10 +568,10 @@ function LogoScrollView({
                 <img
                   src={feature.image.src}
                   alt={feature.image.alt || feature.title}
-                  className="h-16 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                  className="h-20 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
                 />
               ) : (
-                <div className="h-16 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="h-20 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-500">
                   {(() => {
                     const IconComp = getIconComponent(feature.icon);
                     return <IconComp className="w-10 h-10 text-jhr-white-dim group-hover:text-jhr-gold transition-colors duration-500" />;
