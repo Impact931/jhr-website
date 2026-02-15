@@ -11,6 +11,8 @@ import {
   CheckCircle,
   ArrowRight,
   Settings,
+  X,
+  Plus,
 } from "lucide-react";
 import { useEditMode } from "@/context/inline-editor/EditModeContext";
 
@@ -53,6 +55,14 @@ export function ROICalculator({
   const [leadValueMin, setLeadValueMin] = useState(10);
   const [leadValueMax, setLeadValueMax] = useState(200);
   const [leadValueStep, setLeadValueStep] = useState(5);
+  const [benefits, setBenefits] = useState([
+    "Contact data delivered in real-time",
+    "AI-retouched photos in under 5 minutes",
+    "Branded image overlays with your logo",
+    "Social sharing drives organic reach",
+    "Warm leads vs. cold outreach",
+    "Memorable attendee experience",
+  ]);
 
   // Calculations
   const estimatedParticipants = Math.round(attendees * participationRate);
@@ -346,14 +356,7 @@ export function ROICalculator({
           What You Get:
         </h4>
         <ul className="grid md:grid-cols-2 gap-3">
-          {[
-            "Contact data delivered in real-time",
-            "AI-retouched photos in under 5 minutes",
-            "Branded image overlays with your logo",
-            "Social sharing drives organic reach",
-            "Warm leads vs. cold outreach",
-            "Memorable attendee experience",
-          ].map((benefit, i) => (
+          {benefits.map((benefit, i) => (
             <li
               key={i}
               className={`flex items-center gap-2 text-body-sm ${
@@ -361,10 +364,40 @@ export function ROICalculator({
               }`}
             >
               <CheckCircle size={16} className="text-jhr-gold flex-shrink-0" />
-              {benefit}
+              {showEditControls ? (
+                <div className="flex items-center gap-1 flex-1">
+                  <input
+                    type="text"
+                    value={benefit}
+                    onChange={(e) => {
+                      const updated = [...benefits];
+                      updated[i] = e.target.value;
+                      setBenefits(updated);
+                    }}
+                    className="flex-1 bg-transparent border-b border-gray-600 focus:border-[#C9A227] text-sm px-1 py-0.5 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => setBenefits(benefits.filter((_, idx) => idx !== i))}
+                    className="text-gray-500 hover:text-red-400 p-0.5"
+                    title="Remove"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                benefit
+              )}
             </li>
           ))}
         </ul>
+        {showEditControls && (
+          <button
+            onClick={() => setBenefits([...benefits, "New benefit"])}
+            className="mt-3 flex items-center gap-1 text-xs text-gray-500 hover:text-[#C9A227] transition-colors"
+          >
+            <Plus size={14} /> Add benefit
+          </button>
+        )}
       </div>
 
       {/* CTA */}
