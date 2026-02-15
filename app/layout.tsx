@@ -75,6 +75,14 @@ export const metadata: Metadata = {
       "Nashville's trusted partner for corporate event photography and headshot activations.",
     images: ["/images/og-image.jpg"],
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: "/apple-icon.png",
+  },
+  manifest: "/manifest.webmanifest",
   robots: {
     index: true,
     follow: true,
