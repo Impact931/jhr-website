@@ -519,9 +519,6 @@ function LogoScrollView({
   // Duplicate array for seamless loop
   const doubled = [...features, ...features];
 
-  // Detect portrait mode: all features have images and no meaningful descriptions
-  const isPortrait = features.length > 0 && features.every(f => f.image?.src && (!f.description || f.description.trim() === ''));
-
   const duration = (features.length * 4) / (scrollSpeed || 1);
   const animateX: [string, string] = scrollDirection === 'right' ? ['-50%', '0%'] : ['0%', '-50%'];
 
@@ -550,7 +547,7 @@ function LogoScrollView({
         <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-jhr-black to-transparent z-10 pointer-events-none" />
 
         <motion.div
-          className={`flex items-center ${isPortrait ? 'gap-6' : 'gap-12'}`}
+          className="flex items-center gap-12"
           animate={{ x: animateX }}
           transition={{
             x: {
@@ -567,36 +564,23 @@ function LogoScrollView({
               className="flex-shrink-0 flex flex-col items-center gap-2 group"
             >
               {feature.image?.src ? (
-                isPortrait ? (
-                  <div className="relative w-36 h-48 rounded-lg overflow-hidden opacity-90 group-hover:opacity-100 transition-all duration-500">
-                    <SmartImage
-                      src={feature.image.src}
-                      alt={feature.image.alt || feature.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={feature.image.src}
-                    alt={feature.image.alt || feature.title}
-                    className="h-12 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
-                  />
-                )
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={feature.image.src}
+                  alt={feature.image.alt || feature.title}
+                  className="h-16 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                />
               ) : (
-                <div className="h-12 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="h-16 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-500">
                   {(() => {
                     const IconComp = getIconComponent(feature.icon);
                     return <IconComp className="w-10 h-10 text-jhr-white-dim group-hover:text-jhr-gold transition-colors duration-500" />;
                   })()}
                 </div>
               )}
-              {!isPortrait && (
-                <span className="text-xs text-jhr-white-dim opacity-60 group-hover:opacity-100 whitespace-nowrap transition-opacity duration-500">
-                  {feature.title}
-                </span>
-              )}
+              <span className="text-xs text-jhr-white-dim opacity-60 group-hover:opacity-100 whitespace-nowrap transition-opacity duration-500">
+                {feature.title}
+              </span>
             </div>
           ))}
         </motion.div>
