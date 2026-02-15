@@ -158,19 +158,27 @@ function CTAButtonEditor({ label, text, href, variant, onSave, onClose }: CTABut
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex justify-between mt-6">
           <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+            onClick={() => { onSave('', '', editVariant); }}
+            className="px-4 py-2 text-sm text-red-400 hover:text-red-300 transition-colors"
           >
-            Cancel
+            Clear Button
           </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 text-sm bg-[#C9A227] text-black font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
-          >
-            Save
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 text-sm bg-[#C9A227] text-black font-medium rounded-lg hover:bg-[#D4AF37] transition-colors"
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -437,6 +445,11 @@ function renderInlineHtml(text: string): { dangerouslySetInnerHTML: { __html: st
   return { children: text };
 }
 
+/** A button is considered empty (and should be hidden in view mode) when it has no text and no meaningful href. */
+function isButtonEmpty(text: string, href: string): boolean {
+  return (!text || !text.trim()) && (!href || href === '#' || !href.trim());
+}
+
 function getButtonClasses(variant: 'primary' | 'secondary'): string {
   if (variant === 'primary') {
     return 'btn-primary';
@@ -581,28 +594,32 @@ export function EditableCTA({
             {...renderInlineHtml(subtext)}
           />
 
-          <motion.div
-            className={`flex flex-col sm:flex-row gap-4 ${alignment === 'center' ? 'justify-center' : alignment === 'right' ? 'justify-end' : 'justify-start'}`}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
-          >
-            <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
-              <Link href={primaryBtnHref} className={getButtonClasses(primaryBtnVariant)}>
-                {primaryBtnText}
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
-            </motion.div>
+          {(!isButtonEmpty(primaryBtnText, primaryBtnHref) || !isButtonEmpty(secondaryBtnText, secondaryBtnHref)) && (
+            <motion.div
+              className={`flex flex-col sm:flex-row gap-4 ${alignment === 'center' ? 'justify-center' : alignment === 'right' ? 'justify-end' : 'justify-start'}`}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+            >
+              {!isButtonEmpty(primaryBtnText, primaryBtnHref) && (
+                <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
+                  <Link href={primaryBtnHref} className={getButtonClasses(primaryBtnVariant)}>
+                    {primaryBtnText}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Link>
+                </motion.div>
+              )}
 
-            {secondaryButton && (
-              <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
-                <Link href={secondaryBtnHref} className={getButtonClasses(secondaryBtnVariant)}>
-                  {secondaryBtnText}
-                </Link>
-              </motion.div>
-            )}
-          </motion.div>
+              {!isButtonEmpty(secondaryBtnText, secondaryBtnHref) && (
+                <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
+                  <Link href={secondaryBtnHref} className={getButtonClasses(secondaryBtnVariant)}>
+                    {secondaryBtnText}
+                  </Link>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
 
           {children}
         </div>
@@ -737,44 +754,30 @@ export function EditableCTA({
 
             {/* Primary Button */}
             <div className="relative group/btn">
-              <Link
-                href={primaryBtnHref}
-                className={getButtonClasses(primaryBtnVariant)}
-                onClick={(e) => {
-                  if (canEdit) {
-                    e.preventDefault();
-                    setEditingButton('primary');
-                  }
-                }}
+              <button
+                className={`${getButtonClasses(primaryBtnVariant)} ${isButtonEmpty(primaryBtnText, primaryBtnHref) ? 'opacity-40 border-dashed' : ''}`}
+                onClick={() => setEditingButton('primary')}
               >
-                {primaryBtnText}
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
+                {primaryBtnText || 'Primary CTA'}
+                {!isButtonEmpty(primaryBtnText, primaryBtnHref) && <ArrowRight className="w-5 h-5 ml-2" />}
+              </button>
               {canEdit && (
                 <div className="absolute inset-0 border-2 border-dashed border-transparent group-hover/btn:border-[#C9A227]/60 rounded-lg pointer-events-none transition-colors" />
               )}
             </div>
 
             {/* Secondary Button */}
-            {(secondaryButton || canEdit) && (
-              <div className="relative group/btn">
-                <Link
-                  href={secondaryBtnHref}
-                  className={getButtonClasses(secondaryBtnVariant)}
-                  onClick={(e) => {
-                    if (canEdit) {
-                      e.preventDefault();
-                      setEditingButton('secondary');
-                    }
-                  }}
-                >
-                  {secondaryBtnText || 'Secondary CTA'}
-                </Link>
-                {canEdit && (
-                  <div className="absolute inset-0 border-2 border-dashed border-transparent group-hover/btn:border-[#C9A227]/60 rounded-lg pointer-events-none transition-colors" />
-                )}
-              </div>
-            )}
+            <div className="relative group/btn">
+              <button
+                className={`${getButtonClasses(secondaryBtnVariant)} ${isButtonEmpty(secondaryBtnText, secondaryBtnHref) ? 'opacity-40 border-dashed' : ''}`}
+                onClick={() => setEditingButton('secondary')}
+              >
+                {secondaryBtnText || 'Secondary CTA'}
+              </button>
+              {canEdit && (
+                <div className="absolute inset-0 border-2 border-dashed border-transparent group-hover/btn:border-[#C9A227]/60 rounded-lg pointer-events-none transition-colors" />
+              )}
+            </div>
           </div>
 
           {children}
