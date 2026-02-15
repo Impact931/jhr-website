@@ -627,16 +627,23 @@ function JourneyView({
       {/* Desktop: Horizontal journey with connecting line */}
       <div className="hidden md:block">
         <div className="relative">
-          {/* Connecting line */}
+          {/* Connecting line — spans between first and last step centers */}
           <motion.div
-            className="absolute top-8 left-[calc(16.67%)] right-[calc(16.67%)] h-0.5 bg-gradient-to-r from-jhr-gold/20 via-jhr-gold/60 to-jhr-gold/20"
+            className="absolute top-8 h-0.5 bg-gradient-to-r from-jhr-gold/20 via-jhr-gold/60 to-jhr-gold/20"
+            style={{
+              left: `calc(${50 / features.length}%)`,
+              right: `calc(${50 / features.length}%)`,
+              transformOrigin: 'left',
+            }}
             initial={{ scaleX: 0 }}
             animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
-            style={{ transformOrigin: 'left' }}
           />
 
-          <div className="grid grid-cols-3 gap-8">
+          <div
+            className="grid gap-6"
+            style={{ gridTemplateColumns: `repeat(${features.length}, minmax(0, 1fr))` }}
+          >
             {features.map((feature, index) => {
               const IconComp = getIconComponent(feature.icon);
               return (
