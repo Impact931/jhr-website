@@ -795,9 +795,8 @@ function AlternatingView({
                 isReversed ? 'md:flex-row-reverse' : ''
               }`}
               initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 + index * 0.1, ease: 'easeOut' }}
             >
               {/* Image/Video side */}
               <div className="w-full md:w-1/2 min-h-[200px] md:min-h-[340px] relative rounded-xl overflow-hidden bg-[#1A1A1A]">
@@ -1053,6 +1052,7 @@ export function EditableFeatureGrid({
   const [currentCardVariant, setCurrentCardVariant] = useState<'default' | 'glass'>(initialCardVariant);
   const [currentScrollSpeed, setCurrentScrollSpeed] = useState(initialScrollSpeed);
   const [currentScrollDirection, setCurrentScrollDirection] = useState<'left' | 'right'>(initialScrollDirection);
+  const [currentShowStepNumbers, setCurrentShowStepNumbers] = useState(showStepNumbers ?? false);
 
   // Sync local state with parent props after autosave merges edits back into sections.
   // Without this, local state stays stale after pendingChanges are cleared, causing
@@ -1064,6 +1064,7 @@ export function EditableFeatureGrid({
   useEffect(() => { setCurrentCardVariant(initialCardVariant); }, [initialCardVariant]);
   useEffect(() => { setCurrentScrollSpeed(initialScrollSpeed); }, [initialScrollSpeed]);
   useEffect(() => { setCurrentScrollDirection(initialScrollDirection); }, [initialScrollDirection]);
+  useEffect(() => { setCurrentShowStepNumbers(showStepNumbers ?? false); }, [showStepNumbers]);
 
   // Modal states
   const [iconSelectorCardId, setIconSelectorCardId] = useState<string | null>(null);
@@ -1151,6 +1152,15 @@ export function EditableFeatureGrid({
     (dir: 'left' | 'right') => {
       setCurrentScrollDirection(dir);
       updateContent(`${contentKeyPrefix}:scrollDirection`, dir, 'text');
+    },
+    [contentKeyPrefix, updateContent]
+  );
+
+  // Handle step numbers toggle
+  const handleShowStepNumbersChange = useCallback(
+    (show: boolean) => {
+      setCurrentShowStepNumbers(show);
+      updateContent(`${contentKeyPrefix}:showStepNumbers`, String(show), 'text');
     },
     [contentKeyPrefix, updateContent]
   );
@@ -1344,7 +1354,7 @@ export function EditableFeatureGrid({
             heading={displayHeading}
             subheading={displaySubheading}
             features={features}
-            showStepNumbers={showStepNumbers}
+            showStepNumbers={currentShowStepNumbers}
           />
           {children}
         </div>
@@ -1461,6 +1471,21 @@ export function EditableFeatureGrid({
         {canEdit && (
           <div className="flex flex-col gap-3 mb-6">
             <DisplayModeSelector mode={currentDisplayMode} onChange={handleDisplayModeChange} />
+            {currentDisplayMode === 'alternating' && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Step Numbers:</span>
+                <button
+                  onClick={() => handleShowStepNumbersChange(!currentShowStepNumbers)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    currentShowStepNumbers
+                      ? 'bg-[#C9A227] text-black'
+                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#333]'
+                  }`}
+                >
+                  {currentShowStepNumbers ? 'On' : 'Off'}
+                </button>
+              </div>
+            )}
             {currentDisplayMode === 'logo-scroll' && (
               <div className="flex items-center gap-6">
                 {/* Speed slider */}

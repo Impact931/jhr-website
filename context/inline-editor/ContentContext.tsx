@@ -171,6 +171,7 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
   if (elementId === 'displayMode') { s.displayMode = value; return; }
   if (elementId === 'scrollSpeed') { s.scrollSpeed = Number(value) || 1; return; }
   if (elementId === 'scrollDirection') { s.scrollDirection = value; return; }
+  if (elementId === 'showStepNumbers') { s.showStepNumbers = value === 'true'; return; }
 
   // --- Serialized JSON array fields (features, items, images, testimonials, stats, columns, buttons) ---
   if (elementId === 'features' || elementId === 'items' || elementId === 'images' || elementId === 'testimonials' || elementId === 'stats' || elementId === 'columns' || elementId === 'buttons') {
