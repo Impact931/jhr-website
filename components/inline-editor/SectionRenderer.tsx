@@ -265,7 +265,9 @@ function AnimatedSection({
 
   switch (type) {
     case 'feature-grid':
-      return <FadeUp once>{children}</FadeUp>;
+      // All display modes (default, alternating, journey, horizontal, logo-scroll)
+      // handle their own entrance animations — no parent FadeUp needed.
+      return <>{children}</>;
     case 'cta':
       return <FadeUp once>{children}</FadeUp>;
     case 'faq':

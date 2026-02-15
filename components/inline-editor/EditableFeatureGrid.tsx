@@ -764,8 +764,11 @@ function AlternatingView({
   features: FeatureCard[];
   showStepNumbers?: boolean;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(containerRef, { once: true, amount: 0.1 });
+
   return (
-    <div>
+    <div ref={containerRef}>
       {/* Heading / Subheading */}
       {(heading || subheading) && (
         <div className="text-center mb-12">
@@ -795,7 +798,7 @@ function AlternatingView({
                 isReversed ? 'md:flex-row-reverse' : ''
               }`}
               initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
               transition={{ duration: 0.5, delay: 0.2 + index * 0.1, ease: 'easeOut' }}
             >
               {/* Image/Video side */}
