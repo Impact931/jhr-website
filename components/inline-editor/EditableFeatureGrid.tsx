@@ -86,6 +86,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import Link from 'next/link';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import SmartImage from '@/components/ui/SmartImage';
 import MediaPicker from '@/components/admin/media/MediaPicker';
@@ -840,9 +841,9 @@ function AlternatingView({
                   {...renderInlineHtml(feature.description)}
                 />
                 {feature.link && (
-                  <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium mt-4 group cursor-pointer">
+                  <Link href={feature.link.href} className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium mt-4 group">
                     {feature.link.text} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </span>
+                  </Link>
                 )}
               </div>
             </motion.div>
@@ -927,9 +928,9 @@ function HorizontalCardView({
                   {...renderInlineHtml(feature.description)}
                 />
                 {feature.link && (
-                  <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium mt-3 group cursor-pointer">
+                  <Link href={feature.link.href} className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium mt-3 group">
                     {feature.link.text} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </span>
+                  </Link>
                 )}
               </div>
             </motion.div>
@@ -1018,9 +1019,9 @@ function DefaultCardView({
         {...renderInlineHtml(feature.description)}
       />
       {feature.link && (
-        <span className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium group-hover:gap-3 transition-all">
+        <Link href={feature.link.href} className="text-jhr-gold flex items-center gap-2 text-body-sm font-medium group-hover:gap-3 transition-all">
           {feature.link.text} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </span>
+        </Link>
       )}
     </motion.div>
   );
