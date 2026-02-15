@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import Link from 'next/link';
-import { ArrowRight, Pencil, X, Type, AlignLeft, ImageIcon, MousePointerClick, Move } from 'lucide-react';
+import { ArrowRight, Pencil, X, Type, AlignLeft, ImageIcon, MousePointerClick, Move, Video, Youtube } from 'lucide-react';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import { EditableText } from './EditableText';
@@ -47,6 +47,10 @@ interface EditableHeroProps {
   height?: 'full' | 'large' | 'medium';
   /** Image position for split variant ('left' or 'right'). */
   imagePosition?: 'left' | 'right';
+  /** Optional background video URL (file path or youtube:{id}). */
+  backgroundVideo?: string;
+  /** Section ID for updating backgroundVideo via updateSection. */
+  sectionId?: string;
   /** Additional children rendered below CTAs. */
   children?: ReactNode;
 }
@@ -54,6 +58,18 @@ interface EditableHeroProps {
 // ============================================================================
 // Helper: Map HeroVariant to height class
 // ============================================================================
+
+function parseYouTubeId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
 
 function getHeightClass(variant?: HeroVariant, height?: 'full' | 'large' | 'medium'): string {
   // If height is explicitly provided, use that
@@ -207,17 +223,50 @@ export function EditableHero({
   variant,
   height,
   imagePosition = 'right',
+  backgroundVideo,
+  sectionId,
   children,
 }: EditableHeroProps) {
   const { canEdit, isEditMode } = useEditMode();
-  const { updateContent, pendingChanges } = useContent();
+  const { updateContent, updateSection, pendingChanges } = useContent();
 
   // CTA editor state
   const [editingCta, setEditingCta] = useState<'primary' | 'secondary' | null>(null);
   // Background image picker state
   const [isBgPickerOpen, setIsBgPickerOpen] = useState(false);
+  // Video background state
+  const [isVideoBgPickerOpen, setIsVideoBgPickerOpen] = useState(false);
+  const [showYouTubeInput, setShowYouTubeInput] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
   // Image position state (for live preview during drag)
   const [localPositionY, setLocalPositionY] = useState(imagePositionY);
+
+  // Video background helpers
+  const isYouTube = backgroundVideo?.startsWith('youtube:');
+  const youtubeId = isYouTube ? backgroundVideo!.slice(8) : null;
+  const hasVideoBackground = !!backgroundVideo;
+
+  const handleYouTubeSubmit = useCallback(() => {
+    const id = parseYouTubeId(youtubeUrl.trim());
+    if (id && sectionId) {
+      updateSection(sectionId, { backgroundVideo: `youtube:${id}` });
+      setYoutubeUrl('');
+      setShowYouTubeInput(false);
+    }
+  }, [youtubeUrl, sectionId, updateSection]);
+
+  const handleVideoBgSelect = useCallback((results: MediaPickerResult[]) => {
+    if (results.length > 0 && sectionId) {
+      updateSection(sectionId, { backgroundVideo: results[0].publicUrl });
+    }
+    setIsVideoBgPickerOpen(false);
+  }, [sectionId, updateSection]);
+
+  const handleRemoveVideoBg = useCallback(() => {
+    if (sectionId) {
+      updateSection(sectionId, { backgroundVideo: undefined });
+    }
+  }, [sectionId, updateSection]);
 
   // Sync local position state when prop changes (e.g., draft loaded)
   useEffect(() => {
@@ -362,20 +411,55 @@ export function EditableHero({
   // ---- View Mode ----
   if (!isEditMode) {
     return (
-      <section className={`relative ${heightClass} flex items-center`}>
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <SmartImage
-            src={image}
-            alt={imageAlt}
-            fill
-            className="object-cover"
-            objectPosition={objectPosition}
-            priority
-            quality={90}
-          />
-          <div className={`absolute inset-0 ${overlayClass}`} />
-        </div>
+      <section className={`relative ${heightClass} flex items-center overflow-hidden`}>
+        {/* Background Image (hidden when video background is active) */}
+        {!hasVideoBackground && (
+          <div className="absolute inset-0 z-0">
+            <SmartImage
+              src={image}
+              alt={imageAlt}
+              fill
+              className="object-cover"
+              objectPosition={objectPosition}
+              priority
+              quality={90}
+            />
+            <div className={`absolute inset-0 ${overlayClass}`} />
+          </div>
+        )}
+
+        {/* Video Background — uploaded file */}
+        {hasVideoBackground && !isYouTube && (
+          <div className="absolute inset-0 z-0">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              src={backgroundVideo}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/60" />
+          </div>
+        )}
+
+        {/* Video Background — YouTube embed */}
+        {isYouTube && youtubeId && (
+          <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&modestbranding=1&playsinline=1&rel=0&disablekb=1`}
+                allow="autoplay; encrypted-media"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] aspect-video"
+                style={{ transform: 'translate(-50%, -50%) scale(1.2)' }}
+                title="Background video"
+                frameBorder="0"
+              />
+            </div>
+            <div className="absolute inset-0 bg-black/60" />
+          </div>
+        )}
 
         {/* Content */}
         <div className="relative z-10 section-container py-20 lg:py-32">
@@ -478,20 +562,55 @@ export function EditableHero({
   // ---- Edit Mode ----
   return (
     <>
-      <section className={`relative ${heightClass} flex items-center group/hero`}>
-        {/* Background Image - Editable */}
-        <div className="absolute inset-0 z-0">
-          <EditableImage
-            contentKey={imageContentKey}
-            src={image}
-            alt={imageAlt}
-            fill
-            className="object-cover"
-            objectPosition={objectPosition}
-            priority
-          />
-          <div className={`absolute inset-0 ${overlayClass} pointer-events-none`} />
-        </div>
+      <section className={`relative ${heightClass} flex items-center group/hero overflow-hidden`}>
+        {/* Background Image - Editable (hidden when video background is active) */}
+        {!hasVideoBackground && (
+          <div className="absolute inset-0 z-0">
+            <EditableImage
+              contentKey={imageContentKey}
+              src={image}
+              alt={imageAlt}
+              fill
+              className="object-cover"
+              objectPosition={objectPosition}
+              priority
+            />
+            <div className={`absolute inset-0 ${overlayClass} pointer-events-none`} />
+          </div>
+        )}
+
+        {/* Video Background — uploaded file (edit mode) */}
+        {hasVideoBackground && !isYouTube && (
+          <div className="absolute inset-0 z-0">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              src={backgroundVideo}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+          </div>
+        )}
+
+        {/* Video Background — YouTube embed (edit mode) */}
+        {isYouTube && youtubeId && (
+          <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&showinfo=0&modestbranding=1&playsinline=1&rel=0&disablekb=1`}
+                allow="autoplay; encrypted-media"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] aspect-video"
+                style={{ transform: 'translate(-50%, -50%) scale(1.2)' }}
+                title="Background video"
+                frameBorder="0"
+              />
+            </div>
+            <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+          </div>
+        )}
 
         {/* Edit Mode Section Label — offset below fixed header */}
         {canEdit && (
@@ -503,42 +622,98 @@ export function EditableHero({
           </div>
         )}
 
-        {/* Background Image Controls — right side */}
+        {/* Background Controls — right side */}
         {canEdit && (
           <div className="absolute top-20 right-4 z-20 flex flex-col gap-2">
             {/* Image picker button */}
-            <button
-              onClick={() => setIsBgPickerOpen(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#C9A227]/30 hover:bg-[#C9A227]/60 border border-[#C9A227]/60 hover:border-[#C9A227] rounded text-[11px] font-medium text-[#C9A227] uppercase tracking-wider cursor-pointer transition-colors"
-            >
-              <ImageIcon className="w-3 h-3" />
-              Background Image
-            </button>
+            {!hasVideoBackground && (
+              <button
+                onClick={() => setIsBgPickerOpen(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#C9A227]/30 hover:bg-[#C9A227]/60 border border-[#C9A227]/60 hover:border-[#C9A227] rounded text-[11px] font-medium text-[#C9A227] uppercase tracking-wider cursor-pointer transition-colors"
+              >
+                <ImageIcon className="w-3 h-3" />
+                Background Image
+              </button>
+            )}
 
-            {/* Image position control */}
-            <div className="bg-[#1A1A1A]/90 border border-[#C9A227]/40 rounded p-2 backdrop-blur-sm">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Move className="w-3 h-3 text-[#C9A227]" />
-                <span className="text-[10px] font-medium text-[#C9A227] uppercase tracking-wider">
-                  Vertical Position
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] text-gray-400 w-6">Top</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={displayPositionY}
-                  onChange={(e) => handlePositionChange(Number(e.target.value))}
-                  className="flex-1 h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer accent-[#C9A227] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#C9A227] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md"
-                />
-                <span className="text-[9px] text-gray-400 w-8">Bottom</span>
-              </div>
-              <div className="text-center mt-1">
-                <span className="text-[9px] text-gray-500">{displayPositionY}%</span>
-              </div>
+            {/* Video background controls */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setIsVideoBgPickerOpen(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-black/70 hover:bg-black/90 border border-[#C9A227]/60 hover:border-[#C9A227] rounded text-[11px] font-medium text-white cursor-pointer transition-colors backdrop-blur-sm"
+              >
+                <Video className="w-3 h-3" />
+                {hasVideoBackground ? 'Change' : 'Video BG'}
+              </button>
+              <button
+                onClick={() => setShowYouTubeInput(!showYouTubeInput)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-black/70 hover:bg-black/90 border border-[#C9A227]/60 hover:border-[#C9A227] rounded text-[11px] font-medium text-white cursor-pointer transition-colors backdrop-blur-sm"
+              >
+                <Youtube className="w-3 h-3" />
+                YT
+              </button>
+              {hasVideoBackground && (
+                <button
+                  onClick={handleRemoveVideoBg}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-red-900/70 hover:bg-red-900/90 rounded text-[11px] font-medium text-white cursor-pointer transition-colors backdrop-blur-sm"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
+
+            {/* YouTube URL input */}
+            {showYouTubeInput && (
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleYouTubeSubmit()}
+                  placeholder="YouTube URL or ID..."
+                  className="px-2 py-1 rounded-md bg-black/80 border border-[#444] text-white text-xs placeholder-gray-500 focus:outline-none focus:border-[#C9A227] w-56 backdrop-blur-sm"
+                />
+                <button
+                  onClick={handleYouTubeSubmit}
+                  className="px-2 py-1 rounded-md bg-[#C9A227] text-black text-xs font-medium hover:bg-[#D4AF37]"
+                >
+                  Set
+                </button>
+                <button
+                  onClick={() => { setShowYouTubeInput(false); setYoutubeUrl(''); }}
+                  className="px-1.5 py-1 rounded-md bg-black/70 text-gray-400 text-xs hover:text-white backdrop-blur-sm"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
+            {/* Image position control (only when using image background) */}
+            {!hasVideoBackground && (
+              <div className="bg-[#1A1A1A]/90 border border-[#C9A227]/40 rounded p-2 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Move className="w-3 h-3 text-[#C9A227]" />
+                  <span className="text-[10px] font-medium text-[#C9A227] uppercase tracking-wider">
+                    Vertical Position
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] text-gray-400 w-6">Top</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={displayPositionY}
+                    onChange={(e) => handlePositionChange(Number(e.target.value))}
+                    className="flex-1 h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer accent-[#C9A227] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#C9A227] [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md"
+                  />
+                  <span className="text-[9px] text-gray-400 w-8">Bottom</span>
+                </div>
+                <div className="text-center mt-1">
+                  <span className="text-[9px] text-gray-500">{displayPositionY}%</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -728,6 +903,14 @@ export function EditableHero({
         onClose={() => setIsBgPickerOpen(false)}
         onSelect={handleBgImageSelect}
         options={{ allowedTypes: ['image'] }}
+      />
+
+      {/* Video background picker */}
+      <MediaPicker
+        isOpen={isVideoBgPickerOpen}
+        onClose={() => setIsVideoBgPickerOpen(false)}
+        onSelect={handleVideoBgSelect}
+        options={{ allowedTypes: ['video'] }}
       />
     </>
   );

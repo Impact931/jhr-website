@@ -331,6 +331,8 @@ export function SectionRenderer({
           secondaryCta={hero.buttons?.[1]}
           variant={hero.variant}
           imagePosition={hero.imagePosition}
+          backgroundVideo={hero.backgroundVideo}
+          sectionId={hero.id}
         >
           {heroChildren}
         </EditableHero>
