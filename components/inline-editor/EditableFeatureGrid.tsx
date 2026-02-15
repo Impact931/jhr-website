@@ -541,7 +541,7 @@ function LogoScrollView({
       )}
 
       {/* Scrolling marquee */}
-      <div className="relative overflow-hidden py-6">
+      <div className="relative overflow-hidden py-2">
         {/* Fade edges */}
         <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-jhr-black to-transparent z-10 pointer-events-none" />
         <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-jhr-black to-transparent z-10 pointer-events-none" />
@@ -568,7 +568,7 @@ function LogoScrollView({
                 <img
                   src={feature.image.src}
                   alt={feature.image.alt || feature.title}
-                  className="h-20 w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
+                  className="h-20 w-auto object-contain opacity-90 transition-all duration-500"
                 />
               ) : (
                 <div className="h-20 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-500">
