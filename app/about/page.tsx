@@ -22,6 +22,7 @@ const SECTION_CLASS_MAP: Record<string, string> = {
   "why-jhr": "section-padding bg-jhr-black-light",
   "operator-program": "section-padding bg-jhr-black",
   "stats": "section-padding bg-jhr-black-light",
+  "team-cta": "section-padding bg-jhr-black",
 };
 
 export default function AboutPage() {
