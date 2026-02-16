@@ -22,6 +22,7 @@ const navigation = [
   },
   { name: "Venues", href: "/venues" },
   { name: "About", href: "/about" },
+  { name: "Team", href: "/team" },
   { name: "Nashville Insider", href: "/blog" },
   { name: "FAQs", href: "/faqs" },
 ];

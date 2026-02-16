@@ -11,9 +11,10 @@
 
 import type { PageSchema } from '@/types/inline-editor';
 
-// Standard page schemas (19)
+// Standard page schemas (20)
 import { HOME_PAGE_SCHEMA } from './schemas/home';
 import { ABOUT_PAGE_SCHEMA } from './schemas/about';
+import { TEAM_PAGE_SCHEMA } from './schemas/team';
 import { CONTACT_PAGE_SCHEMA } from './schemas/contact';
 import { FAQS_PAGE_SCHEMA } from './schemas/faqs';
 import { SCHEDULE_PAGE_SCHEMA } from './schemas/schedule';
@@ -47,7 +48,7 @@ import {
 /**
  * Central registry: site slug → PageSchema.
  *
- * 19 standard pages + 8 venue detail pages = 27 total.
+ * 20 standard pages + 8 venue detail pages = 28 total.
  * Note: 'corporate-headshot-program' is the legacy slug (301 redirects
  * to executive-imaging), but its schema is still included for seeding.
  */
@@ -55,6 +56,7 @@ export const SCHEMA_REGISTRY: Map<string, PageSchema> = new Map([
   // Main pages
   ['home', HOME_PAGE_SCHEMA],
   ['about', ABOUT_PAGE_SCHEMA],
+  ['team', TEAM_PAGE_SCHEMA],
   ['contact', CONTACT_PAGE_SCHEMA],
   ['faqs', FAQS_PAGE_SCHEMA],
   ['schedule', SCHEDULE_PAGE_SCHEMA],

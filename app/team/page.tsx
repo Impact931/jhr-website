@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from "react";
 import { useEditMode } from "@/context/inline-editor/EditModeContext";
 import { useContent } from "@/context/inline-editor/ContentContext";
-import { ABOUT_SECTIONS } from "@/content/schemas/about";
+import { TEAM_SECTIONS } from "@/content/schemas/team";
 import { SectionRenderer } from "@/components/inline-editor/SectionRenderer";
 import { SectionWrapper, AddSectionButton } from "@/components/inline-editor/SectionWrapper";
 import { createDefaultSection } from "@/types/inline-editor";
@@ -14,17 +14,16 @@ import type {
 } from "@/types/inline-editor";
 
 // ============================================================================
-// About Page - Editable with inline CMS
+// Team Page - Editable with inline CMS
 // ============================================================================
 
 const SECTION_CLASS_MAP: Record<string, string> = {
-  "guide": "section-padding bg-jhr-black",
-  "why-jhr": "section-padding bg-jhr-black-light",
-  "operator-program": "section-padding bg-jhr-black",
-  "stats": "section-padding bg-jhr-black-light",
+  "team-overview": "section-padding bg-jhr-black-light",
+  "team": "section-padding bg-jhr-black",
+  "team-cta": "section-padding bg-jhr-black-light",
 };
 
-export default function AboutPage() {
+export default function TeamPage() {
   const { isEditMode } = useEditMode();
   const {
     sections,
@@ -37,7 +36,7 @@ export default function AboutPage() {
   } = useContent();
 
   useEffect(() => {
-    loadSectionsForPage('about', ABOUT_SECTIONS);
+    loadSectionsForPage('team', TEAM_SECTIONS);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddSection = useCallback(
@@ -97,7 +96,7 @@ export default function AboutPage() {
         >
           <SectionRenderer
             section={section}
-            pageSlug="about"
+            pageSlug="team"
             sectionClassMap={SECTION_CLASS_MAP}
           />
         </SectionWrapper>
