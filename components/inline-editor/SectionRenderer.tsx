@@ -355,6 +355,7 @@ export function SectionRenderer({
               cardVariant={grid.cardVariant}
               scrollSpeed={grid.scrollSpeed}
               scrollDirection={grid.scrollDirection}
+              cardImageFit={grid.cardImageFit}
             />
           </SectionShell>
         </AnimatedSection>

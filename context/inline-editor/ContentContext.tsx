@@ -192,6 +192,7 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
   if (elementId === 'scrollSpeed') { s.scrollSpeed = Number(value) || 1; return; }
   if (elementId === 'scrollDirection') { s.scrollDirection = value; return; }
   if (elementId === 'showStepNumbers') { s.showStepNumbers = value === 'true'; return; }
+  if (elementId === 'cardImageFit') { s.cardImageFit = value; return; }
   if (elementId === 'carouselHeight') { s.carouselHeight = Number(value) || 320; return; }
   if (elementId === 'carouselGap') { s.carouselGap = Number(value); return; }
   if (elementId === 'carouselSpeed') { s.carouselSpeed = Number(value) || 1; return; }

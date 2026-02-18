@@ -331,6 +331,8 @@ export interface FeatureGridSectionContent extends BaseSectionContent {
   scrollSpeed?: number;
   /** Scroll direction for logo-scroll mode. Default 'left'. */
   scrollDirection?: 'left' | 'right';
+  /** How card images fit their container. 'cover' = fill & crop (default), 'contain' = fit inside, 'natural' = native aspect ratio. */
+  cardImageFit?: 'cover' | 'contain' | 'natural';
 }
 
 /**

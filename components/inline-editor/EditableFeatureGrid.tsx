@@ -84,6 +84,9 @@ import {
   UserCircle,
   Presentation,
   ClipboardList,
+  Maximize,
+  Minimize,
+  RectangleHorizontal,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -230,6 +233,8 @@ interface EditableFeatureGridProps {
   scrollSpeed?: number;
   /** Scroll direction for logo-scroll mode. */
   scrollDirection?: 'left' | 'right';
+  /** How card images fit their container. */
+  cardImageFit?: 'cover' | 'contain' | 'natural';
   /** Callback when features array changes (for parent state management). */
   onFeaturesChange?: (features: FeatureCard[]) => void;
   /** Callback when columns change. */
@@ -956,10 +961,12 @@ function DefaultCardView({
   feature,
   index,
   columnsCount,
+  currentCardImageFit = 'cover',
 }: {
   feature: FeatureCard;
   index: number;
   columnsCount: FeatureGridColumns;
+  currentCardImageFit?: 'cover' | 'contain' | 'natural';
 }) {
   const IconComp = getIconComponent(feature.icon);
   const isCheckCircle = feature.icon === 'CheckCircle';
@@ -991,14 +998,24 @@ function DefaultCardView({
           />
         </div>
       ) : feature.image?.src ? (
-        <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-4 bg-[#1A1A1A]">
-          <SmartImage
-            src={feature.image.src}
-            alt={feature.image.alt || feature.title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-            objectPosition={`center ${feature.image.positionY ?? 50}%`}
-          />
+        <div className={`relative w-full rounded-lg overflow-hidden mb-4 bg-[#1A1A1A] ${currentCardImageFit === 'natural' ? '' : 'aspect-[4/3]'}`}>
+          {currentCardImageFit === 'natural' ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={feature.image.src}
+              alt={feature.image.alt || feature.title}
+              className="w-full h-auto block group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+          ) : (
+            <SmartImage
+              src={feature.image.src}
+              alt={feature.image.alt || feature.title}
+              fill
+              className={`${currentCardImageFit === 'contain' ? 'object-contain' : 'object-cover'} group-hover:scale-105 transition-transform duration-500`}
+              objectPosition={currentCardImageFit === 'cover' ? `center ${feature.image.positionY ?? 50}%` : undefined}
+            />
+          )}
         </div>
       ) : isCheckCircle ? (
         <motion.div
@@ -1050,6 +1067,7 @@ export function EditableFeatureGrid({
   cardVariant: initialCardVariant = 'default',
   scrollSpeed: initialScrollSpeed = 1,
   scrollDirection: initialScrollDirection = 'left',
+  cardImageFit: initialCardImageFit = 'cover',
   onFeaturesChange,
   onColumnsChange,
   children,
@@ -1065,6 +1083,7 @@ export function EditableFeatureGrid({
   const [currentScrollSpeed, setCurrentScrollSpeed] = useState(initialScrollSpeed);
   const [currentScrollDirection, setCurrentScrollDirection] = useState<'left' | 'right'>(initialScrollDirection);
   const [currentShowStepNumbers, setCurrentShowStepNumbers] = useState(showStepNumbers ?? false);
+  const [currentCardImageFit, setCurrentCardImageFit] = useState<'cover' | 'contain' | 'natural'>(initialCardImageFit);
 
   // Sync local state with parent props after autosave merges edits back into sections.
   // Without this, local state stays stale after pendingChanges are cleared, causing
@@ -1144,6 +1163,19 @@ export function EditableFeatureGrid({
       updateContent(
         `${contentKeyPrefix}:cardVariant`,
         variant,
+        'text'
+      );
+    },
+    [contentKeyPrefix, updateContent]
+  );
+
+  // Handle card image fit change
+  const handleCardImageFitChange = useCallback(
+    (fit: 'cover' | 'contain' | 'natural') => {
+      setCurrentCardImageFit(fit);
+      updateContent(
+        `${contentKeyPrefix}:cardImageFit`,
+        fit,
         'text'
       );
     },
@@ -1413,6 +1445,7 @@ export function EditableFeatureGrid({
               feature={feature}
               index={index}
               columnsCount={currentColumns}
+              currentCardImageFit={currentCardImageFit}
             />
           ))}
         </div>
@@ -1549,6 +1582,27 @@ export function EditableFeatureGrid({
                     Glass
                   </button>
                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400 uppercase tracking-wider">Images:</span>
+                  {([
+                    { value: 'cover' as const, label: 'Fill', icon: <Maximize className="w-3.5 h-3.5" /> },
+                    { value: 'contain' as const, label: 'Fit', icon: <Minimize className="w-3.5 h-3.5" /> },
+                    { value: 'natural' as const, label: 'Original', icon: <RectangleHorizontal className="w-3.5 h-3.5" /> },
+                  ]).map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => handleCardImageFitChange(opt.value)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        currentCardImageFit === opt.value
+                          ? 'bg-[#C9A227] text-black'
+                          : 'bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#333]'
+                      }`}
+                    >
+                      {opt.icon}
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <FieldLabel label="Feature Cards" icon={<Grid3X3 className="w-3 h-3" />} />
@@ -1631,14 +1685,24 @@ export function EditableFeatureGrid({
                     )}
                   </div>
                 ) : feature.image?.src ? (
-                  <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-4 bg-[#1A1A1A] group/img">
-                    <SmartImage
-                      src={feature.image.src}
-                      alt={feature.image.alt || feature.title}
-                      fill
-                      className="object-cover"
-                      objectPosition={`center ${feature.image.positionY ?? 50}%`}
-                    />
+                  <div className={`relative w-full rounded-lg overflow-hidden mb-4 bg-[#1A1A1A] group/img ${currentCardImageFit === 'natural' ? '' : 'aspect-[4/3]'}`}>
+                    {currentCardImageFit === 'natural' ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={feature.image.src}
+                        alt={feature.image.alt || feature.title}
+                        className="w-full h-auto block"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <SmartImage
+                        src={feature.image.src}
+                        alt={feature.image.alt || feature.title}
+                        fill
+                        className={currentCardImageFit === 'contain' ? 'object-contain' : 'object-cover'}
+                        objectPosition={currentCardImageFit === 'cover' ? `center ${feature.image.positionY ?? 50}%` : undefined}
+                      />
+                    )}
                     {canEdit && (
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                         <div className="flex items-center gap-2">
@@ -1655,27 +1719,29 @@ export function EditableFeatureGrid({
                             Remove
                           </button>
                         </div>
-                        {/* Vertical position slider */}
-                        <label className="flex items-center gap-2 px-3 py-1.5 bg-[#2A2A2A] rounded-lg" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-[10px] text-gray-400 uppercase tracking-wider whitespace-nowrap">Position</span>
-                          <input
-                            type="range"
-                            min={0}
-                            max={100}
-                            value={feature.image.positionY ?? 50}
-                            onChange={(e) => {
-                              const pos = Number(e.target.value);
-                              const newFeatures = features.map((f) =>
-                                f.id === feature.id && f.image
-                                  ? { ...f, image: { ...f.image, positionY: pos } }
-                                  : f
-                              );
-                              updateFeatures(newFeatures);
-                            }}
-                            className="w-20 accent-[#C9A227]"
-                          />
-                          <span className="text-[10px] text-white font-mono w-7 text-right">{feature.image.positionY ?? 50}%</span>
-                        </label>
+                        {/* Vertical position slider — only relevant for cover mode */}
+                        {currentCardImageFit === 'cover' && (
+                          <label className="flex items-center gap-2 px-3 py-1.5 bg-[#2A2A2A] rounded-lg" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider whitespace-nowrap">Position</span>
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              value={feature.image.positionY ?? 50}
+                              onChange={(e) => {
+                                const pos = Number(e.target.value);
+                                const newFeatures = features.map((f) =>
+                                  f.id === feature.id && f.image
+                                    ? { ...f, image: { ...f.image, positionY: pos } }
+                                    : f
+                                );
+                                updateFeatures(newFeatures);
+                              }}
+                              className="w-20 accent-[#C9A227]"
+                            />
+                            <span className="text-[10px] text-white font-mono w-7 text-right">{feature.image.positionY ?? 50}%</span>
+                          </label>
+                        )}
                         <button
                           onClick={() => {
                             handleRemoveImage(feature.id);
