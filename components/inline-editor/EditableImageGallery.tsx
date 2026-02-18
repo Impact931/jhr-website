@@ -1068,14 +1068,11 @@ export function EditableImageGallery({
       if (patch.carouselSpeed !== undefined) setCSpeed(patch.carouselSpeed);
       if (patch.carouselDirection !== undefined) setCDirection(patch.carouselDirection);
       onCarouselConfigChange?.(patch);
-      // Persist as pending change
-      const merged = {
-        carouselHeight: patch.carouselHeight ?? cHeight,
-        carouselGap: patch.carouselGap ?? cGap,
-        carouselSpeed: patch.carouselSpeed ?? cSpeed,
-        carouselDirection: patch.carouselDirection ?? cDirection,
-      };
-      updateContent(`${contentKeyPrefix}:carouselConfig`, JSON.stringify(merged), 'text');
+      // Persist each field as an individual pending change
+      if (patch.carouselHeight !== undefined) updateContent(`${contentKeyPrefix}:carouselHeight`, String(patch.carouselHeight), 'text');
+      if (patch.carouselGap !== undefined) updateContent(`${contentKeyPrefix}:carouselGap`, String(patch.carouselGap), 'text');
+      if (patch.carouselSpeed !== undefined) updateContent(`${contentKeyPrefix}:carouselSpeed`, String(patch.carouselSpeed), 'text');
+      if (patch.carouselDirection !== undefined) updateContent(`${contentKeyPrefix}:carouselDirection`, patch.carouselDirection, 'text');
     },
     [cHeight, cGap, cSpeed, cDirection, contentKeyPrefix, onCarouselConfigChange, updateContent]
   );
