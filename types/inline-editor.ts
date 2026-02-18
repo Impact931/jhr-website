@@ -163,7 +163,7 @@ export interface FeatureCard {
   /** Optional link for the card. */
   link?: { text: string; href: string };
   /** Optional card image. When present, displayed instead of the icon. */
-  image?: { src: string; alt: string };
+  image?: { src: string; alt: string; positionY?: number };
   /** Optional YouTube video URL. When present, renders an embedded player. */
   videoUrl?: string;
 }

@@ -997,6 +997,7 @@ function DefaultCardView({
             alt={feature.image.alt || feature.title}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-500"
+            objectPosition={`center ${feature.image.positionY ?? 50}%`}
           />
         </div>
       ) : isCheckCircle ? (
@@ -1636,6 +1637,7 @@ export function EditableFeatureGrid({
                       alt={feature.image.alt || feature.title}
                       fill
                       className="object-cover"
+                      objectPosition={`center ${feature.image.positionY ?? 50}%`}
                     />
                     {canEdit && (
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
@@ -1653,6 +1655,27 @@ export function EditableFeatureGrid({
                             Remove
                           </button>
                         </div>
+                        {/* Vertical position slider */}
+                        <label className="flex items-center gap-2 px-3 py-1.5 bg-[#2A2A2A] rounded-lg" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-[10px] text-gray-400 uppercase tracking-wider whitespace-nowrap">Position</span>
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={feature.image.positionY ?? 50}
+                            onChange={(e) => {
+                              const pos = Number(e.target.value);
+                              const newFeatures = features.map((f) =>
+                                f.id === feature.id && f.image
+                                  ? { ...f, image: { ...f.image, positionY: pos } }
+                                  : f
+                              );
+                              updateFeatures(newFeatures);
+                            }}
+                            className="w-20 accent-[#C9A227]"
+                          />
+                          <span className="text-[10px] text-white font-mono w-7 text-right">{feature.image.positionY ?? 50}%</span>
+                        </label>
                         <button
                           onClick={() => {
                             handleRemoveImage(feature.id);
