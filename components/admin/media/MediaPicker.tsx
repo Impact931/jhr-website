@@ -29,6 +29,9 @@ export default function MediaPicker({
 }: MediaPickerProps) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [totalCount, setTotalCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showUpload, setShowUpload] = useState(false);
   const [collections, setCollections] = useState<MediaCollection[]>([]);
@@ -41,6 +44,7 @@ export default function MediaPicker({
   });
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingMediaIdsRef = useRef<string[]>([]);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const fetchCollections = useCallback(async () => {
     try {
@@ -54,8 +58,12 @@ export default function MediaPicker({
     }
   }, []);
 
-  const fetchMedia = useCallback(async () => {
-    setIsLoading(true);
+  const fetchMedia = useCallback(async (append = false, pageCursor?: string) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (filters.search) params.set('search', filters.search);
@@ -64,18 +72,32 @@ export default function MediaPicker({
       params.set('sortBy', filters.sortBy);
       params.set('sortOrder', filters.sortOrder);
       params.set('limit', '50');
+      if (pageCursor) params.set('cursor', pageCursor);
 
       const res = await fetch(`/api/admin/media?${params}`);
       if (res.ok) {
         const data = await res.json();
-        setItems(data.items || []);
+        if (append) {
+          setItems((prev) => [...prev, ...(data.items || [])]);
+        } else {
+          setItems(data.items || []);
+        }
+        setCursor(data.cursor || undefined);
+        if (data.total !== undefined) setTotalCount(data.total);
       }
     } catch {
       // Silently fail
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   }, [filters]);
+
+  const loadMore = useCallback(() => {
+    if (cursor && !isLoadingMore) {
+      fetchMedia(true, cursor);
+    }
+  }, [cursor, isLoadingMore, fetchMedia]);
 
   useEffect(() => {
     if (isOpen) {
@@ -85,6 +107,25 @@ export default function MediaPicker({
       pendingMediaIdsRef.current = [];
     }
   }, [isOpen, fetchMedia, fetchCollections]);
+
+  // Infinite scroll — observe sentinel element at bottom of grid
+  useEffect(() => {
+    if (!isOpen || showUpload) return;
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && cursor && !isLoadingMore) {
+          loadMore();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isOpen, showUpload, cursor, isLoadingMore, loadMore]);
 
   // Escape key to close modal — always responsive
   useEffect(() => {
@@ -245,7 +286,7 @@ export default function MediaPicker({
                     }
                     viewMode="grid"
                     onViewModeChange={() => {}}
-                    totalCount={items.length}
+                    totalCount={totalCount || items.length}
                   />
                 </div>
               </div>
@@ -257,6 +298,24 @@ export default function MediaPicker({
                 viewMode="grid"
                 isLoading={isLoading}
               />
+              {/* Infinite scroll sentinel + load more */}
+              {!isLoading && cursor && (
+                <div ref={loadMoreRef} className="flex flex-col items-center gap-2 py-4">
+                  {isLoadingMore ? (
+                    <div className="flex items-center gap-2 text-sm text-jhr-white-dim">
+                      <div className="w-4 h-4 border-2 border-jhr-gold/40 border-t-jhr-gold rounded-full animate-spin" />
+                      Loading more...
+                    </div>
+                  ) : (
+                    <button
+                      onClick={loadMore}
+                      className="px-4 py-2 rounded-lg border border-jhr-black-lighter text-sm text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter transition-colors"
+                    >
+                      Load More ({items.length} of {totalCount})
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
