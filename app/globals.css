@@ -315,6 +315,12 @@ body {
     width: 100vw;
     margin-left: calc(-50vw + 50%);
   }
+
+  /* Carousel full-bleed — same pattern */
+  .carousel-full-bleed {
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+  }
 }
 
 @layer utilities {

@@ -363,6 +363,12 @@ export function SectionRenderer({
 
     case 'image-gallery': {
       const gallery = section as ImageGallerySectionContent;
+      const carouselProps = {
+        carouselHeight: gallery.carouselHeight,
+        carouselGap: gallery.carouselGap,
+        carouselSpeed: gallery.carouselSpeed,
+        carouselDirection: gallery.carouselDirection,
+      };
       if (isNested) {
         return (
           <div className="h-full flex items-center">
@@ -373,6 +379,7 @@ export function SectionRenderer({
                 layout={gallery.layout}
                 images={gallery.images}
                 singleImageFit={gallery.singleImageFit}
+                {...carouselProps}
               />
             </div>
           </div>
@@ -387,6 +394,7 @@ export function SectionRenderer({
               layout={gallery.layout}
               images={gallery.images}
               singleImageFit={gallery.singleImageFit}
+              {...carouselProps}
             />
           </SectionShell>
         </AnimatedSection>

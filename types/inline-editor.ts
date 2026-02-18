@@ -47,7 +47,7 @@ export type HeroVariant = 'full-height' | 'half-height' | 'banner' | 'split';
  * - slider: Horizontal scrolling carousel
  * - masonry: Pinterest-style masonry layout
  */
-export type GalleryLayout = 'grid' | 'slider' | 'masonry' | 'single' | 'filmstrip';
+export type GalleryLayout = 'grid' | 'slider' | 'masonry' | 'single' | 'filmstrip' | 'carousel';
 
 /**
  * Layout options for feature grids.
@@ -357,6 +357,14 @@ export interface ImageGallerySectionContent extends BaseSectionContent {
   images: EditableImageField[];
   /** How the single-image layout fits its container. Defaults to 'cover'. */
   singleImageFit?: SingleImageFit;
+  /** Carousel image height in px. Default 320. Range 120–600. */
+  carouselHeight?: number;
+  /** Gap between carousel images in px. Default 16. Range 0–64. */
+  carouselGap?: number;
+  /** Carousel scroll speed multiplier. Default 1. Range 0.25–4. */
+  carouselSpeed?: number;
+  /** Carousel scroll direction. Default 'left'. */
+  carouselDirection?: 'left' | 'right';
 }
 
 /**

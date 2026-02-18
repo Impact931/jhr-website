@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, ReactNode, useRef } from 'react';
+import { useState, useCallback, useEffect, ReactNode, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import {
@@ -23,7 +23,10 @@ import {
   Film,
   Video,
   Link as LinkIcon,
+  GalleryHorizontalEnd,
+  ArrowLeftRight,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
@@ -79,6 +82,16 @@ interface EditableImageGalleryProps {
   onLayoutChange?: (layout: GalleryLayout) => void;
   /** Callback when singleImageFit changes. */
   onSingleImageFitChange?: (fit: SingleImageFit) => void;
+  /** Carousel image height in px. */
+  carouselHeight?: number;
+  /** Gap between carousel images in px. */
+  carouselGap?: number;
+  /** Carousel scroll speed multiplier. */
+  carouselSpeed?: number;
+  /** Carousel scroll direction. */
+  carouselDirection?: 'left' | 'right';
+  /** Callback when any carousel config field changes. */
+  onCarouselConfigChange?: (config: { carouselHeight?: number; carouselGap?: number; carouselSpeed?: number; carouselDirection?: 'left' | 'right' }) => void;
   /** Additional children rendered below the gallery. */
   children?: ReactNode;
 }
@@ -100,6 +113,7 @@ function LayoutSelector({
     { value: 'slider', label: 'Slider', icon: <GalleryHorizontal className="w-4 h-4" /> },
     { value: 'masonry', label: 'Masonry', icon: <LayoutGrid className="w-4 h-4" /> },
     { value: 'filmstrip', label: 'Filmstrip', icon: <Film className="w-4 h-4" /> },
+    { value: 'carousel', label: 'Carousel', icon: <GalleryHorizontalEnd className="w-4 h-4" /> },
   ];
 
   return (
@@ -376,6 +390,11 @@ export function EditableImageGallery({
   onImagesChange,
   onLayoutChange,
   onSingleImageFitChange,
+  carouselHeight: initialCarouselHeight = 320,
+  carouselGap: initialCarouselGap = 16,
+  carouselSpeed: initialCarouselSpeed = 1,
+  carouselDirection: initialCarouselDirection = 'left',
+  onCarouselConfigChange,
   children,
 }: EditableImageGalleryProps) {
   const { canEdit, isEditMode } = useEditMode();
@@ -385,6 +404,12 @@ export function EditableImageGallery({
   const [images, setImages] = useState<EditableImageField[]>(initialImages);
   const [currentLayout, setCurrentLayout] = useState<GalleryLayout>(layout);
   const [currentFit, setCurrentFit] = useState<SingleImageFit>(initialFit);
+
+  // Carousel config state
+  const [cHeight, setCHeight] = useState(initialCarouselHeight);
+  const [cGap, setCGap] = useState(initialCarouselGap);
+  const [cSpeed, setCSpeed] = useState(initialCarouselSpeed);
+  const [cDirection, setCDirection] = useState<'left' | 'right'>(initialCarouselDirection);
 
   // Sync local state when initialImages prop changes (e.g., when draft is loaded)
   useEffect(() => {
@@ -1035,6 +1060,141 @@ export function EditableImageGallery({
     );
   };
 
+  // ---- Carousel helper: update config and notify parent ----
+  const updateCarouselConfig = useCallback(
+    (patch: { carouselHeight?: number; carouselGap?: number; carouselSpeed?: number; carouselDirection?: 'left' | 'right' }) => {
+      if (patch.carouselHeight !== undefined) setCHeight(patch.carouselHeight);
+      if (patch.carouselGap !== undefined) setCGap(patch.carouselGap);
+      if (patch.carouselSpeed !== undefined) setCSpeed(patch.carouselSpeed);
+      if (patch.carouselDirection !== undefined) setCDirection(patch.carouselDirection);
+      onCarouselConfigChange?.(patch);
+      // Persist as pending change
+      const merged = {
+        carouselHeight: patch.carouselHeight ?? cHeight,
+        carouselGap: patch.carouselGap ?? cGap,
+        carouselSpeed: patch.carouselSpeed ?? cSpeed,
+        carouselDirection: patch.carouselDirection ?? cDirection,
+      };
+      updateContent(`${contentKeyPrefix}:carouselConfig`, JSON.stringify(merged), 'text');
+    },
+    [cHeight, cGap, cSpeed, cDirection, contentKeyPrefix, onCarouselConfigChange, updateContent]
+  );
+
+  // ---- Carousel Layout Renderer ----
+  const renderCarouselLayout = (imageList: EditableImageField[], editable: boolean) => {
+    if (imageList.length === 0) return null;
+
+    const doubled = [...imageList, ...imageList];
+    const duration = (imageList.length * 4) / (cSpeed || 1);
+    const animateX: [string, string] = cDirection === 'right' ? ['-50%', '0%'] : ['0%', '-50%'];
+
+    return (
+      <div className={editable ? '' : 'carousel-full-bleed'}>
+        <div className="relative overflow-hidden">
+          {/* Fade edges */}
+          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#0A0A0A] to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#0A0A0A] to-transparent z-10 pointer-events-none" />
+
+          <motion.div
+            className="flex items-center"
+            style={{ gap: `${cGap}px` }}
+            animate={{ x: animateX }}
+            transition={{
+              x: {
+                repeat: Infinity,
+                repeatType: 'loop',
+                duration,
+                ease: 'linear',
+              },
+            }}
+            key={`carousel-${cSpeed}-${cDirection}-${cGap}-${cHeight}-${imageList.length}`}
+          >
+            {doubled.map((image, index) => (
+              <div
+                key={`carousel-${index}`}
+                className="flex-shrink-0 rounded-lg overflow-hidden bg-[#1A1A1A]"
+                style={{ height: `${cHeight}px` }}
+              >
+                {image.src ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={image.src}
+                    alt={image.alt || `Carousel image ${(index % imageList.length) + 1}`}
+                    className="h-full w-auto object-contain"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full w-[200px]">
+                    <ImageIcon className="w-12 h-12 text-gray-600" />
+                  </div>
+                )}
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    );
+  };
+
+  // ---- Carousel Config Controls (edit mode) ----
+  const renderCarouselControls = () => (
+    <div className="flex flex-wrap items-center gap-4 mt-4 p-3 bg-[#1A1A1A] border border-[#333] rounded-lg">
+      {/* Height */}
+      <label className="flex items-center gap-2 text-xs text-gray-400">
+        Height
+        <input
+          type="range"
+          min={120}
+          max={600}
+          step={10}
+          value={cHeight}
+          onChange={(e) => updateCarouselConfig({ carouselHeight: Number(e.target.value) })}
+          className="w-24 accent-[#C9A227]"
+        />
+        <span className="text-white font-mono text-xs w-10 text-right">{cHeight}px</span>
+      </label>
+
+      {/* Gap */}
+      <label className="flex items-center gap-2 text-xs text-gray-400">
+        Gap
+        <input
+          type="range"
+          min={0}
+          max={64}
+          step={2}
+          value={cGap}
+          onChange={(e) => updateCarouselConfig({ carouselGap: Number(e.target.value) })}
+          className="w-20 accent-[#C9A227]"
+        />
+        <span className="text-white font-mono text-xs w-10 text-right">{cGap}px</span>
+      </label>
+
+      {/* Speed */}
+      <label className="flex items-center gap-2 text-xs text-gray-400">
+        Speed
+        <input
+          type="range"
+          min={0.25}
+          max={4}
+          step={0.25}
+          value={cSpeed}
+          onChange={(e) => updateCarouselConfig({ carouselSpeed: Number(e.target.value) })}
+          className="w-20 accent-[#C9A227]"
+        />
+        <span className="text-white font-mono text-xs w-10 text-right">{cSpeed}x</span>
+      </label>
+
+      {/* Direction */}
+      <button
+        onClick={() => updateCarouselConfig({ carouselDirection: cDirection === 'left' ? 'right' : 'left' })}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-[#2A2A2A] text-gray-400 hover:text-white hover:bg-[#333] transition-colors"
+      >
+        <ArrowLeftRight className="w-3.5 h-3.5" />
+        {cDirection === 'left' ? 'Left' : 'Right'}
+      </button>
+    </div>
+  );
+
   // ---- Render the appropriate layout ----
   const renderLayout = (imageList: EditableImageField[], editable: boolean) => {
     switch (currentLayout) {
@@ -1046,6 +1206,8 @@ export function EditableImageGallery({
         return renderMasonryLayout(imageList, editable);
       case 'filmstrip':
         return renderFilmstripLayout(imageList, editable);
+      case 'carousel':
+        return renderCarouselLayout(imageList, editable);
       case 'grid':
       default:
         return renderGridLayout(imageList, editable);
@@ -1127,6 +1289,7 @@ export function EditableImageGallery({
             {currentLayout === 'single' && (
               <FitSelector fit={currentFit} onChange={handleFitChange} />
             )}
+            {currentLayout === 'carousel' && renderCarouselControls()}
           </div>
         )}
 
