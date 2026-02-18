@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Folder,
   FolderOpen,
@@ -11,38 +11,47 @@ import {
   Video,
   Layers,
   X,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import type { MediaCollection } from '@/types/media';
 
 interface MediaFolderTreeProps {
   selectedCollectionId?: string;
   onSelectCollection: (collectionId: string | undefined) => void;
+  onDropMedia?: (mediaIds: string[], collectionId: string | undefined) => void;
+  collections: MediaCollection[];
+  onCollectionsChange: () => void;
 }
 
 export default function MediaFolderTree({
   selectedCollectionId,
   onSelectCollection,
+  onDropMedia,
+  collections,
+  onCollectionsChange,
 }: MediaFolderTreeProps) {
-  const [collections, setCollections] = useState<MediaCollection[]>([]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [isCreating, setIsCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [dragOverId, setDragOverId] = useState<string | null | 'root'>(null);
+  const [contextMenu, setContextMenu] = useState<{ collectionId: string; x: number; y: number } | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
+  // Click-away to dismiss context menu
   useEffect(() => {
-    fetchCollections();
-  }, []);
-
-  const fetchCollections = async () => {
-    try {
-      const res = await fetch('/api/admin/media/collections');
-      if (res.ok) {
-        const data = await res.json();
-        setCollections(data);
+    if (!contextMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
       }
-    } catch {
-      // Silently fail
-    }
-  };
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [contextMenu]);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -57,7 +66,37 @@ export default function MediaFolderTree({
       });
       setNewName('');
       setIsCreating(false);
-      fetchCollections();
+      onCollectionsChange();
+    } catch {
+      // Silently fail
+    }
+  };
+
+  const handleRename = async (collectionId: string) => {
+    if (!renameValue.trim()) return;
+    try {
+      await fetch(`/api/admin/media/collections/${collectionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: renameValue.trim() }),
+      });
+      setRenamingId(null);
+      onCollectionsChange();
+    } catch {
+      // Silently fail
+    }
+  };
+
+  const handleDeleteFolder = async (collectionId: string) => {
+    try {
+      await fetch(`/api/admin/media/collections/${collectionId}`, {
+        method: 'DELETE',
+      });
+      setDeleteConfirmId(null);
+      if (selectedCollectionId === collectionId) {
+        onSelectCollection(undefined);
+      }
+      onCollectionsChange();
     } catch {
       // Silently fail
     }
@@ -72,6 +111,32 @@ export default function MediaFolderTree({
     });
   };
 
+  const handleDragOver = (e: React.DragEvent, id: string | 'root') => {
+    if (e.dataTransfer.types.includes('application/x-media-ids')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverId(id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, collectionId: string | undefined) => {
+    e.preventDefault();
+    setDragOverId(null);
+    const data = e.dataTransfer.getData('application/x-media-ids');
+    if (data && onDropMedia) {
+      try {
+        const mediaIds = JSON.parse(data) as string[];
+        onDropMedia(mediaIds, collectionId);
+      } catch {
+        // Invalid data
+      }
+    }
+  };
+
   // Build tree from flat list
   const rootCollections = collections.filter((c) => !c.parentId);
   const getChildren = (parentId: string) =>
@@ -81,15 +146,65 @@ export default function MediaFolderTree({
     const children = getChildren(collection.collectionId);
     const isExpanded = expandedIds.has(collection.collectionId);
     const isSelected = selectedCollectionId === collection.collectionId;
+    const isDragOver = dragOverId === collection.collectionId;
+
+    if (renamingId === collection.collectionId) {
+      return (
+        <div key={collection.collectionId} className="flex items-center gap-1 px-3 py-1" style={{ paddingLeft: `${12 + depth * 16}px` }}>
+          <input
+            autoFocus
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleRename(collection.collectionId);
+              if (e.key === 'Escape') setRenamingId(null);
+            }}
+            onBlur={() => handleRename(collection.collectionId)}
+            className="flex-1 px-2 py-1 bg-jhr-black border border-jhr-gold/50 rounded text-xs text-jhr-white focus:outline-none focus:ring-1 focus:ring-jhr-gold/50"
+          />
+        </div>
+      );
+    }
+
+    if (deleteConfirmId === collection.collectionId) {
+      return (
+        <div key={collection.collectionId} className="px-3 py-1.5 space-y-1" style={{ paddingLeft: `${12 + depth * 16}px` }}>
+          <p className="text-xs text-red-400">Delete &ldquo;{collection.name}&rdquo;?</p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => handleDeleteFolder(collection.collectionId)}
+              className="px-2 py-0.5 rounded text-xs bg-red-500 text-white hover:bg-red-600"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setDeleteConfirmId(null)}
+              className="px-2 py-0.5 rounded text-xs border border-jhr-black-lighter text-jhr-white-dim hover:bg-jhr-black-lighter"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div key={collection.collectionId}>
         <button
           onClick={() => onSelectCollection(collection.collectionId)}
-          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-            isSelected
-              ? 'bg-jhr-gold/20 text-jhr-gold'
-              : 'text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter'
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setContextMenu({ collectionId: collection.collectionId, x: e.clientX, y: e.clientY });
+          }}
+          onDragOver={(e) => handleDragOver(e, collection.collectionId)}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, collection.collectionId)}
+          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all ${
+            isDragOver
+              ? 'ring-2 ring-jhr-gold bg-jhr-gold/10 text-jhr-gold'
+              : isSelected
+                ? 'bg-jhr-gold/20 text-jhr-gold'
+                : 'text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter'
           }`}
           style={{ paddingLeft: `${12 + depth * 16}px` }}
         >
@@ -128,10 +243,15 @@ export default function MediaFolderTree({
       {/* All media */}
       <button
         onClick={() => onSelectCollection(undefined)}
-        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-          !selectedCollectionId
-            ? 'bg-jhr-gold/20 text-jhr-gold'
-            : 'text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter'
+        onDragOver={(e) => handleDragOver(e, 'root')}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, undefined)}
+        className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all ${
+          dragOverId === 'root'
+            ? 'ring-2 ring-jhr-gold bg-jhr-gold/10 text-jhr-gold'
+            : !selectedCollectionId
+              ? 'bg-jhr-gold/20 text-jhr-gold'
+              : 'text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter'
         }`}
       >
         <Layers className="w-4 h-4" />
@@ -170,6 +290,38 @@ export default function MediaFolderTree({
           <FolderPlus className="w-4 h-4" />
           New Folder
         </button>
+      )}
+
+      {/* Context menu */}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-50 w-36 bg-jhr-black-light border border-jhr-black-lighter rounded-lg shadow-xl py-1"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button
+            onClick={() => {
+              const col = collections.find((c) => c.collectionId === contextMenu.collectionId);
+              setRenameValue(col?.name || '');
+              setRenamingId(contextMenu.collectionId);
+              setContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-jhr-white hover:bg-jhr-black-lighter transition-colors"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Rename
+          </button>
+          <button
+            onClick={() => {
+              setDeleteConfirmId(contextMenu.collectionId);
+              setContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete
+          </button>
+        </div>
       )}
     </div>
   );

@@ -12,10 +12,11 @@ import {
   AlertTriangle,
   Image as ImageIcon,
   Video,
+  FolderInput,
 } from 'lucide-react';
 import MediaTagInput from './MediaTagInput';
 import MediaAIPanel from './MediaAIPanel';
-import type { MediaItem, MediaUsage } from '@/types/media';
+import type { MediaItem, MediaUsage, MediaCollection } from '@/types/media';
 
 interface MediaDetailPanelProps {
   item: MediaItem | null;
@@ -23,6 +24,8 @@ interface MediaDetailPanelProps {
   onSave: (mediaId: string, updates: Record<string, unknown>) => Promise<void>;
   onDelete: (mediaId: string) => Promise<void>;
   onGenerateAI: (mediaId: string) => Promise<void>;
+  collections: MediaCollection[];
+  onMoveToFolder: (mediaId: string, collectionId: string | undefined) => Promise<void>;
 }
 
 function formatFileSize(bytes: number): string {
@@ -39,6 +42,8 @@ export default function MediaDetailPanel({
   onSave,
   onDelete,
   onGenerateAI,
+  collections,
+  onMoveToFolder,
 }: MediaDetailPanelProps) {
   const [title, setTitle] = useState('');
   const [alt, setAlt] = useState('');
@@ -49,6 +54,7 @@ export default function MediaDetailPanel({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [usage, setUsage] = useState<MediaUsage[]>([]);
   const [copied, setCopied] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
     if (item) {
@@ -87,6 +93,15 @@ export default function MediaDetailPanel({
     }
   };
 
+  const handleMoveChange = async (collectionId: string) => {
+    setIsMoving(true);
+    try {
+      await onMoveToFolder(item.mediaId, collectionId || undefined);
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
   const copyUrl = () => {
     navigator.clipboard.writeText(item.publicUrl);
     setCopied(true);
@@ -95,6 +110,7 @@ export default function MediaDetailPanel({
 
   const previewSrc = item.thumbnailUrl || item.publicUrl;
   const isVideo = item.mediaType === 'video';
+  const currentFolder = collections.find((c) => c.collectionId === item.collectionId);
 
   return (
     <div className="fixed inset-y-0 right-0 w-full max-w-md bg-jhr-black-light border-l border-jhr-black-lighter shadow-2xl z-40 flex flex-col overflow-hidden">
@@ -192,6 +208,31 @@ export default function MediaDetailPanel({
               {new Date(item.createdAt).toLocaleDateString()}
             </p>
           </div>
+          <div>
+            <span className="text-jhr-white-dim">Folder</span>
+            <p className="text-jhr-white">{currentFolder?.name || 'None'}</p>
+          </div>
+        </div>
+
+        {/* Move to folder */}
+        <div>
+          <label className="flex items-center gap-1.5 text-sm font-medium text-jhr-white-dim mb-1">
+            <FolderInput className="w-4 h-4" />
+            Move to Folder
+          </label>
+          <select
+            value={item.collectionId || ''}
+            onChange={(e) => handleMoveChange(e.target.value)}
+            disabled={isMoving}
+            className="w-full px-3 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-sm text-jhr-white focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 disabled:opacity-50"
+          >
+            <option value="">No folder</option>
+            {collections.map((col) => (
+              <option key={col.collectionId} value={col.collectionId}>
+                {col.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Editable fields */}

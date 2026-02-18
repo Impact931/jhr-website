@@ -15,6 +15,7 @@ import type { MediaItem } from '@/types/media';
 interface MediaCardProps {
   item: MediaItem;
   isSelected: boolean;
+  selectedIds: Set<string>;
   onSelect: (mediaId: string, multi: boolean) => void;
   onClick: (item: MediaItem) => void;
 }
@@ -27,14 +28,25 @@ function formatFileSize(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-export default function MediaCard({ item, isSelected, onSelect, onClick }: MediaCardProps) {
+export default function MediaCard({ item, isSelected, selectedIds, onSelect, onClick }: MediaCardProps) {
   const isDocument = item.mediaType === 'document';
   const thumbnailSrc = isDocument ? undefined : (item.thumbnailUrl || item.publicUrl);
   const isVideo = item.mediaType === 'video';
   const hasAI = !!item.aiMetadata?.altText;
 
+  const handleDragStart = (e: React.DragEvent) => {
+    // If this card is selected, drag all selected IDs; otherwise just this one
+    const ids = isSelected && selectedIds.size > 1
+      ? Array.from(selectedIds)
+      : [item.mediaId];
+    e.dataTransfer.setData('application/x-media-ids', JSON.stringify(ids));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
   return (
     <div
+      draggable
+      onDragStart={handleDragStart}
       className={`group relative bg-jhr-black-light rounded-xl border overflow-hidden transition-all cursor-pointer ${
         isSelected
           ? 'border-jhr-gold ring-2 ring-jhr-gold/30'

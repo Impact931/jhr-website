@@ -62,6 +62,15 @@ export default function MediaGrid({
     );
   }
 
+  const handleListDragStart = (e: React.DragEvent, item: MediaItem) => {
+    const isSelected = selectedIds.has(item.mediaId);
+    const ids = isSelected && selectedIds.size > 1
+      ? Array.from(selectedIds)
+      : [item.mediaId];
+    e.dataTransfer.setData('application/x-media-ids', JSON.stringify(ids));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
   if (viewMode === 'list') {
     return (
       <div className="space-y-1">
@@ -76,6 +85,8 @@ export default function MediaGrid({
         {items.map((item) => (
           <div
             key={item.mediaId}
+            draggable
+            onDragStart={(e) => handleListDragStart(e, item)}
             onClick={() => onItemClick(item)}
             className={`grid grid-cols-[auto_1fr_100px_100px_120px] gap-4 items-center px-4 py-2 rounded-lg cursor-pointer transition-colors ${
               selectedIds.has(item.mediaId)
@@ -139,6 +150,7 @@ export default function MediaGrid({
           key={item.mediaId}
           item={item}
           isSelected={selectedIds.has(item.mediaId)}
+          selectedIds={selectedIds}
           onSelect={onSelect}
           onClick={onItemClick}
         />

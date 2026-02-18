@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Tag, FolderInput, Trash2, X, Loader2 } from 'lucide-react';
+import type { MediaCollection } from '@/types/media';
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -22,6 +23,29 @@ export default function BulkActionBar({
   const [tagInput, setTagInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [collections, setCollections] = useState<MediaCollection[]>([]);
+  const moveRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (action === 'move' && collections.length === 0) {
+      fetch('/api/admin/media/collections')
+        .then((r) => r.json())
+        .then((data) => setCollections(data))
+        .catch(() => {});
+    }
+  }, [action, collections.length]);
+
+  // Click-away to dismiss move picker
+  useEffect(() => {
+    if (action !== 'move') return;
+    const handler = (e: MouseEvent) => {
+      if (moveRef.current && !moveRef.current.contains(e.target as Node)) {
+        setAction(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [action]);
 
   if (selectedCount === 0) return null;
 
@@ -32,6 +56,16 @@ export default function BulkActionBar({
       const tags = tagInput.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);
       await onBulkTag(tags);
       setTagInput('');
+      setAction(null);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMove = async (collectionId: string) => {
+    setIsProcessing(true);
+    try {
+      await onBulkMove(collectionId);
       setAction(null);
     } finally {
       setIsProcessing(false);
@@ -80,6 +114,36 @@ export default function BulkActionBar({
             <X className="w-4 h-4" />
           </button>
         </div>
+      ) : action === 'move' ? (
+        <div ref={moveRef} className="relative flex items-center gap-2">
+          <div className="absolute bottom-full mb-2 left-0 w-56 max-h-60 overflow-y-auto bg-jhr-black border border-jhr-black-lighter rounded-lg shadow-xl py-1">
+            <button
+              onClick={() => handleMove('')}
+              disabled={isProcessing}
+              className="w-full text-left px-3 py-1.5 text-sm text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter transition-colors"
+            >
+              No folder (root)
+            </button>
+            {collections.map((col) => (
+              <button
+                key={col.collectionId}
+                onClick={() => handleMove(col.collectionId)}
+                disabled={isProcessing}
+                className="w-full text-left px-3 py-1.5 text-sm text-jhr-white hover:bg-jhr-black-lighter transition-colors truncate"
+              >
+                {col.name}
+              </button>
+            ))}
+          </div>
+          {isProcessing && <Loader2 className="w-4 h-4 animate-spin text-jhr-white" />}
+          <span className="text-sm text-jhr-white-dim">Pick a folder</span>
+          <button
+            onClick={() => setAction(null)}
+            className="p-1 text-jhr-white-dim hover:text-jhr-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       ) : showDeleteConfirm ? (
         <div className="flex items-center gap-2">
           <span className="text-sm text-red-400">Delete {selectedCount} items?</span>
@@ -105,6 +169,13 @@ export default function BulkActionBar({
           >
             <Tag className="w-4 h-4" />
             Tag
+          </button>
+          <button
+            onClick={() => setAction('move')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-jhr-white hover:bg-jhr-black-lighter transition-colors"
+          >
+            <FolderInput className="w-4 h-4" />
+            Move
           </button>
           <button
             onClick={() => setShowDeleteConfirm(true)}

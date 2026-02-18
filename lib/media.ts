@@ -215,7 +215,7 @@ export async function listCollections(): Promise<MediaCollection[]> {
 
 export async function updateCollection(
   collectionId: string,
-  updates: Partial<Pick<MediaCollection, 'name' | 'slug' | 'description' | 'parentId' | 'coverMediaId' | 'sortOrder'>>
+  updates: Partial<Pick<MediaCollection, 'name' | 'slug' | 'description' | 'parentId' | 'coverMediaId' | 'sortOrder' | 'mediaCount'>>
 ): Promise<MediaCollection | undefined> {
   const existing = await getCollection(collectionId);
   if (!existing) return undefined;
@@ -453,11 +453,34 @@ export async function bulkOperation(action: MediaBulkAction): Promise<MediaBulkR
           break;
         }
 
-        case 'move':
-          await updateMediaItem(mediaId, {
-            collectionId: action.collectionId || undefined,
-          });
+        case 'move': {
+          const existingItem = await getMediaItem(mediaId);
+          if (!existingItem) throw new Error('Not found');
+          const oldCollectionId = existingItem.collectionId;
+          const newCollectionId = action.collectionId || undefined;
+
+          await updateMediaItem(mediaId, { collectionId: newCollectionId });
+
+          // Decrement old folder's mediaCount
+          if (oldCollectionId) {
+            const oldCol = await getCollection(oldCollectionId);
+            if (oldCol) {
+              await updateCollection(oldCollectionId, {
+                mediaCount: Math.max(0, oldCol.mediaCount - 1),
+              });
+            }
+          }
+          // Increment new folder's mediaCount
+          if (newCollectionId) {
+            const newCol = await getCollection(newCollectionId);
+            if (newCol) {
+              await updateCollection(newCollectionId, {
+                mediaCount: newCol.mediaCount + 1,
+              });
+            }
+          }
           break;
+        }
       }
       results.success++;
     } catch (err) {

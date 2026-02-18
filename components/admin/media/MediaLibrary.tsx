@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, ChevronRight } from 'lucide-react';
 import MediaGrid from './MediaGrid';
 import MediaToolbar from './MediaToolbar';
 import MediaUploadZone from './MediaUploadZone';
@@ -10,7 +10,7 @@ import MediaFolderTree from './MediaFolderTree';
 import BulkActionBar from './BulkActionBar';
 import VideoEmbedInput from './VideoEmbedInput';
 import MediaStorageDashboard from './MediaStorageDashboard';
-import type { MediaItem, MediaFilterState, MediaListResponse } from '@/types/media';
+import type { MediaItem, MediaCollection, MediaFilterState, MediaListResponse } from '@/types/media';
 
 export default function MediaLibrary() {
   const [items, setItems] = useState<MediaItem[]>([]);
@@ -23,12 +23,29 @@ export default function MediaLibrary() {
   const [showVideoEmbed, setShowVideoEmbed] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [statsRefreshKey, setStatsRefreshKey] = useState(0);
+  const [collections, setCollections] = useState<MediaCollection[]>([]);
   const [filters, setFilters] = useState<MediaFilterState>({
     tags: [],
     search: '',
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
+
+  const fetchCollections = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/media/collections');
+      if (res.ok) {
+        const data = await res.json();
+        setCollections(data);
+      }
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCollections();
+  }, [fetchCollections]);
 
   const fetchMedia = useCallback(async (append = false) => {
     if (!append) setIsLoading(true);
@@ -168,9 +185,10 @@ export default function MediaLibrary() {
         }),
       });
       fetchMedia();
+      fetchCollections();
       setSelectedIds(new Set());
     },
-    [selectedIds, fetchMedia]
+    [selectedIds, fetchMedia, fetchCollections]
   );
 
   const handleBulkDelete = useCallback(async () => {
@@ -186,6 +204,67 @@ export default function MediaLibrary() {
     setSelectedIds(new Set());
     setDetailItem(null);
   }, [selectedIds, fetchMedia]);
+
+  const handleDropMedia = useCallback(
+    async (mediaIds: string[], collectionId: string | undefined) => {
+      await fetch('/api/admin/media/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'move',
+          mediaIds,
+          collectionId: collectionId || '',
+        }),
+      });
+      fetchMedia();
+      fetchCollections();
+      setSelectedIds(new Set());
+    },
+    [fetchMedia, fetchCollections]
+  );
+
+  const handleMoveToFolder = useCallback(
+    async (mediaId: string, collectionId: string | undefined) => {
+      await fetch('/api/admin/media/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'move',
+          mediaIds: [mediaId],
+          collectionId: collectionId || '',
+        }),
+      });
+      // Update the detail item locally
+      setDetailItem((prev) =>
+        prev && prev.mediaId === mediaId
+          ? { ...prev, collectionId: collectionId || '' }
+          : prev
+      );
+      setItems((prev) =>
+        prev.map((i) =>
+          i.mediaId === mediaId ? { ...i, collectionId: collectionId || '' } : i
+        )
+      );
+      fetchCollections();
+    },
+    [fetchCollections]
+  );
+
+  // Build breadcrumb path from current collectionId
+  const buildBreadcrumb = (): { id: string | undefined; name: string }[] => {
+    if (!filters.collectionId) return [];
+    const path: { id: string | undefined; name: string }[] = [];
+    let currentId: string | undefined = filters.collectionId;
+    while (currentId) {
+      const col = collections.find((c) => c.collectionId === currentId);
+      if (!col) break;
+      path.unshift({ id: col.collectionId, name: col.name });
+      currentId = col.parentId;
+    }
+    return path;
+  };
+
+  const breadcrumb = buildBreadcrumb();
 
   return (
     <div className="space-y-6">
@@ -247,12 +326,42 @@ export default function MediaLibrary() {
               onSelectCollection={(id) =>
                 setFilters((prev) => ({ ...prev, collectionId: id }))
               }
+              onDropMedia={handleDropMedia}
+              collections={collections}
+              onCollectionsChange={fetchCollections}
             />
           </div>
         </div>
 
         {/* Main grid */}
         <div className="flex-1 space-y-4">
+          {/* Breadcrumb */}
+          {breadcrumb.length > 0 && (
+            <nav className="flex items-center gap-1 text-sm">
+              <button
+                onClick={() => setFilters((prev) => ({ ...prev, collectionId: undefined }))}
+                className="text-jhr-white-dim hover:text-jhr-white transition-colors"
+              >
+                All Media
+              </button>
+              {breadcrumb.map((crumb) => (
+                <span key={crumb.id} className="flex items-center gap-1">
+                  <ChevronRight className="w-3 h-3 text-jhr-white-dim" />
+                  <button
+                    onClick={() => setFilters((prev) => ({ ...prev, collectionId: crumb.id }))}
+                    className={`transition-colors ${
+                      crumb.id === filters.collectionId
+                        ? 'text-jhr-gold font-medium'
+                        : 'text-jhr-white-dim hover:text-jhr-white'
+                    }`}
+                  >
+                    {crumb.name}
+                  </button>
+                </span>
+              ))}
+            </nav>
+          )}
+
           <MediaToolbar
             filters={filters}
             onFilterChange={(update) =>
@@ -294,6 +403,8 @@ export default function MediaLibrary() {
           onSave={handleSave}
           onDelete={handleDelete}
           onGenerateAI={handleGenerateAI}
+          collections={collections}
+          onMoveToFolder={handleMoveToFolder}
         />
       )}
 
