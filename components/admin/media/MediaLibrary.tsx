@@ -297,7 +297,7 @@ export default function MediaLibrary() {
 
       {/* Upload zone */}
       {showUpload && (
-        <MediaUploadZone onUploadComplete={handleUploadComplete} />
+        <MediaUploadZone onUploadComplete={handleUploadComplete} collectionId={filters.collectionId} />
       )}
 
       {/* Video embed */}

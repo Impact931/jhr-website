@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { X, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Folder } from 'lucide-react';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import MediaGrid from './MediaGrid';
 import MediaToolbar from './MediaToolbar';
 import MediaUploadZone from './MediaUploadZone';
-import type { MediaItem, MediaFilterState, MediaPickerOptions, MediaPickerResult, MediaType } from '@/types/media';
+import type { MediaItem, MediaCollection, MediaFilterState, MediaPickerOptions, MediaPickerResult, MediaType } from '@/types/media';
 
 interface MediaPickerProps {
   isOpen: boolean;
@@ -31,6 +31,7 @@ export default function MediaPicker({
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showUpload, setShowUpload] = useState(false);
+  const [collections, setCollections] = useState<MediaCollection[]>([]);
   const [filters, setFilters] = useState<MediaFilterState>({
     tags: [],
     search: '',
@@ -41,12 +42,25 @@ export default function MediaPicker({
   const fetchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingMediaIdsRef = useRef<string[]>([]);
 
+  const fetchCollections = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/media/collections');
+      if (res.ok) {
+        const data = await res.json();
+        setCollections(data);
+      }
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
   const fetchMedia = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
       if (filters.search) params.set('search', filters.search);
       if (filters.mediaType) params.set('mediaType', filters.mediaType);
+      if (filters.collectionId) params.set('collectionId', filters.collectionId);
       params.set('sortBy', filters.sortBy);
       params.set('sortOrder', filters.sortOrder);
       params.set('limit', '50');
@@ -66,10 +80,11 @@ export default function MediaPicker({
   useEffect(() => {
     if (isOpen) {
       fetchMedia();
+      fetchCollections();
       setSelectedIds(new Set());
       pendingMediaIdsRef.current = [];
     }
-  }, [isOpen, fetchMedia]);
+  }, [isOpen, fetchMedia, fetchCollections]);
 
   // Escape key to close modal — always responsive
   useEffect(() => {
@@ -196,21 +211,44 @@ export default function MediaPicker({
           {showUpload ? (
             <MediaUploadZone
               onUploadComplete={handleUploadComplete}
+              collectionId={filters.collectionId}
               accept={options.allowedTypes?.length
                 ? options.allowedTypes.map(t => ACCEPT_BY_TYPE[t]).join(',')
                 : undefined}
             />
           ) : (
             <div className="space-y-4">
-              <MediaToolbar
-                filters={filters}
-                onFilterChange={(update) =>
-                  setFilters((prev) => ({ ...prev, ...update }))
-                }
-                viewMode="grid"
-                onViewModeChange={() => {}}
-                totalCount={items.length}
-              />
+              {/* Folder filter + toolbar */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <Folder className="w-4 h-4 text-jhr-white-dim" />
+                  <select
+                    value={filters.collectionId || ''}
+                    onChange={(e) =>
+                      setFilters((prev) => ({ ...prev, collectionId: e.target.value || undefined }))
+                    }
+                    className="px-2 py-1.5 bg-jhr-black border border-jhr-black-lighter rounded-lg text-sm text-jhr-white focus:outline-none focus:ring-1 focus:ring-jhr-gold/50"
+                  >
+                    <option value="">All Folders</option>
+                    {collections.map((col) => (
+                      <option key={col.collectionId} value={col.collectionId}>
+                        {col.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <MediaToolbar
+                    filters={filters}
+                    onFilterChange={(update) =>
+                      setFilters((prev) => ({ ...prev, ...update }))
+                    }
+                    viewMode="grid"
+                    onViewModeChange={() => {}}
+                    totalCount={items.length}
+                  />
+                </div>
+              </div>
               <MediaGrid
                 items={items}
                 selectedIds={selectedIds}

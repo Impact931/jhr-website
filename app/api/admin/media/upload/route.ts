@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generatePresignedUploadUrl, getPublicUrl } from '@/lib/s3';
-import { generateMediaId, createMediaItem } from '@/lib/media';
+import { generateMediaId, createMediaItem, getCollection, updateCollection } from '@/lib/media';
 import {
   ALLOWED_IMAGE_TYPES,
   ALLOWED_VIDEO_TYPES,
@@ -17,7 +17,7 @@ import type { MediaUploadRequest, MediaUploadResponse, MediaType } from '@/types
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as MediaUploadRequest;
-    const { filename, contentType, fileSize, contentHash } = body;
+    const { filename, contentType, fileSize, contentHash, collectionId } = body;
 
     if (!filename || !contentType) {
       return NextResponse.json(
@@ -69,11 +69,19 @@ export async function POST(request: NextRequest) {
         variants: { original: s3Key },
         fileSize: fileSize || 0,
         contentHash,
+        collectionId: collectionId || undefined,
         tags: [],
         publicUrl,
         createdAt: now,
         updatedAt: now,
       });
+      // Increment folder mediaCount
+      if (collectionId) {
+        const col = await getCollection(collectionId);
+        if (col) {
+          await updateCollection(collectionId, { mediaCount: col.mediaCount + 1 });
+        }
+      }
     } catch (dbError) {
       // Log but don't fail — the S3 upload can still proceed
       console.warn('Failed to create DynamoDB media record:', dbError);

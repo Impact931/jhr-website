@@ -57,7 +57,7 @@ export default function MediaCard({ item, isSelected, selectedIds, onSelect, onC
       <button
         onClick={(e) => {
           e.stopPropagation();
-          onSelect(item.mediaId, e.shiftKey || e.metaKey);
+          onSelect(item.mediaId, true);
         }}
         className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
           isSelected

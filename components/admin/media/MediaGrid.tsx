@@ -99,7 +99,7 @@ export default function MediaGrid({
               checked={selectedIds.has(item.mediaId)}
               onClick={(e) => {
                 e.stopPropagation();
-                onSelect(item.mediaId, e.shiftKey || e.metaKey);
+                onSelect(item.mediaId, true);
               }}
               readOnly
               className="w-4 h-4 rounded border-jhr-black-lighter accent-jhr-gold"

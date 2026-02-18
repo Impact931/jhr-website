@@ -9,6 +9,7 @@ interface MediaUploadZoneProps {
   accept?: string;
   maxSizeMB?: number;
   compact?: boolean;
+  collectionId?: string;
 }
 
 interface UploadFile {
@@ -121,6 +122,7 @@ export default function MediaUploadZone({
   accept = 'image/jpeg,image/png,image/gif,image/webp,image/tiff,video/mp4,video/webm,application/pdf',
   maxSizeMB = 50,
   compact = false,
+  collectionId,
 }: MediaUploadZoneProps) {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -200,6 +202,7 @@ export default function MediaUploadZone({
             contentType: optimizedFile.type,
             fileSize: optimizedFile.size,
             contentHash,
+            collectionId,
           }),
         });
 

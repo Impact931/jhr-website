@@ -203,6 +203,7 @@ export interface MediaUploadRequest {
   contentType: string;
   fileSize: number;
   contentHash?: string; // Client-side SHA-256 for dedup
+  collectionId?: string; // Upload directly into a folder
 }
 
 export interface MediaUploadResponse {
