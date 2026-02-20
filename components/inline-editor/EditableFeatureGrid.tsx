@@ -911,9 +911,19 @@ function HorizontalCardView({
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
             >
-              {/* Image or Icon — left side */}
-              <div className="w-1/4 flex-shrink-0">
-                {feature.image?.src ? (
+              {/* Video, Image, or Icon — left side */}
+              <div className={feature.videoUrl ? 'w-2/5 flex-shrink-0' : 'w-1/4 flex-shrink-0'}>
+                {feature.videoUrl ? (
+                  <div className="relative aspect-video rounded-lg overflow-hidden bg-[#1A1A1A]">
+                    <iframe
+                      src={getYouTubeEmbedUrl(feature.videoUrl)}
+                      title={feature.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                    />
+                  </div>
+                ) : feature.image?.src ? (
                   <div className="relative aspect-square rounded-lg overflow-hidden bg-[#1A1A1A]">
                     <SmartImage
                       src={feature.image.src}
