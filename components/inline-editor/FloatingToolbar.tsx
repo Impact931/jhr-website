@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { Editor } from '@tiptap/core';
 import {
   Bold,
@@ -444,7 +445,7 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
     ? 'bottom-full mb-1'
     : 'top-full mt-1';
 
-  return (
+  return createPortal(
     <div
       ref={toolbarRef}
       onMouseDown={(e) => {
@@ -454,7 +455,7 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
         // Start drag
         handleDragStart(e);
       }}
-      className="fixed z-[100]"
+      className="fixed z-[9999]"
       style={
         dragPos
           ? { left: dragPos.x, top: dragPos.y, cursor: 'default' }
@@ -790,6 +791,7 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
