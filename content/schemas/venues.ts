@@ -141,6 +141,7 @@ export const VENUES_GRID: FeatureGridSectionContent = {
       description:
         'Nashville\u2019s premier convention center. We know the marshaling yard procedures, the hand-carry policies, and every corner of this 2.1 million square foot facility.',
       link: { text: 'View Venue', href: '/venues/music-city-center' },
+      category: 'Convention Center',
     },
     {
       id: 'venues-grid-card-1',
@@ -149,6 +150,7 @@ export const VENUES_GRID: FeatureGridSectionContent = {
       description:
         'A unique venue with challenging lighting conditions. We\u2019re EAC-ready and understand the strict vendor policies, atrium humidity, and mixed lighting environments.',
       link: { text: 'View Venue', href: '/venues/gaylord-opryland' },
+      category: 'Convention Center',
     },
     {
       id: 'venues-grid-card-2',
@@ -157,6 +159,7 @@ export const VENUES_GRID: FeatureGridSectionContent = {
       description:
         'Connected to the Music City Center, the Renaissance offers seamless access for convention attendees. We coordinate across both properties effortlessly.',
       link: { text: 'View Venue', href: '/venues/renaissance-hotel-nashville' },
+      category: 'Hotel',
     },
     {
       id: 'venues-grid-card-3',
@@ -165,6 +168,7 @@ export const VENUES_GRID: FeatureGridSectionContent = {
       description:
         'A luxury property in the heart of downtown. We understand the service expectations and deliver photography that matches the venue\u2019s standards.',
       link: { text: 'View Venue', href: '/venues/omni-hotel-nashville' },
+      category: 'Hotel',
     },
     {
       id: 'venues-grid-card-4',
@@ -173,6 +177,7 @@ export const VENUES_GRID: FeatureGridSectionContent = {
       description:
         'Nashville\u2019s largest hotel with extensive event spaces. We\u2019ve documented countless corporate events and galas in this premium property.',
       link: { text: 'View Venue', href: '/venues/jw-marriott-nashville' },
+      category: 'Hotel',
     },
     {
       id: 'venues-grid-card-5',
@@ -181,6 +186,7 @@ export const VENUES_GRID: FeatureGridSectionContent = {
       description:
         'A versatile property popular with corporate groups. We know the logistics and deliver consistent results across their event spaces.',
       link: { text: 'View Venue', href: '/venues/embassy-suites-nashville' },
+      category: 'Hotel',
     },
     {
       id: 'venues-grid-card-6',
@@ -189,6 +195,7 @@ export const VENUES_GRID: FeatureGridSectionContent = {
       description:
         'A unique venue combining event space with dining and entertainment. We capture the energy and intimate atmosphere perfectly.',
       link: { text: 'View Venue', href: '/venues/city-winery-nashville' },
+      category: 'Event Center',
     },
     {
       id: 'venues-grid-card-7',
@@ -197,6 +204,7 @@ export const VENUES_GRID: FeatureGridSectionContent = {
       description:
         'A beautiful campus with diverse event spaces. From academic conferences to corporate retreats, we know the campus and its possibilities.',
       link: { text: 'View Venue', href: '/venues/belmont-university' },
+      category: 'Event Center',
     },
   ],
 };

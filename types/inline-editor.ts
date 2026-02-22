@@ -166,6 +166,8 @@ export interface FeatureCard {
   image?: { src: string; alt: string; positionY?: number; fit?: 'cover' | 'contain' | 'natural' };
   /** Optional YouTube video URL. When present, renders an embedded player. */
   videoUrl?: string;
+  /** Optional category tag for filtering (e.g., venue type). */
+  category?: string;
 }
 
 /**
