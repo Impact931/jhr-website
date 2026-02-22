@@ -1828,6 +1828,31 @@ export function EditableFeatureGrid({
                   </button>
                 ) : null}
 
+                {/* Category selector */}
+                {canEdit && (
+                  <div className="mt-3 flex items-center gap-1.5">
+                    <Tag className="w-3 h-3 text-gray-500" />
+                    <select
+                      value={feature.category || ''}
+                      onChange={(e) => {
+                        const val = e.target.value || undefined;
+                        const newFeatures = features.map((f) =>
+                          f.id === feature.id ? { ...f, category: val } : f
+                        );
+                        updateFeatures(newFeatures);
+                      }}
+                      className="bg-[#1A1A1A] text-xs text-gray-400 border border-[#333] rounded px-2 py-1 hover:border-[#C9A227]/60 focus:border-[#C9A227] focus:outline-none transition-colors cursor-pointer"
+                    >
+                      <option value="">No category</option>
+                      <option value="Hotel">Hotel</option>
+                      <option value="Convention Center">Convention Center</option>
+                      <option value="Event Center">Event Center</option>
+                      <option value="Honky Tonk">Honky Tonk</option>
+                      <option value="Park">Park</option>
+                    </select>
+                  </div>
+                )}
+
                 {/* Edit mode border */}
                 {canEdit && (
                   <div className="absolute inset-0 border-2 border-dashed border-transparent group-hover/card:border-[#C9A227]/40 rounded-xl pointer-events-none transition-colors" />
