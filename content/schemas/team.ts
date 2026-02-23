@@ -14,7 +14,9 @@
  * 0 (hero)   | Hero Banner (split)                 | EditableHero              | team:hero
  * 1          | Team Overview                       | EditableTextBlock          | team:team-overview
  * 2          | Meet the Team (Grid)                | EditableTeamGrid          | team:team
- * 3          | Join Our Team CTA                   | EditableCTA               | team:team-cta
+ * 3          | How We Develop Operators             | EditableFeatureGrid       | team:operator-program
+ * 4          | Stats Section                        | EditableStats             | team:stats
+ * 5          | Join Our Team CTA                   | EditableCTA               | team:team-cta
  */
 
 import type {
@@ -22,7 +24,9 @@ import type {
   PageSectionContent,
   HeroSectionContent,
   TextBlockSectionContent,
+  FeatureGridSectionContent,
   CTASectionContent,
+  StatsSectionContent,
   TeamGridSectionContent,
 } from '@/types/inline-editor';
 
@@ -241,13 +245,90 @@ export const TEAM_GRID: TeamGridSectionContent = {
 };
 
 /**
- * Section 3: Join Our Team CTA
+ * Section 3: How We Develop Certified Media Operators
+ * Component: EditableFeatureGrid (alternating layout with step numbers)
+ *
+ * Moved from About page — shows clients exactly how JHR ensures
+ * consistent quality through the force multiplier philosophy.
+ */
+export const TEAM_OPERATOR_PROGRAM: FeatureGridSectionContent = {
+  id: 'operator-program',
+  type: 'feature-grid',
+  order: 3,
+  seo: {
+    ariaLabel: 'How JHR Photography develops certified media operators',
+    sectionId: 'operator-program',
+    dataSectionName: 'operator-program',
+  },
+  heading: 'How We Develop Certified Media Operators',
+  subheading:
+    'In Special Forces, Jayson was a force multiplier — training people to succeed on their own with little or no resources. That\'s exactly how we build our team. No shortcuts. No hoping for the best.',
+  columns: 2,
+  displayMode: 'alternating',
+  showStepNumbers: true,
+  features: [
+    {
+      id: 'op-card-0',
+      icon: 'Users',
+      title: 'Recruited From Professional Networks',
+      description:
+        'We don\'t post on staffing marketplaces. Every operator comes through referral, military and first-responder networks, or direct vetting. We\'re looking for discipline and character first — camera skills can be sharpened. Attitude can\'t.',
+    },
+    {
+      id: 'op-card-1',
+      icon: 'Camera',
+      title: 'Trained in Our Studio on Fundamentals',
+      description:
+        'We have a full studio where operators work on the basics and fundamentals of photography — composition, lighting, exposure, equipment handling. But it doesn\'t stop at technical skills. Our people have to think like the client, anticipate needs before they\'re spoken, and deliver the value event professionals deserve.',
+    },
+    {
+      id: 'op-card-2',
+      icon: 'BookOpen',
+      title: 'Workshops, Classes, and Brand Voice',
+      description:
+        'This isn\'t just about taking good photos. We run workshops and classes that cover customer service, communication protocols, venue etiquette, and the JHR brand voice. Every operator learns to represent not just themselves, but your brand and ours — professionally, consistently, every time.',
+    },
+    {
+      id: 'op-card-3',
+      icon: 'Repeat',
+      title: 'Left Seat, Right Seat — Proven Before Deployed',
+      description:
+        'Before an operator works your event solo, they do ride-alongs. Left seat, right seat — like an internship. They shadow certified operators, then take the lead while being observed. We don\'t clear anyone for deployment until they can consistently produce quality work to standard and execute with the brand voice. It\'s no different than how Jayson built teams in the military. It\'s just a lot more fun.',
+    },
+  ],
+};
+
+/**
+ * Section 4: Stats Section
+ * Component: EditableStats (animated counters)
+ *
+ * Moved from About page — quantified social proof.
+ */
+export const TEAM_STATS: StatsSectionContent = {
+  id: 'stats',
+  type: 'stats',
+  order: 4,
+  seo: {
+    ariaLabel: 'JHR Photography key statistics and achievements',
+    sectionId: 'stats',
+    dataSectionName: 'stats',
+  },
+  stats: [
+    { id: 'stat-0', value: 500, suffix: '+', label: 'Events Covered' },
+    { id: 'stat-1', value: 15000, suffix: '+', label: 'Headshots Delivered' },
+    { id: 'stat-2', value: 100, suffix: '%', label: 'On-Time Delivery' },
+    { id: 'stat-3', value: 10, suffix: '+', label: 'Years Experience' },
+  ],
+};
+
+/**
+ * Section 5: Join Our Team CTA
  * Component: EditableCTA
  */
 export const TEAM_CTA: CTASectionContent = {
   id: 'team-cta',
   type: 'cta',
-  order: 3,
+  order: 5,
   seo: {
     ariaLabel: 'Work with JHR Photography - schedule a strategy call',
     sectionId: 'team-cta',
@@ -273,6 +354,8 @@ export const TEAM_SECTIONS: PageSectionContent[] = [
   TEAM_HERO,
   TEAM_OVERVIEW,
   TEAM_GRID,
+  TEAM_OPERATOR_PROGRAM,
+  TEAM_STATS,
   TEAM_CTA,
 ];
 

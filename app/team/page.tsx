@@ -20,6 +20,8 @@ import type {
 const SECTION_CLASS_MAP: Record<string, string> = {
   "team-overview": "section-padding bg-jhr-black-light",
   "team": "section-padding bg-jhr-black",
+  "operator-program": "section-padding bg-jhr-black-light",
+  "stats": "section-padding bg-jhr-black",
   "team-cta": "section-padding bg-jhr-black-light",
 };
 

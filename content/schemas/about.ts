@@ -2,10 +2,8 @@
  * About Page Content Schema
  *
  * Defines the editable structure for the JHR Photography about page.
- * This is the "Guide" page in the StoryBrand framework — it establishes
- * Jayson as the guide who understands the client's pressure, demonstrates
- * authority through story and philosophy, shows how the team is built,
- * and invites the client into the next step.
+ * Company-focused: vision, mission, values, and the JHR story.
+ * Team/operator content lives on the dedicated Team page.
  *
  * ============================================================================
  * SECTION MAP: About Page Sections -> Editable Components
@@ -15,10 +13,10 @@
  * -----------|-------------------------------------|---------------------------|----------------------------
  * 0 (hero)   | Hero Banner (split)                 | EditableHero              | about:hero
  * 1          | Origin Story (Guide intro)           | EditableTextBlock          | about:guide
- * 2          | Our Philosophy (differentiators)     | EditableFeatureGrid       | about:why-jhr
- * 3          | How We Develop Operators             | EditableFeatureGrid       | about:operator-program
- * 4          | Stats Section                        | EditableStats             | about:stats
- * 5          | Meet Our Operators CTA               | EditableCTA               | about:team-cta
+ * 2          | Our Mission (3 pillars)              | EditableFeatureGrid       | about:mission
+ * 3          | What We Stand For (values)           | EditableFeatureGrid       | about:values
+ * 4          | Why Event Pros Choose JHR            | EditableFeatureGrid       | about:why-jhr
+ * 5          | Team Link CTA                        | EditableCTA               | about:team-link
  * 6          | Final CTA                            | EditableCTA               | about:final-cta
  */
 
@@ -29,7 +27,6 @@ import type {
   TextBlockSectionContent,
   FeatureGridSectionContent,
   CTASectionContent,
-  StatsSectionContent,
 } from '@/types/inline-editor';
 
 // ============================================================================
@@ -100,10 +97,103 @@ export const ABOUT_GUIDE: TextBlockSectionContent = {
  * StoryBrand: Authority through differentiation.
  * Three pillars that show why JHR operates differently.
  */
+/**
+ * Section 2: Our Mission
+ * Component: EditableFeatureGrid (3-column)
+ *
+ * Three pillars: mission statement, vision, and the standard.
+ */
+export const ABOUT_MISSION: FeatureGridSectionContent = {
+  id: 'mission',
+  type: 'feature-grid',
+  order: 2,
+  seo: {
+    ariaLabel: 'JHR Photography mission, vision, and standard',
+    sectionId: 'mission',
+    dataSectionName: 'mission',
+  },
+  heading: 'Our Mission',
+  subheading: 'The principles that drive every event, every deliverable, every interaction.',
+  columns: 3,
+  features: [
+    {
+      id: 'mission-card-0',
+      icon: 'Target',
+      title: 'Our Mission',
+      description:
+        'Remove media uncertainty. Deploy local, certified professionals. Capture what matters. We exist to give event professionals one less thing to worry about — and one more thing to be proud of.',
+    },
+    {
+      id: 'mission-card-1',
+      icon: 'Eye',
+      title: 'Our Vision',
+      description:
+        'To be Nashville\'s most trusted media partner for event professionals — setting the standard that others follow. Not the biggest. Not the cheapest. The most reliable.',
+    },
+    {
+      id: 'mission-card-2',
+      icon: 'Award',
+      title: 'The Standard',
+      description:
+        'Every interaction, every deliverable, every event is measured against one question: would we stake our name on this? If the answer isn\'t yes, it doesn\'t leave our hands.',
+    },
+  ],
+};
+
+/**
+ * Section 3: What We Stand For
+ * Component: EditableFeatureGrid (4-column)
+ *
+ * Core values that define how JHR operates.
+ */
+export const ABOUT_VALUES: FeatureGridSectionContent = {
+  id: 'values',
+  type: 'feature-grid',
+  order: 3,
+  seo: {
+    ariaLabel: 'JHR Photography core values',
+    sectionId: 'values',
+    dataSectionName: 'values',
+  },
+  heading: 'What We Stand For',
+  subheading: 'These aren\'t words on a wall. They\'re how we show up — every event, every time.',
+  columns: 4,
+  features: [
+    {
+      id: 'values-card-0',
+      icon: 'Shield',
+      title: 'Reliability',
+      description:
+        'Show up prepared, deliver on time, no excuses. When you hire JHR, you\'re hiring a team that treats your event like their reputation depends on it — because it does.',
+    },
+    {
+      id: 'values-card-1',
+      icon: 'Briefcase',
+      title: 'Entrepreneurial Excellence',
+      description:
+        'Three generations of business builders. Your name is your brand. We bring the same ownership mentality to your event that we bring to our own company.',
+    },
+    {
+      id: 'values-card-2',
+      icon: 'Target',
+      title: 'Discipline',
+      description:
+        'Military-grade precision applied to creative work. Protocols, preparation, and accountability aren\'t restrictions — they\'re what make excellence repeatable.',
+    },
+    {
+      id: 'values-card-3',
+      icon: 'Heart',
+      title: 'Family-First Steadiness',
+      description:
+        'The same values that hold a family together — showing up when it matters, doing what you said you\'d do — hold this company together.',
+    },
+  ],
+};
+
 export const ABOUT_WHY_JHR: FeatureGridSectionContent = {
   id: 'why-jhr',
   type: 'feature-grid',
-  order: 2,
+  order: 4,
   seo: {
     ariaLabel: 'Why event professionals choose JHR Photography',
     sectionId: 'why-jhr',
@@ -138,113 +228,29 @@ export const ABOUT_WHY_JHR: FeatureGridSectionContent = {
 };
 
 /**
- * Section 3: How We Develop Certified Media Operators
- * Component: EditableFeatureGrid (alternating layout with step numbers)
- *
- * StoryBrand: The Plan. Shows clients exactly how JHR ensures consistent
- * quality — the force multiplier philosophy from Special Forces applied
- * to media operator development.
- */
-export const ABOUT_OPERATOR_PROGRAM: FeatureGridSectionContent = {
-  id: 'operator-program',
-  type: 'feature-grid',
-  order: 3,
-  seo: {
-    ariaLabel: 'How JHR Photography develops certified media operators',
-    sectionId: 'operator-program',
-    dataSectionName: 'operator-program',
-  },
-  heading: 'How We Develop Certified Media Operators',
-  subheading:
-    'In Special Forces, Jayson was a force multiplier — training people to succeed on their own with little or no resources. That\'s exactly how we build our team. No shortcuts. No hoping for the best.',
-  columns: 2,
-  displayMode: 'alternating',
-  showStepNumbers: true,
-  features: [
-    {
-      id: 'op-card-0',
-      icon: 'Users',
-      title: 'Recruited From Professional Networks',
-      description:
-        'We don\'t post on staffing marketplaces. Every operator comes through referral, military and first-responder networks, or direct vetting. We\'re looking for discipline and character first — camera skills can be sharpened. Attitude can\'t.',
-    },
-    {
-      id: 'op-card-1',
-      icon: 'Camera',
-      title: 'Trained in Our Studio on Fundamentals',
-      description:
-        'We have a full studio where operators work on the basics and fundamentals of photography — composition, lighting, exposure, equipment handling. But it doesn\'t stop at technical skills. Our people have to think like the client, anticipate needs before they\'re spoken, and deliver the value event professionals deserve.',
-    },
-    {
-      id: 'op-card-2',
-      icon: 'BookOpen',
-      title: 'Workshops, Classes, and Brand Voice',
-      description:
-        'This isn\'t just about taking good photos. We run workshops and classes that cover customer service, communication protocols, venue etiquette, and the JHR brand voice. Every operator learns to represent not just themselves, but your brand and ours — professionally, consistently, every time.',
-    },
-    {
-      id: 'op-card-3',
-      icon: 'Repeat',
-      title: 'Left Seat, Right Seat — Proven Before Deployed',
-      description:
-        'Before an operator works your event solo, they do ride-alongs. Left seat, right seat — like an internship. They shadow certified operators, then take the lead while being observed. We don\'t clear anyone for deployment until they can consistently produce quality work to standard and execute with the brand voice. It\'s no different than how Jayson built teams in the military. It\'s just a lot more fun.',
-    },
-  ],
-};
-
-/**
- * Section 4: Stats Section
- * Component: EditableStats (animated counters)
- *
- * StoryBrand: Social proof — quantified authority.
- */
-export const ABOUT_STATS: StatsSectionContent = {
-  id: 'stats',
-  type: 'stats',
-  order: 4,
-  seo: {
-    ariaLabel: 'JHR Photography key statistics and achievements',
-    sectionId: 'stats',
-    dataSectionName: 'stats',
-  },
-  stats: [
-    { id: 'stat-0', value: 500, suffix: '+', label: 'Events Covered' },
-    { id: 'stat-1', value: 15000, suffix: '+', label: 'Headshots Delivered' },
-    { id: 'stat-2', value: 100, suffix: '%', label: 'On-Time Delivery' },
-    { id: 'stat-3', value: 10, suffix: '+', label: 'Years Experience' },
-  ],
-};
-
-/**
- * Section 5: Meet Our Operators CTA
+ * Section 5: Team Link CTA
  * Component: EditableCTA
  *
- * Bridge to the Team page + invitation for photographers to join.
- * Dual buttons: meet the team / interested in joining.
+ * Simple bridge to the Team page.
  */
-export const ABOUT_TEAM_CTA: CTASectionContent = {
-  id: 'team-cta',
+export const ABOUT_TEAM_LINK: CTASectionContent = {
+  id: 'team-link',
   type: 'cta',
   order: 5,
   seo: {
-    ariaLabel: 'Meet the JHR Photography team or join our operator network',
-    sectionId: 'team-cta',
-    dataSectionName: 'team-cta',
+    ariaLabel: 'Meet the JHR Photography team',
+    sectionId: 'team-link',
+    dataSectionName: 'team-link',
   },
   headline: 'The People Behind the Standard',
   subtext:
-    'Every JHR operator is vetted, trained in our studio, and certified before they ever step on-site for your event. Want to see who\'s behind the camera — or interested in joining our team?',
+    'Every JHR operator is vetted, trained in our studio, and certified before they ever step on-site for your event. Meet the team that makes it happen.',
   backgroundType: 'gradient',
   backgroundValue: 'from-jhr-black via-jhr-black-light to-jhr-black',
   primaryButton: {
     text: 'Meet Our Operators',
     href: '/team',
     variant: 'primary',
-  },
-  secondaryButton: {
-    text: 'Join Our Team',
-    href: '/contact',
-    variant: 'secondary',
   },
 };
 
@@ -257,7 +263,7 @@ export const ABOUT_TEAM_CTA: CTASectionContent = {
 export const ABOUT_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 6,
+  order: 6, // Final CTA
   seo: {
     ariaLabel: 'Schedule a strategy call with JHR Photography',
     sectionId: 'final-cta',
@@ -282,10 +288,10 @@ export const ABOUT_FINAL_CTA: CTASectionContent = {
 export const ABOUT_SECTIONS: PageSectionContent[] = [
   ABOUT_HERO,
   ABOUT_GUIDE,
+  ABOUT_MISSION,
+  ABOUT_VALUES,
   ABOUT_WHY_JHR,
-  ABOUT_OPERATOR_PROGRAM,
-  ABOUT_STATS,
-  ABOUT_TEAM_CTA,
+  ABOUT_TEAM_LINK,
   ABOUT_FINAL_CTA,
 ];
 
