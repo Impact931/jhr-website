@@ -11,10 +11,12 @@ import {
   ChevronDown,
   Camera,
   Instagram,
+  Facebook,
   Globe,
   Linkedin,
   Twitter,
   ExternalLink,
+  ImageIcon,
   Users,
   Award,
   MapPin,
@@ -42,6 +44,7 @@ import type {
 
 const SOCIAL_PLATFORMS: { value: TeamMemberSocialLink['platform']; label: string }[] = [
   { value: 'instagram', label: 'Instagram' },
+  { value: 'facebook', label: 'Facebook' },
   { value: 'linkedin', label: 'LinkedIn' },
   { value: 'twitter', label: 'Twitter/X' },
   { value: 'tiktok', label: 'TikTok' },
@@ -59,6 +62,7 @@ const BADGE_CATEGORIES: { value: TeamMemberBadge['category']; label: string }[] 
 function getSocialIcon(platform: string) {
   switch (platform) {
     case 'instagram': return <Instagram className="w-4 h-4" />;
+    case 'facebook': return <Facebook className="w-4 h-4" />;
     case 'linkedin': return <Linkedin className="w-4 h-4" />;
     case 'twitter': return <Twitter className="w-4 h-4" />;
     case 'website': return <Globe className="w-4 h-4" />;
@@ -232,7 +236,11 @@ function TeamMemberCard({
                         key={badge.id}
                         className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-full bg-[#C9A227]/10 text-[#C9A227] border border-[#C9A227]/30"
                       >
-                        {getBadgeCategoryIcon(badge.category)}
+                        {badge.icon ? (
+                          <img src={badge.icon} alt="" className="w-4 h-4 object-contain" />
+                        ) : (
+                          getBadgeCategoryIcon(badge.category)
+                        )}
                         {badge.label}
                       </span>
                     ))}
@@ -336,6 +344,9 @@ function TeamMemberEditor({ member, onSave, onClose }: TeamMemberEditorProps) {
   // Badge inputs
   const [newBadgeLabel, setNewBadgeLabel] = useState('');
   const [newBadgeCategory, setNewBadgeCategory] = useState<TeamMemberBadge['category']>('specialty');
+  // Badge icon picker
+  const [badgeIconPickerIdx, setBadgeIconPickerIdx] = useState<number | 'new' | null>(null);
+  const [newBadgeIcon, setNewBadgeIcon] = useState('');
   // Social link inputs
   const [newLinkPlatform, setNewLinkPlatform] = useState<TeamMemberSocialLink['platform']>('instagram');
   const [newLinkUrl, setNewLinkUrl] = useState('');
@@ -381,15 +392,31 @@ function TeamMemberEditor({ member, onSave, onClose }: TeamMemberEditorProps) {
         id: `badge-${Date.now()}`,
         label: trimmed,
         category: newBadgeCategory,
+        ...(newBadgeIcon ? { icon: newBadgeIcon } : {}),
       };
       setBadges([...badges, newBadge]);
       setNewBadgeLabel('');
+      setNewBadgeIcon('');
     }
-  }, [newBadgeLabel, newBadgeCategory, badges]);
+  }, [newBadgeLabel, newBadgeCategory, newBadgeIcon, badges]);
 
   const removeBadge = useCallback((id: string) => {
     setBadges(badges.filter((b) => b.id !== id));
   }, [badges]);
+
+  const handleBadgeIconSelect = useCallback((results: MediaPickerResult[]) => {
+    if (results.length > 0) {
+      const url = results[0].publicUrl;
+      if (badgeIconPickerIdx === 'new') {
+        setNewBadgeIcon(url);
+      } else if (typeof badgeIconPickerIdx === 'number') {
+        setBadges((prev) =>
+          prev.map((b, i) => (i === badgeIconPickerIdx ? { ...b, icon: url } : b))
+        );
+      }
+    }
+    setBadgeIconPickerIdx(null);
+  }, [badgeIconPickerIdx]);
 
   const addSocialLink = useCallback(() => {
     const trimmed = newLinkUrl.trim();
@@ -543,18 +570,38 @@ function TeamMemberEditor({ member, onSave, onClose }: TeamMemberEditorProps) {
             {/* Badges */}
             <div>
               <label className="block text-sm text-gray-400 mb-2">Badges</label>
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {badges.map((badge) => (
-                  <span
+              <div className="space-y-1.5 mb-2">
+                {badges.map((badge, idx) => (
+                  <div
                     key={badge.id}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-[#C9A227]/10 text-[#C9A227] border border-[#C9A227]/30 rounded-full"
+                    className="flex items-center gap-2 px-2 py-1.5 bg-[#0A0A0A] border border-[#333] rounded-lg text-xs"
                   >
-                    {getBadgeCategoryIcon(badge.category)}
-                    {badge.label}
-                    <button onClick={() => removeBadge(badge.id)} className="hover:text-red-400 ml-0.5">
-                      <X className="w-3 h-3" />
+                    {badge.icon ? (
+                      <img src={badge.icon} alt="" className="w-4 h-4 object-contain flex-shrink-0" />
+                    ) : (
+                      <span className="text-[#C9A227] flex-shrink-0">{getBadgeCategoryIcon(badge.category)}</span>
+                    )}
+                    <span className="text-[#C9A227] flex-1 truncate">{badge.label}</span>
+                    <button
+                      onClick={() => setBadgeIconPickerIdx(idx)}
+                      className="px-1.5 py-0.5 text-[10px] bg-[#2A2A2A] text-gray-400 hover:text-white rounded transition-colors"
+                      title="Pick icon"
+                    >
+                      <ImageIcon className="w-3 h-3" />
                     </button>
-                  </span>
+                    {badge.icon && (
+                      <button
+                        onClick={() => setBadges((prev) => prev.map((b, i) => i === idx ? { ...b, icon: undefined } : b))}
+                        className="text-gray-500 hover:text-red-400"
+                        title="Remove icon"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                    <button onClick={() => removeBadge(badge.id)} className="text-gray-500 hover:text-red-400">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
                 ))}
               </div>
               <div className="flex gap-2">
@@ -567,6 +614,21 @@ function TeamMemberEditor({ member, onSave, onClose }: TeamMemberEditorProps) {
                     <option key={cat.value} value={cat.value}>{cat.label}</option>
                   ))}
                 </select>
+                <button
+                  onClick={() => setBadgeIconPickerIdx('new')}
+                  className={`px-2 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1 ${
+                    newBadgeIcon
+                      ? 'bg-[#C9A227]/10 text-[#C9A227] border border-[#C9A227]/30'
+                      : 'bg-[#2A2A2A] text-gray-400 hover:text-white'
+                  }`}
+                  title="Pick badge icon"
+                >
+                  {newBadgeIcon ? (
+                    <img src={newBadgeIcon} alt="" className="w-4 h-4 object-contain" />
+                  ) : (
+                    <ImageIcon className="w-4 h-4" />
+                  )}
+                </button>
                 <input
                   type="text"
                   value={newBadgeLabel}
@@ -582,6 +644,12 @@ function TeamMemberEditor({ member, onSave, onClose }: TeamMemberEditorProps) {
                   Add
                 </button>
               </div>
+              <MediaPicker
+                isOpen={badgeIconPickerIdx !== null}
+                onClose={() => setBadgeIconPickerIdx(null)}
+                onSelect={handleBadgeIconSelect}
+                options={{ allowedTypes: ['image'] }}
+              />
             </div>
 
             {/* Social Links */}

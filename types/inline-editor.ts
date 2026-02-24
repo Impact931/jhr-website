@@ -215,7 +215,7 @@ export interface FAQItem {
  * Social link for a team member.
  */
 export interface TeamMemberSocialLink {
-  platform: 'instagram' | 'website' | 'linkedin' | 'twitter' | 'tiktok' | 'other';
+  platform: 'instagram' | 'facebook' | 'website' | 'linkedin' | 'twitter' | 'tiktok' | 'other';
   url: string;
   label?: string;
 }
