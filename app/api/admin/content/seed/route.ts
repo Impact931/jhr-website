@@ -9,237 +9,198 @@ import {
 } from '@/content/schema-registry';
 
 // ============================================================================
-// Image-preserving merge logic
+// Content-preserving merge logic
 // ============================================================================
 
 /**
- * Merge a schema section with existing DB section, preserving user-uploaded
- * images while applying schema text/structure updates.
+ * Merge a schema section with existing DB section.
  *
- * Strategy: use the schema section as the base, then overlay any image fields
- * that the user has customized in the existing DB content.
+ * PRINCIPLE: Published DynamoDB content is the source of truth. When a section
+ * already exists in DynamoDB with a matching ID and type, keep ALL of the
+ * existing content. The schema only contributes:
+ *   1. New child items (features, images, members, etc.) that don't exist yet
+ *   2. Structural metadata (order, seo) from the schema
+ *   3. Default content for brand-new sections with no DynamoDB match
+ *
+ * This prevents seeds from overwriting user edits (text, images, videos,
+ * categories, links, etc.) that were made through the admin editor.
  */
-function mergeSectionImages(
+function mergeSection(
   schemaSection: PageSectionContent,
   existingSection: PageSectionContent
 ): PageSectionContent {
-  // Only merge if same type and same ID
+  // Only merge if same type — if type changed, schema wins (structural change)
   if (schemaSection.type !== existingSection.type) return schemaSection;
 
-  // Deep clone schema section so we don't mutate the original
-  const merged = JSON.parse(JSON.stringify(schemaSection)) as PageSectionContent;
+  // Start from existing content (preserves all user edits)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const merged = JSON.parse(JSON.stringify(existingSection)) as any;
+
+  // Update structural fields from schema (order, seo)
+  merged.order = schemaSection.order;
+  merged.seo = schemaSection.seo;
+
+  // For array-based sections, append any NEW items from the schema
+  // that don't already exist (by ID) in the published content
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const schema = schemaSection as any;
 
   switch (merged.type) {
-    case 'hero': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = existingSection as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = merged as any;
-      if (existing.backgroundImage?.src) {
-        m.backgroundImage = existing.backgroundImage;
-      }
-      if (existing.imagePositionY !== undefined) {
-        m.imagePositionY = existing.imagePositionY;
-      }
-      break;
-    }
-
-    case 'cta': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = existingSection as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = merged as any;
-      if (existing.backgroundType === 'image' && existing.backgroundValue) {
-        m.backgroundValue = existing.backgroundValue;
-      }
-      if (existing.imagePositionY !== undefined) {
-        m.imagePositionY = existing.imagePositionY;
-      }
-      break;
-    }
-
     case 'feature-grid': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = existingSection as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = merged as any;
-      if (existing.features && m.features) {
-        m.features = m.features.map((feat: { id: string; image?: unknown; videoUrl?: string }) => {
-          const existingFeat = existing.features.find(
-            (f: { id: string }) => f.id === feat.id
-          );
-          if (!existingFeat) return feat;
-
-          const overlay: Record<string, unknown> = {};
-
-          // Preserve user-uploaded card image
-          if (existingFeat.image?.src) {
-            overlay.image = existingFeat.image;
-          }
-          // Preserve user-set YouTube/Vimeo video URL
-          if (existingFeat.videoUrl) {
-            overlay.videoUrl = existingFeat.videoUrl;
-          }
-          // Preserve user-set category tag
-          if (existingFeat.category) {
-            overlay.category = existingFeat.category;
-          }
-
-          return Object.keys(overlay).length > 0
-            ? { ...feat, ...overlay }
-            : feat;
-        });
+      if (schema.features && merged.features) {
+        const existingIds = new Set(merged.features.map((f: { id: string }) => f.id));
+        const newFeatures = schema.features.filter(
+          (f: { id: string }) => !existingIds.has(f.id)
+        );
+        if (newFeatures.length > 0) {
+          merged.features = [...merged.features, ...newFeatures];
+        }
+      }
+      // Apply new structural props the schema may introduce (e.g. displayMode, columns)
+      if (schema.displayMode !== undefined && merged.displayMode === undefined) {
+        merged.displayMode = schema.displayMode;
+      }
+      if (schema.showStepNumbers !== undefined && merged.showStepNumbers === undefined) {
+        merged.showStepNumbers = schema.showStepNumbers;
       }
       break;
     }
 
     case 'image-gallery': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = existingSection as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = merged as any;
-      if (existing.images && m.images) {
-        m.images = m.images.map((img: { id?: string; src?: string; alt?: string }, i: number) => {
-          // Match by ID only when both sides have defined IDs; otherwise use positional match
-          let existingImg = null;
-          if (img.id) {
-            existingImg = existing.images.find((ei: { id?: string }) => ei.id && ei.id === img.id);
-          }
-          if (!existingImg) {
-            existingImg = existing.images[i];
-          }
-          if (existingImg?.src) {
-            // Preserve all user-edited image metadata (src, alt, caption, etc.)
-            return { ...img, ...existingImg };
-          }
-          return img;
-        });
+      if (schema.images && merged.images) {
+        const existingIds = new Set(
+          merged.images
+            .map((img: { id?: string }) => img.id)
+            .filter(Boolean)
+        );
+        const newImages = schema.images.filter(
+          (img: { id?: string }) => img.id && !existingIds.has(img.id)
+        );
+        if (newImages.length > 0) {
+          merged.images = [...merged.images, ...newImages];
+        }
+      }
+      break;
+    }
+
+    case 'testimonials': {
+      if (schema.testimonials && merged.testimonials) {
+        const existingIds = new Set(merged.testimonials.map((t: { id: string }) => t.id));
+        const newTestimonials = schema.testimonials.filter(
+          (t: { id: string }) => !existingIds.has(t.id)
+        );
+        if (newTestimonials.length > 0) {
+          merged.testimonials = [...merged.testimonials, ...newTestimonials];
+        }
+      }
+      break;
+    }
+
+    case 'faq': {
+      if (schema.items && merged.items) {
+        const existingIds = new Set(merged.items.map((item: { id: string }) => item.id));
+        const newItems = schema.items.filter(
+          (item: { id: string }) => !existingIds.has(item.id)
+        );
+        if (newItems.length > 0) {
+          merged.items = [...merged.items, ...newItems];
+        }
+      }
+      break;
+    }
+
+    case 'team-grid': {
+      if (schema.members && merged.members) {
+        const existingIds = new Set(merged.members.map((m: { id: string }) => m.id));
+        const newMembers = schema.members.filter(
+          (m: { id: string }) => !existingIds.has(m.id)
+        );
+        if (newMembers.length > 0) {
+          merged.members = [...merged.members, ...newMembers];
+        }
+      }
+      break;
+    }
+
+    case 'tabbed-content': {
+      if (schema.tabs && merged.tabs) {
+        const existingIds = new Set(merged.tabs.map((t: { id: string }) => t.id));
+        const newTabs = schema.tabs.filter(
+          (t: { id: string }) => !existingIds.has(t.id)
+        );
+        if (newTabs.length > 0) {
+          merged.tabs = [...merged.tabs, ...newTabs];
+        }
       }
       break;
     }
 
     case 'columns': {
       // Recursively merge nested sections inside each column
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = existingSection as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = merged as any;
-      if (existing.columns && m.columns) {
-        m.columns = m.columns.map((col: { sections: PageSectionContent[] }, colIdx: number) => {
-          const existingCol = existing.columns[colIdx];
-          if (!existingCol?.sections) return col;
+      if (schema.columns && merged.columns) {
+        merged.columns = merged.columns.map(
+          (col: { sections: PageSectionContent[] }, colIdx: number) => {
+            const schemaCol = schema.columns[colIdx];
+            if (!schemaCol?.sections) return col;
 
-          const mergedChildren = col.sections.map((childSchema: PageSectionContent) => {
-            const existingChild = existingCol.sections.find(
-              (ec: PageSectionContent) => ec.id === childSchema.id
-            );
-            if (existingChild) {
-              return mergeSectionImages(childSchema, existingChild);
+            const existingChildMap = new Map<string, PageSectionContent>();
+            for (const child of col.sections) {
+              existingChildMap.set(child.id, child);
             }
-            return childSchema;
-          });
 
-          return { ...col, sections: mergedChildren };
-        });
-      }
-      break;
-    }
+            const mergedChildren = schemaCol.sections.map(
+              (childSchema: PageSectionContent) => {
+                const existingChild = existingChildMap.get(childSchema.id);
+                if (existingChild) {
+                  return mergeSection(childSchema, existingChild);
+                }
+                return childSchema;
+              }
+            );
 
-    case 'testimonials': {
-      // Preserve user-uploaded avatar images on testimonials
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = existingSection as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = merged as any;
-      if (existing.testimonials && m.testimonials) {
-        m.testimonials = m.testimonials.map((t: { id: string; authorImage?: { src?: string } }) => {
-          const existingT = existing.testimonials.find(
-            (et: { id: string }) => et.id === t.id
-          );
-          if (existingT?.authorImage?.src) {
-            return { ...t, authorImage: existingT.authorImage };
+            return { ...col, sections: mergedChildren };
           }
-          return t;
-        });
+        );
       }
       break;
     }
 
-    case 'tabbed-content': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = existingSection as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = merged as any;
-      if (existing.tabs && m.tabs) {
-        m.tabs = m.tabs.map((tab: { id: string; image?: { src?: string } }) => {
-          const existingTab = existing.tabs.find((et: { id: string }) => et.id === tab.id);
-          if (existingTab?.image?.src) {
-            return { ...tab, image: existingTab.image };
-          }
-          return tab;
-        });
-      }
-      break;
-    }
-
-    case 'team-grid': {
-      // Preserve user-uploaded team member photos
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = existingSection as any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const m = merged as any;
-      if (existing.members && m.members) {
-        m.members = m.members.map((member: { id: string; photo?: { src?: string } }) => {
-          const existingMember = existing.members.find(
-            (em: { id: string }) => em.id === member.id
-          );
-          if (existingMember?.photo?.src) {
-            return { ...member, photo: existingMember.photo };
-          }
-          return member;
-        });
-      }
-      break;
-    }
-
-    // text-block, faq, stats — no user-uploadable images to preserve
+    // hero, cta, text-block, stats — existing content preserved as-is
   }
 
-  // Preserve backgroundVideo on any section type (YouTube embeds, uploaded videos, etc.)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const existingBgVideo = (existingSection as any).backgroundVideo;
-  if (existingBgVideo) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (merged as any).backgroundVideo = existingBgVideo;
+  return merged as PageSectionContent;
+}
+
+/**
+ * Merge schema SEO with existing SEO.
+ * Existing user-uploaded OG image always wins.
+ */
+function mergeSeo(
+  schemaSeo: PageSEOMetadata,
+  existingSeo?: PageSEOMetadata
+): PageSEOMetadata {
+  if (!existingSeo) return schemaSeo;
+
+  // Keep existing SEO entirely — user may have edited title, description, etc.
+  // Only update fields the user hasn't customized (still at schema defaults)
+  const merged = { ...existingSeo };
+
+  // Preserve user-uploaded OG image; only update if still a placeholder
+  if (
+    !existingSeo.ogImage ||
+    existingSeo.ogImage.startsWith('/images/generated/')
+  ) {
+    merged.ogImage = schemaSeo.ogImage;
   }
 
   return merged;
 }
 
 /**
- * Merge schema SEO with existing SEO, preserving user-uploaded OG image.
- */
-function mergeSeoImages(
-  schemaSeo: PageSEOMetadata,
-  existingSeo?: PageSEOMetadata
-): PageSEOMetadata {
-  if (!existingSeo) return schemaSeo;
-
-  // Preserve user-uploaded OG image (non-default local placeholder)
-  if (
-    existingSeo.ogImage &&
-    existingSeo.ogImage !== schemaSeo.ogImage &&
-    !existingSeo.ogImage.startsWith('/images/generated/')
-  ) {
-    return { ...schemaSeo, ogImage: existingSeo.ogImage };
-  }
-
-  return schemaSeo;
-}
-
-/**
  * Merge full page: schema sections + existing DB content.
- * Returns merged sections array and merged SEO.
+ *
+ * Schema controls section ORDER and introduces NEW sections.
+ * Existing DB content is preserved for all sections that already exist.
  */
 function mergePageContent(
   schemaSections: PageSectionContent[],
@@ -247,23 +208,23 @@ function mergePageContent(
   existingSections: PageSectionContent[],
   existingSeo?: PageSEOMetadata
 ): { sections: PageSectionContent[]; seo: PageSEOMetadata } {
-  // Build a map of existing sections by ID for O(1) lookup
   const existingMap = new Map<string, PageSectionContent>();
   for (const section of existingSections) {
     existingMap.set(section.id, section);
   }
 
-  // Use schema sections as the structural source of truth,
-  // merging images from existing content where section IDs match
+  // Schema controls which sections exist and their order.
+  // For each section: if it exists in DynamoDB, preserve its content.
+  // If it's new (no DynamoDB match), use schema defaults.
   const mergedSections = schemaSections.map((schemaSection) => {
     const existing = existingMap.get(schemaSection.id);
     if (existing) {
-      return mergeSectionImages(schemaSection, existing);
+      return mergeSection(schemaSection, existing);
     }
     return schemaSection;
   });
 
-  const mergedSeo = mergeSeoImages(schemaSeo, existingSeo);
+  const mergedSeo = mergeSeo(schemaSeo, existingSeo);
 
   return { sections: mergedSections, seo: mergedSeo };
 }
