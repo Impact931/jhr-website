@@ -139,7 +139,7 @@ function TeamMemberCard({
   return (
     <div
       className={`group/card relative cursor-pointer ${isFlipped ? 'z-10' : 'z-0'}`}
-      style={{ perspective: '1000px' }}
+      style={{ perspective: '1000px', WebkitPerspective: '1000px' }}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -147,15 +147,16 @@ function TeamMemberCard({
       {/* Card Container - 3:4 aspect ratio */}
       <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
         <motion.div
-          className="absolute inset-0"
-          style={{ transformStyle: 'preserve-3d' }}
+          className="absolute inset-0 will-change-transform"
+          style={{ transformStyle: 'preserve-3d', WebkitTransformStyle: 'preserve-3d' }}
+          initial={{ rotateY: 0 }}
           animate={{ rotateY: isFlipped ? 180 : 0 }}
           transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         >
           {/* FRONT FACE */}
           <div
             className="absolute inset-0 rounded-xl overflow-hidden border border-white/10"
-            style={{ backfaceVisibility: 'hidden' }}
+            style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
           >
             {/* Gold top accent */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#C9A227] to-transparent z-10" />
@@ -208,7 +209,7 @@ function TeamMemberCard({
           {/* BACK FACE */}
           <div
             className="absolute inset-0 rounded-xl overflow-hidden border border-[#C9A227]/30 bg-[#0D0D0D]"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
             {/* Gold top accent */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#C9A227] to-transparent z-10" />

@@ -283,7 +283,9 @@ function AnimatedSection({
     case 'tabbed-content':
       return <FadeUp once>{children}</FadeUp>;
     case 'team-grid':
-      return <FadeUp once>{children}</FadeUp>;
+      // Team grid can be very tall on mobile (single column of many cards).
+      // FadeUp's amount threshold would never trigger, hiding the section.
+      return <>{children}</>;
     case 'image-gallery':
       return <FadeIn once>{children}</FadeIn>;
     default:
