@@ -64,14 +64,30 @@ function mergeSectionImages(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const m = merged as any;
       if (existing.features && m.features) {
-        m.features = m.features.map((feat: { id: string; image?: unknown }) => {
+        m.features = m.features.map((feat: { id: string; image?: unknown; videoUrl?: string }) => {
           const existingFeat = existing.features.find(
             (f: { id: string }) => f.id === feat.id
           );
-          if (existingFeat?.image?.src) {
-            return { ...feat, image: existingFeat.image };
+          if (!existingFeat) return feat;
+
+          const overlay: Record<string, unknown> = {};
+
+          // Preserve user-uploaded card image
+          if (existingFeat.image?.src) {
+            overlay.image = existingFeat.image;
           }
-          return feat;
+          // Preserve user-set YouTube/Vimeo video URL
+          if (existingFeat.videoUrl) {
+            overlay.videoUrl = existingFeat.videoUrl;
+          }
+          // Preserve user-set category tag
+          if (existingFeat.category) {
+            overlay.category = existingFeat.category;
+          }
+
+          return Object.keys(overlay).length > 0
+            ? { ...feat, ...overlay }
+            : feat;
         });
       }
       break;
