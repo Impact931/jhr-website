@@ -182,34 +182,61 @@ export const EVS_USE_CASES: FeatureGridSectionContent = {
   type: 'feature-grid',
   order: 3,
   seo: {
-    ariaLabel: 'Common applications for event video content',
+    ariaLabel: 'Ways to leverage event video for extended ROI',
     sectionId: 'use-cases',
     dataSectionName: 'use-cases',
   },
-  heading: 'Common Applications',
-  subheading: 'How organizations use event video to extend ROI.',
+  heading: 'Extend Your Event ROI With Video',
+  subheading: 'Your event happens once. The content it produces should work for you all year. Here\u2019s how smart marketers turn one event into months of leverage.',
   columns: 3,
   features: [
     {
       id: 'use-cases-card-0',
       icon: 'GraduationCap',
-      title: 'Internal Training',
+      title: 'Training & Development Libraries',
       description:
-        'Keynote recordings become on-demand training for team members who couldn\u2019t attend. Build a library of leadership content.',
+        'Turn keynotes and breakout sessions into on-demand training content. One event builds a leadership library that onboards and develops your team year-round.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Corporate training video library from event keynotes' },
     },
     {
       id: 'use-cases-card-1',
-      icon: 'Megaphone',
-      title: 'Event Promotion',
+      icon: 'MessageSquare',
+      title: 'Testimonial & Case Study Content',
       description:
-        'This year\u2019s highlight reel sells next year\u2019s tickets. Show prospects exactly what they\u2019ll experience.',
+        'Capture authentic attendee reactions and speaker endorsements on-site while the energy is real. Nothing sells like an unscripted testimonial recorded in the moment.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Attendee testimonial being recorded at event' },
     },
     {
       id: 'use-cases-card-2',
-      icon: 'BarChart',
-      title: 'Stakeholder Reporting',
+      icon: 'Mic',
+      title: 'Tradeshow & Expo Interviews',
       description:
-        'A 3-minute highlight reel communicates event success better than any slide deck. Show the board what happened.',
+        'Pull exhibitors, sponsors, and thought leaders aside for quick on-camera interviews. Produce content that strengthens partnerships and builds authority in your space.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Professional interview at tradeshow exhibit booth' },
+    },
+    {
+      id: 'use-cases-card-3',
+      icon: 'Smartphone',
+      title: 'Social Media Shorts & Reels',
+      description:
+        'Repurpose event footage into vertical clips optimized for LinkedIn, Instagram, and TikTok. Drip content for weeks and keep your audience engaged long after the event ends.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Social media video content from corporate event' },
+    },
+    {
+      id: 'use-cases-card-4',
+      icon: 'PieChart',
+      title: 'Investor & Stakeholder Reports',
+      description:
+        'A 90-second highlight reel says more than a 40-page deck. Show your board, sponsors, and investors the energy, turnout, and impact they funded.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Event highlight reel for stakeholder presentation' },
+    },
+    {
+      id: 'use-cases-card-5',
+      icon: 'Ticket',
+      title: 'Next-Event Promotion',
+      description:
+        'This year\u2019s footage becomes next year\u2019s best marketing asset. Sell registrations, attract sponsors, and build FOMO with proof of what they missed.',
+      image: { src: '/images/generated/placeholder.jpg', alt: 'Promotional video driving event registration' },
     },
   ],
 };
