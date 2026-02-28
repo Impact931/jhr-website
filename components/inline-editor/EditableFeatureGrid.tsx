@@ -1036,7 +1036,7 @@ function DefaultCardView({
             delay: staggerDelay + 0.15,
           }}
         >
-          <CheckCircle className="w-4 h-4 text-green-400" />
+          <CheckCircle className="w-4 h-4 text-jhr-gold" />
         </motion.div>
       ) : (
         <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center mb-4 group-hover:bg-jhr-gold/20 group-hover:scale-110 transition-all duration-300">
