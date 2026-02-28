@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import Link from 'next/link';
-import { ArrowRight, Pencil, X, Type, AlignLeft, ImageIcon, MousePointerClick, Move, Video, Youtube } from 'lucide-react';
+import { ArrowRight, Pencil, X, Plus, Trash2, Type, AlignLeft, ImageIcon, MousePointerClick, Move, Video, Youtube } from 'lucide-react';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import { EditableText } from './EditableText';
@@ -295,6 +295,21 @@ export function EditableHero({
     updateContent(secondaryHrefKey, href, 'text');
     setEditingCta(null);
   }, [secondaryTextKey, secondaryHrefKey, updateContent]);
+
+  const handleAddSecondaryButton = useCallback(() => {
+    if (!sectionId) return;
+    const newButton: CTAButton = { text: 'Learn More', href: '/', variant: 'secondary' };
+    const currentPrimary = primaryCta || { text: primaryCtaText, href: primaryCtaHref, variant: 'primary' as const };
+    updateSection(sectionId, { buttons: [currentPrimary as CTAButton, newButton] } as Partial<any>);
+    // Open editor immediately so user can configure it
+    setEditingCta('secondary');
+  }, [sectionId, primaryCta, primaryCtaText, primaryCtaHref, updateSection]);
+
+  const handleRemoveSecondaryButton = useCallback(() => {
+    if (!sectionId) return;
+    const currentPrimary = primaryCta || { text: primaryCtaText, href: primaryCtaHref, variant: 'primary' as const };
+    updateSection(sectionId, { buttons: [currentPrimary as CTAButton] } as Partial<any>);
+  }, [sectionId, primaryCta, primaryCtaText, primaryCtaHref, updateSection]);
 
   const handleBgImageSelect = useCallback((results: MediaPickerResult[]) => {
     if (results.length > 0) {
@@ -820,7 +835,7 @@ export function EditableHero({
                 )}
 
                 {/* Secondary CTA */}
-                {(secondaryCta || canEdit) && (
+                {secondaryCta && (
                   <div className="relative group/cta">
                     <Link
                       href={secondaryCtaHref}
@@ -835,9 +850,32 @@ export function EditableHero({
                       {secondaryCtaText || 'Secondary CTA'}
                     </Link>
                     {canEdit && (
-                      <div className="absolute inset-0 border-2 border-dashed border-transparent group-hover/cta:border-[#C9A227]/60 rounded-lg pointer-events-none transition-colors" />
+                      <>
+                        <div className="absolute inset-0 border-2 border-dashed border-transparent group-hover/cta:border-[#C9A227]/60 rounded-lg pointer-events-none transition-colors" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveSecondaryButton();
+                          }}
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover/cta:opacity-100 transition-opacity z-10"
+                          title="Remove secondary button"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </>
                     )}
                   </div>
+                )}
+
+                {/* Add Secondary Button (shown when no secondary CTA exists) */}
+                {!secondaryCta && canEdit && (
+                  <button
+                    onClick={handleAddSecondaryButton}
+                    className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-[#C9A227]/40 hover:border-[#C9A227] rounded-lg text-[#C9A227]/60 hover:text-[#C9A227] transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="text-sm font-medium">Add Button</span>
+                  </button>
                 )}
               </div>
             )}
@@ -887,7 +925,7 @@ export function EditableHero({
           onClose={() => setEditingCta(null)}
         />
       )}
-      {editingCta === 'secondary' && secondaryCta && (
+      {editingCta === 'secondary' && (
         <CTAEditor
           label="Secondary Button"
           text={secondaryCtaText}
