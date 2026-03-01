@@ -5,14 +5,14 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import SmartImage from '@/components/ui/SmartImage';
 import Link from 'next/link';
-import { ArrowRight, Pencil, X, Plus, Trash2, Type, AlignLeft, ImageIcon, MousePointerClick, Move, Video, Youtube } from 'lucide-react';
+import { ArrowRight, Pencil, X, Plus, Type, AlignLeft, ImageIcon, MousePointerClick, Move, Video, Youtube } from 'lucide-react';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { useContent } from '@/context/inline-editor/ContentContext';
 import { EditableText } from './EditableText';
 import { EditableImage } from './EditableImage';
 import MediaPicker from '@/components/admin/media/MediaPicker';
 import type { MediaPickerResult } from '@/types/media';
-import type { HeroVariant, CTAButton } from '@/types/inline-editor';
+import type { HeroVariant, CTAButton, HeroSectionContent } from '@/types/inline-editor';
 
 // ============================================================================
 // Types
@@ -300,7 +300,7 @@ export function EditableHero({
     if (!sectionId) return;
     const newButton: CTAButton = { text: 'Learn More', href: '/', variant: 'secondary' };
     const currentPrimary = primaryCta || { text: primaryCtaText, href: primaryCtaHref, variant: 'primary' as const };
-    updateSection(sectionId, { buttons: [currentPrimary as CTAButton, newButton] } as Partial<any>);
+    updateSection(sectionId, { buttons: [currentPrimary as CTAButton, newButton] } as Partial<HeroSectionContent>);
     // Open editor immediately so user can configure it
     setEditingCta('secondary');
   }, [sectionId, primaryCta, primaryCtaText, primaryCtaHref, updateSection]);
@@ -308,7 +308,7 @@ export function EditableHero({
   const handleRemoveSecondaryButton = useCallback(() => {
     if (!sectionId) return;
     const currentPrimary = primaryCta || { text: primaryCtaText, href: primaryCtaHref, variant: 'primary' as const };
-    updateSection(sectionId, { buttons: [currentPrimary as CTAButton] } as Partial<any>);
+    updateSection(sectionId, { buttons: [currentPrimary as CTAButton] } as Partial<HeroSectionContent>);
   }, [sectionId, primaryCta, primaryCtaText, primaryCtaHref, updateSection]);
 
   const handleBgImageSelect = useCallback((results: MediaPickerResult[]) => {
