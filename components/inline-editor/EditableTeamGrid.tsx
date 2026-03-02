@@ -3,12 +3,27 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   Pencil,
   Plus,
   Trash2,
   X,
-  ChevronUp,
-  ChevronDown,
+  GripVertical,
   Camera,
   Instagram,
   Facebook,
@@ -734,20 +749,14 @@ function TeamMemberEditor({ member, onSave, onClose }: TeamMemberEditorProps) {
 
 function EditModeCardOverlay({
   member,
-  index,
-  total,
   onEdit,
   onDelete,
-  onMoveUp,
-  onMoveDown,
+  dragHandleProps,
 }: {
   member: TeamMember;
-  index: number;
-  total: number;
   onEdit: () => void;
   onDelete: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
+  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
 }) {
   return (
     <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
@@ -768,6 +777,15 @@ function EditModeCardOverlay({
 
         <div className="absolute inset-0 bg-black/50" />
 
+        {/* Drag handle — always visible */}
+        <button
+          {...dragHandleProps}
+          className="absolute top-2 right-2 z-30 p-1.5 bg-black/60 backdrop-blur-sm text-gray-300 hover:text-white rounded-lg cursor-grab active:cursor-grabbing transition-colors"
+          title="Drag to reorder"
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+
         {/* Info */}
         <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
           <p className="text-sm font-semibold text-white truncate">{member.name}</p>
@@ -783,24 +801,6 @@ function EditModeCardOverlay({
           >
             <Pencil className="w-4 h-4" />
           </button>
-          {index > 0 && (
-            <button
-              onClick={onMoveUp}
-              className="p-2 bg-[#2A2A2A] text-white rounded-lg hover:bg-[#333] transition-colors"
-              title="Move up"
-            >
-              <ChevronUp className="w-4 h-4" />
-            </button>
-          )}
-          {index < total - 1 && (
-            <button
-              onClick={onMoveDown}
-              className="p-2 bg-[#2A2A2A] text-white rounded-lg hover:bg-[#333] transition-colors"
-              title="Move down"
-            >
-              <ChevronDown className="w-4 h-4" />
-            </button>
-          )}
           <button
             onClick={onDelete}
             className="p-2 bg-red-900/80 text-white rounded-lg hover:bg-red-800 transition-colors"
@@ -810,6 +810,47 @@ function EditModeCardOverlay({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Sortable Team Card Wrapper (Edit Mode)
+// ============================================================================
+
+function SortableTeamCard({
+  member,
+  onEdit,
+  onDelete,
+}: {
+  member: TeamMember;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: member.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <EditModeCardOverlay
+        member={member}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        dragHandleProps={listeners}
+      />
     </div>
   );
 }
@@ -906,15 +947,20 @@ export function EditableTeamGrid({
     setEditingMember(newMember);
   }, [members, updateMembers]);
 
-  const handleMoveMember = useCallback(
-    (index: number, direction: 'up' | 'down') => {
-      const newMembers = [...members];
-      const swapIndex = direction === 'up' ? index - 1 : index + 1;
-      if (swapIndex < 0 || swapIndex >= newMembers.length) return;
-      [newMembers[index], newMembers[swapIndex]] = [newMembers[swapIndex], newMembers[index]];
-      // Update order fields
-      newMembers.forEach((m, i) => (m.order = i));
-      updateMembers(newMembers);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const oldIndex = members.findIndex((m) => m.id === active.id);
+      const newIndex = members.findIndex((m) => m.id === over.id);
+      const reordered = arrayMove(members, oldIndex, newIndex);
+      reordered.forEach((m, i) => (m.order = i));
+      updateMembers(reordered);
     },
     [members, updateMembers]
   );
@@ -974,31 +1020,38 @@ export function EditableTeamGrid({
         </EditableText>
 
         {/* Members grid */}
-        <div className={`grid ${gridColClass} gap-4`}>
-          {members.map((member, index) => (
-            <EditModeCardOverlay
-              key={member.id}
-              member={member}
-              index={index}
-              total={members.length}
-              onEdit={() => setEditingMember(member)}
-              onDelete={() => handleDeleteMember(member.id)}
-              onMoveUp={() => handleMoveMember(index, 'up')}
-              onMoveDown={() => handleMoveMember(index, 'down')}
-            />
-          ))}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={members.map((m) => m.id)}
+            strategy={rectSortingStrategy}
+          >
+            <div className={`grid ${gridColClass} gap-4`}>
+              {members.map((member) => (
+                <SortableTeamCard
+                  key={member.id}
+                  member={member}
+                  onEdit={() => setEditingMember(member)}
+                  onDelete={() => handleDeleteMember(member.id)}
+                />
+              ))}
 
-          {/* Add Member button */}
-          <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
-            <button
-              onClick={handleAddMember}
-              className="absolute inset-0 rounded-xl border-2 border-dashed border-[#333] hover:border-[#C9A227] bg-[#0A0A0A] hover:bg-[#C9A227]/5 flex flex-col items-center justify-center gap-2 transition-colors"
-            >
-              <Plus className="w-8 h-8 text-gray-500" />
-              <span className="text-sm text-gray-500">Add Member</span>
-            </button>
-          </div>
-        </div>
+              {/* Add Member button */}
+              <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
+                <button
+                  onClick={handleAddMember}
+                  className="absolute inset-0 rounded-xl border-2 border-dashed border-[#333] hover:border-[#C9A227] bg-[#0A0A0A] hover:bg-[#C9A227]/5 flex flex-col items-center justify-center gap-2 transition-colors"
+                >
+                  <Plus className="w-8 h-8 text-gray-500" />
+                  <span className="text-sm text-gray-500">Add Member</span>
+                </button>
+              </div>
+            </div>
+          </SortableContext>
+        </DndContext>
 
         {/* Recruitment CTA toggle */}
         <div className="mt-6 flex items-center gap-3">
