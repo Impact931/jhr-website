@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
+import { EditableImage } from "@/components/inline-editor/EditableImage";
 import { useEditMode } from "@/context/inline-editor/EditModeContext";
 import { useContent } from "@/context/inline-editor/ContentContext";
 import { CONTACT_SECTIONS } from "@/content/schemas/contact";
@@ -145,7 +145,8 @@ function ContactForm() {
 
             {/* Image */}
             <div className="mt-8 aspect-video relative rounded-xl overflow-hidden">
-              <Image
+              <EditableImage
+                contentKey="contact:form-image"
                 src="/images/generated/venue-hotel-ballroom.jpg"
                 alt="Corporate event venue"
                 fill
