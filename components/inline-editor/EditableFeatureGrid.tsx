@@ -685,7 +685,7 @@ function JourneyView({
                   />
 
                   {/* Description */}
-                  <p className="text-body-md text-jhr-white-dim max-w-xs"
+                  <div className="text-body-md text-jhr-white-dim max-w-xs"
                     {...renderInlineHtml(feature.description)}
                   />
                 </motion.div>
@@ -744,7 +744,7 @@ function JourneyView({
                       <h3 className="text-heading-lg font-semibold text-jhr-white mb-1"
                         {...renderInlineHtml(feature.title)}
                       />
-                      <p className="text-body-md text-jhr-white-dim"
+                      <div className="text-body-md text-jhr-white-dim"
                         {...renderInlineHtml(feature.description)}
                       />
                     </div>
@@ -847,7 +847,7 @@ function AlternatingView({
                 <h3 className="text-heading-lg font-semibold text-jhr-white mb-3"
                   {...renderInlineHtml(feature.title)}
                 />
-                <p className="text-body-md text-jhr-white-dim leading-relaxed"
+                <div className="text-body-md text-jhr-white-dim leading-relaxed"
                   {...renderInlineHtml(feature.description)}
                 />
                 {feature.link && (
@@ -944,7 +944,7 @@ function HorizontalCardView({
                 <h3 className="text-heading-lg font-semibold text-jhr-white mb-2"
                   {...renderInlineHtml(feature.title)}
                 />
-                <p className="text-body-md text-jhr-white-dim"
+                <div className="text-body-md text-jhr-white-dim"
                   {...renderInlineHtml(feature.description)}
                 />
                 {feature.link && (
@@ -1046,7 +1046,7 @@ function DefaultCardView({
       <h3 className="text-heading-lg font-semibold text-jhr-white mb-2"
         {...renderInlineHtml(feature.title)}
       />
-      <p className="text-body-md text-jhr-white-dim mb-4"
+      <div className="text-body-md text-jhr-white-dim mb-4"
         {...renderInlineHtml(feature.description)}
       />
       {feature.link && (
@@ -1802,8 +1802,9 @@ export function EditableFeatureGrid({
                 <div className="mb-4">
                   <EditableText
                     contentKey={`${contentKeyPrefix}:card-${feature.id}-description`}
-                    as="p"
+                    as="div"
                     className="text-body-md text-jhr-white-dim"
+                    multiline
                     placeholder="Feature description..."
                   >
                     {feature.description}

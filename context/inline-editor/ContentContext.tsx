@@ -103,11 +103,10 @@ function sanitizeSections(sections: PageSectionContent[]): PageSectionContent[] 
       }
     }
 
-    // Clean feature-grid cards — preserve inline formatting
+    // Clean feature-grid cards — titles get inline formatting, descriptions are rich text (preserved as-is)
     if (section.type === 'feature-grid' && Array.isArray(s.features)) {
       for (const f of s.features) {
         if (typeof f?.title === 'string' && f.title.includes('<')) f.title = cleanInlineHtml(f.title);
-        if (typeof f?.description === 'string' && f.description.includes('<')) f.description = cleanInlineHtml(f.description);
       }
     }
 
@@ -246,7 +245,11 @@ function applyFieldToSection(section: PageSectionContent, elementId: string, val
     const cardId = cardMatch[1];
     const field = cardMatch[2];
     const card = s.features?.find((f: { id: string }) => f.id === cardId);
-    if (card) { card[field] = field === 'icon' ? stripAllHtml(value) : cleanInlineHtml(value); }
+    if (card) {
+      if (field === 'icon') card[field] = stripAllHtml(value);
+      else if (field === 'description') card[field] = value; // preserve rich text (paragraphs, formatting)
+      else card[field] = cleanInlineHtml(value);
+    }
     return;
   }
 
