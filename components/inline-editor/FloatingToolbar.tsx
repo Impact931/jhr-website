@@ -381,6 +381,29 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
 
   // ---- Helpers ----
 
+  /** Get the DOM element at the current cursor position for computed style fallback. */
+  const getCursorElement = (): HTMLElement | null => {
+    if (!editor) return null;
+    try {
+      const { from } = editor.state.selection;
+      const domAtPos = editor.view.domAtPos(from);
+      const node = domAtPos.node;
+      if (node instanceof HTMLElement) return node;
+      if (node.parentElement) return node.parentElement;
+    } catch {
+      // Fallback to editor root
+    }
+    return editor.view.dom as HTMLElement;
+  };
+
+  /** Get computed style value from the element at cursor. */
+  const getComputedProp = (prop: string): string => {
+    if (typeof window === 'undefined') return '';
+    const el = getCursorElement();
+    if (!el) return '';
+    return window.getComputedStyle(el).getPropertyValue(prop);
+  };
+
   /** Get current heading level label. */
   const getHeadingLabel = (): string => {
     if (!editor) return PARAGRAPH_OPTION.label;
@@ -401,7 +424,16 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
       const match = FONT_FAMILIES.find((f) => f.value === currentFont);
       if (match) return match.name;
     }
-    return 'Font';
+    // Fallback: read computed font from DOM
+    const computed = getComputedProp('font-family');
+    if (computed) {
+      const match = FONT_FAMILIES.find((f) => {
+        const primary = f.value.split(',')[0].trim().replace(/['"]/g, '');
+        return computed.toLowerCase().includes(primary.toLowerCase());
+      });
+      if (match) return match.name;
+    }
+    return 'Inter';
   };
 
   /** Get current font weight label. */
@@ -413,7 +445,13 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
       const match = FONT_WEIGHTS.find((w) => w.value === currentWeight);
       if (match) return match.label;
     }
-    return 'Weight';
+    // Fallback: read computed weight from DOM
+    const computed = getComputedProp('font-weight');
+    if (computed) {
+      const match = FONT_WEIGHTS.find((w) => w.value === computed);
+      if (match) return match.label;
+    }
+    return 'Regular';
   };
 
   /** Get current font size label. */
@@ -426,14 +464,35 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
       if (match) return match.label;
       return currentSize;
     }
-    return 'Size';
+    // Fallback: read computed size from DOM
+    const computed = getComputedProp('font-size');
+    if (computed) {
+      // Round to nearest pixel for clean display
+      const px = Math.round(parseFloat(computed));
+      if (px > 0) return `${px}px`;
+    }
+    return '16px';
   };
 
-  /** Get current text color. */
+  /** Get current text color (explicit or computed). */
   const getCurrentColor = (): string => {
     if (!editor) return '';
     const attrs = editor.getAttributes('textStyle');
-    return (attrs?.color as string) || '';
+    const explicit = (attrs?.color as string) || '';
+    if (explicit) return explicit;
+    // Fallback: read computed color from DOM
+    const computed = getComputedProp('color');
+    if (computed) {
+      // Convert rgb(r, g, b) to hex for matching
+      const match = computed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      if (match) {
+        const hex = '#' + [match[1], match[2], match[3]]
+          .map(n => parseInt(n).toString(16).padStart(2, '0'))
+          .join('');
+        return hex.toUpperCase();
+      }
+    }
+    return '';
   };
 
   // Don't render if no editor or not visible
@@ -540,25 +599,28 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
           />
           {activeDropdown === 'font' && (
             <div className={`absolute ${dropdownPositionClass} left-0 bg-[#1A1A1A] border border-gray-700 rounded-lg shadow-xl py-1 min-w-[220px] z-10 max-h-72 overflow-y-auto`}>
-              {FONT_FAMILIES.map((font) => (
-                <button
-                  key={font.name}
-                  type="button"
-                  onClick={() => handleFontFamily(font.value)}
-                  className={`
-                    w-full text-left px-3 py-3 sm:py-2 text-sm flex items-center justify-between transition-colors min-h-[44px] touch-manipulation
-                    ${editor.getAttributes('textStyle')?.fontFamily === font.value
-                      ? 'text-jhr-gold bg-jhr-gold/10'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                    }
-                  `}
-                >
-                  <span style={{ fontFamily: font.value }}>{font.label}</span>
-                  {editor.getAttributes('textStyle')?.fontFamily === font.value && (
-                    <Check className="w-4 h-4 text-jhr-gold" />
-                  )}
-                </button>
-              ))}
+              {FONT_FAMILIES.map((font) => {
+                const isActive = font.name === getFontLabel();
+                return (
+                  <button
+                    key={font.name}
+                    type="button"
+                    onClick={() => handleFontFamily(font.value)}
+                    className={`
+                      w-full text-left px-3 py-3 sm:py-2 text-sm flex items-center justify-between transition-colors min-h-[44px] touch-manipulation
+                      ${isActive
+                        ? 'text-jhr-gold bg-jhr-gold/10'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                      }
+                    `}
+                  >
+                    <span style={{ fontFamily: font.value }}>{font.label}</span>
+                    {isActive && (
+                      <Check className="w-4 h-4 text-jhr-gold" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -573,25 +635,28 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
           />
           {activeDropdown === 'weight' && (
             <div className={`absolute ${dropdownPositionClass} left-0 bg-[#1A1A1A] border border-gray-700 rounded-lg shadow-xl py-1 min-w-[160px] z-10`}>
-              {FONT_WEIGHTS.map((w) => (
-                <button
-                  key={w.value}
-                  type="button"
-                  onClick={() => handleFontWeight(w.value)}
-                  className={`
-                    w-full text-left px-3 py-3 sm:py-2 text-sm flex items-center justify-between transition-colors min-h-[44px] touch-manipulation
-                    ${editor.getAttributes('textStyle')?.fontWeight === w.value
-                      ? 'text-jhr-gold bg-jhr-gold/10'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                    }
-                  `}
-                >
-                  <span style={{ fontWeight: w.value }}>{w.label}</span>
-                  {editor.getAttributes('textStyle')?.fontWeight === w.value && (
-                    <Check className="w-4 h-4 text-jhr-gold" />
-                  )}
-                </button>
-              ))}
+              {FONT_WEIGHTS.map((w) => {
+                const isActive = w.label === getWeightLabel();
+                return (
+                  <button
+                    key={w.value}
+                    type="button"
+                    onClick={() => handleFontWeight(w.value)}
+                    className={`
+                      w-full text-left px-3 py-3 sm:py-2 text-sm flex items-center justify-between transition-colors min-h-[44px] touch-manipulation
+                      ${isActive
+                        ? 'text-jhr-gold bg-jhr-gold/10'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                      }
+                    `}
+                  >
+                    <span style={{ fontWeight: w.value }}>{w.label}</span>
+                    {isActive && (
+                      <Check className="w-4 h-4 text-jhr-gold" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -606,25 +671,28 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
           />
           {activeDropdown === 'size' && (
             <div className={`absolute ${dropdownPositionClass} left-0 bg-[#1A1A1A] border border-gray-700 rounded-lg shadow-xl py-1 min-w-[120px] z-10 max-h-64 overflow-y-auto`}>
-              {FONT_SIZES.map((s) => (
-                <button
-                  key={s.value}
-                  type="button"
-                  onClick={() => handleFontSize(s.value)}
-                  className={`
-                    w-full text-left px-3 py-3 sm:py-2 text-sm flex items-center justify-between transition-colors min-h-[44px] touch-manipulation
-                    ${editor.getAttributes('textStyle')?.fontSize === s.value
-                      ? 'text-jhr-gold bg-jhr-gold/10'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                    }
-                  `}
-                >
-                  <span>{s.label}</span>
-                  {editor.getAttributes('textStyle')?.fontSize === s.value && (
-                    <Check className="w-4 h-4 text-jhr-gold" />
-                  )}
-                </button>
-              ))}
+              {FONT_SIZES.map((s) => {
+                const isActive = s.label === getSizeLabel();
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => handleFontSize(s.value)}
+                    className={`
+                      w-full text-left px-3 py-3 sm:py-2 text-sm flex items-center justify-between transition-colors min-h-[44px] touch-manipulation
+                      ${isActive
+                        ? 'text-jhr-gold bg-jhr-gold/10'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                      }
+                    `}
+                  >
+                    <span>{s.label}</span>
+                    {isActive && (
+                      <Check className="w-4 h-4 text-jhr-gold" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -646,12 +714,10 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
           >
             <div className="relative">
               <Palette className="w-4 h-4" />
-              {getCurrentColor() && (
-                <div
-                  className="absolute -bottom-0.5 left-0 right-0 h-1 rounded-full"
-                  style={{ backgroundColor: getCurrentColor() }}
-                />
-              )}
+              <div
+                className="absolute -bottom-0.5 left-0 right-0 h-1 rounded-full"
+                style={{ backgroundColor: getCurrentColor() || '#A3A3A3' }}
+              />
             </div>
           </button>
           {activeDropdown === 'color' && (
