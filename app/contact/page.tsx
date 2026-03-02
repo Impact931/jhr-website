@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Send, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
 import { useEditMode } from "@/context/inline-editor/EditModeContext";
 import { useContent } from "@/context/inline-editor/ContentContext";
 import { CONTACT_SECTIONS } from "@/content/schemas/contact";
@@ -18,9 +19,7 @@ import type {
 // Section class map
 // ============================================================================
 
-const SECTION_CLASS_MAP: Record<string, string> = {
-  info: "section-padding bg-jhr-black",
-};
+const SECTION_CLASS_MAP: Record<string, string> = {};
 
 // ============================================================================
 // Contact Form (unchanged)
@@ -89,8 +88,74 @@ function ContactForm() {
 
   return (
     <section className="section-padding bg-jhr-black">
-      <div className="section-container max-w-2xl mx-auto">
-        <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-xl p-6 lg:p-8">
+      <div className="section-container">
+        <div className="grid lg:grid-cols-2 gap-12">
+          {/* Contact Info — left column */}
+          <div>
+            <h2 className="text-display-sm font-display font-bold text-jhr-white mb-6">
+              Contact Information
+            </h2>
+            <p className="text-body-lg text-jhr-white-muted mb-8">
+              Prefer a direct conversation? Use the information below to reach
+              us directly, or schedule a strategy call for a more in-depth
+              discussion.
+            </p>
+
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center">
+                  <Mail className="w-6 h-6 text-jhr-gold" />
+                </div>
+                <div>
+                  <p className="text-body-sm text-jhr-white-dim">Email</p>
+                  <a
+                    href="mailto:info@jhr-photography.com"
+                    className="text-body-md text-jhr-white hover:text-jhr-gold transition-colors"
+                  >
+                    info@jhr-photography.com
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center">
+                  <Phone className="w-6 h-6 text-jhr-gold" />
+                </div>
+                <div>
+                  <p className="text-body-sm text-jhr-white-dim">Phone</p>
+                  <a
+                    href="tel:+16155550123"
+                    className="text-body-md text-jhr-white hover:text-jhr-gold transition-colors"
+                  >
+                    (615) 555-0123
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-lg bg-jhr-gold/10 flex items-center justify-center">
+                  <MapPin className="w-6 h-6 text-jhr-gold" />
+                </div>
+                <div>
+                  <p className="text-body-sm text-jhr-white-dim">Location</p>
+                  <p className="text-body-md text-jhr-white">
+                    Nashville, Tennessee
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Image */}
+            <div className="mt-8 aspect-video relative rounded-xl overflow-hidden">
+              <Image
+                src="/images/generated/venue-hotel-ballroom.jpg"
+                alt="Corporate event venue"
+                fill
+                className="object-cover"
+              />
+            </div>
+          </div>
+
+          {/* Contact Form — right column */}
+          <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-xl p-6 lg:p-8">
           {submitStatus === "success" ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 rounded-full bg-jhr-gold/10 flex items-center justify-center mx-auto mb-6">
@@ -285,6 +350,7 @@ function ContactForm() {
               )}
             </form>
           )}
+          </div>
         </div>
       </div>
     </section>

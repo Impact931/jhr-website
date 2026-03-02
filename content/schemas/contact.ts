@@ -101,7 +101,6 @@ export const CONTACT_INFO: TextBlockSectionContent = {
 
 export const CONTACT_SECTIONS: PageSectionContent[] = [
   CONTACT_HERO,
-  CONTACT_INFO,
 ];
 
 export const CONTACT_PAGE_SCHEMA: PageSchema = {
