@@ -131,7 +131,7 @@ interface SettingsRecord extends SiteSettings {
 const defaultSettings: SiteSettings = {
   siteName: 'JHR Photography',
   siteTagline: 'Nashville Corporate Event Photography',
-  contactEmail: 'info@jhrphotography.com',
+  contactEmail: 'info@jhr-photography.com',
   contactPhone: '(615) 555-0123',
   defaultMetaTitle: 'JHR Photography | Nashville Corporate Event Photography',
   defaultMetaDescription:

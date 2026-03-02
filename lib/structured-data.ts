@@ -147,8 +147,8 @@ export function generateOrganizationSchema(): StructuredDataSchema {
       ],
       sameAs: [
         'https://www.linkedin.com/company/jhr-photography',
-        'https://www.instagram.com/jhrphotography',
-        'https://www.facebook.com/jhrphotography',
+        'https://www.instagram.com/jhrphotos',
+        'https://www.facebook.com/jhrphotos/',
       ],
     },
   };

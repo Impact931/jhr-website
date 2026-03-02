@@ -122,7 +122,7 @@ export const TEAM_GRID: TeamGridSectionContent = {
         { id: 'b-j4', label: 'Lead Certified', category: 'certification' },
       ],
       socialLinks: [
-        { platform: 'instagram', url: 'https://instagram.com/jhrphotography' },
+        { platform: 'instagram', url: 'https://www.instagram.com/jhrphotos' },
         { platform: 'linkedin', url: 'https://linkedin.com/in/jaysonrivas' },
         { platform: 'website', url: 'https://jhrphotography.com' },
       ],

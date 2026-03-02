@@ -47,7 +47,7 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-4">
               <a
-                href="https://linkedin.com/company/jhr-photography"
+                href="https://www.linkedin.com/company/jhr-photography/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-jhr-white-dim hover:text-jhr-gold transition-colors duration-200"
@@ -58,7 +58,7 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href="https://instagram.com/jhrphotography"
+                href="https://www.instagram.com/jhrphotos"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-jhr-white-dim hover:text-jhr-gold transition-colors duration-200"
@@ -69,7 +69,7 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href="https://facebook.com/jhrphotography"
+                href="https://www.facebook.com/jhrphotos/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-jhr-white-dim hover:text-jhr-gold transition-colors duration-200"
