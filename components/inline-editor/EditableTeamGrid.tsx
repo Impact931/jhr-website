@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import {
   DndContext,
   closestCenter,
@@ -132,7 +131,7 @@ function TeamMemberCard({
   onUnlock: () => void;
   onUnflip: () => void;
 }) {
-  const handleClick = useCallback(() => {
+  const handleCardClick = useCallback(() => {
     if (isLocked) {
       onUnlock();
     } else if (isFlipped) {
@@ -154,140 +153,142 @@ function TeamMemberCard({
   return (
     <div
       className={`group/card relative cursor-pointer ${isFlipped ? 'z-10' : 'z-0'}`}
-      style={{ perspective: '1000px', WebkitPerspective: '1000px' }}
-      onClick={handleClick}
+      onClick={handleCardClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Card Container - 3:4 aspect ratio */}
       <div className="relative w-full" style={{ paddingBottom: '133.33%' }}>
-        <motion.div
-          className="absolute inset-0 will-change-transform"
-          style={{ transformStyle: 'preserve-3d', WebkitTransformStyle: 'preserve-3d' }}
-          initial={{ rotateY: 0 }}
-          animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+        {/* FRONT FACE */}
+        <div
+          className={`absolute inset-0 rounded-xl overflow-hidden border border-white/10 transition-opacity duration-500 ${
+            isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
         >
-          {/* FRONT FACE */}
-          <div
-            className="absolute inset-0 rounded-xl overflow-hidden border border-white/10"
-            style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-          >
-            {/* Gold top accent */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#C9A227] to-transparent z-10" />
+          {/* Gold top accent */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#C9A227] to-transparent z-10" />
 
-            {/* Photo */}
-            {member.photo?.src ? (
-              <img
-                src={member.photo.src}
-                alt={member.photo.alt || member.name}
-                className="absolute inset-0 w-full h-full object-cover"
-                style={{ objectPosition: `center ${member.photo.positionY ?? 20}%` }}
-              />
-            ) : (
-              <div className="absolute inset-0 bg-gradient-to-b from-[#1A1A1A] to-[#0A0A0A] flex items-center justify-center">
-                <Users className="w-16 h-16 text-[#333]" />
+          {/* Photo */}
+          {member.photo?.src ? (
+            <img
+              src={member.photo.src}
+              alt={member.photo.alt || member.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ objectPosition: `center ${member.photo.positionY ?? 20}%` }}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-b from-[#1A1A1A] to-[#0A0A0A] flex items-center justify-center">
+              <Users className="w-16 h-16 text-[#333]" />
+            </div>
+          )}
+
+          {/* Gradient overlay at bottom */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
+          {/* Name, Role, Specialties */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+            <h3 className="text-lg font-display font-bold text-white leading-tight">
+              {member.name}
+            </h3>
+            <p className="text-sm text-[#C9A227] font-medium mt-0.5">
+              {member.role}
+            </p>
+            {member.specialties.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {member.specialties.slice(0, 3).map((spec, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-white/10 text-white/80 backdrop-blur-sm"
+                  >
+                    {spec}
+                  </span>
+                ))}
               </div>
             )}
+          </div>
 
-            {/* Gradient overlay at bottom */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+          {/* Tap hint on mobile, hover hint on desktop */}
+          <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm text-[10px] text-white/60 z-10 sm:opacity-0 sm:group-hover/card:opacity-100 transition-opacity">
+            Tap for details
+          </div>
+        </div>
 
-            {/* Name, Role, Specialties */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-              <h3 className="text-lg font-display font-bold text-white leading-tight">
+        {/* BACK FACE */}
+        <div
+          className={`absolute inset-0 rounded-xl overflow-hidden border border-[#C9A227]/30 bg-[#0D0D0D] transition-opacity duration-500 ${
+            isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          {/* Gold top accent */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#C9A227] to-transparent z-10" />
+
+          <div className="absolute inset-0 p-5 flex flex-col overflow-y-auto">
+            {/* Name header */}
+            <div className="mb-3">
+              <h3 className="text-base font-display font-bold text-white">
                 {member.name}
               </h3>
-              <p className="text-sm text-[#C9A227] font-medium mt-0.5">
-                {member.role}
-              </p>
-              {member.specialties.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {member.specialties.slice(0, 3).map((spec, i) => (
+              <p className="text-xs text-[#C9A227] font-medium">{member.role}</p>
+            </div>
+
+            {/* Bio */}
+            <p className="text-sm text-gray-300 leading-relaxed mb-4 flex-shrink-0">
+              {member.bio}
+            </p>
+
+            {/* Badges */}
+            {member.badges.length > 0 && (
+              <div className="mb-4">
+                <div className="flex flex-wrap gap-1.5">
+                  {member.badges.map((badge) => (
                     <span
-                      key={i}
-                      className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-white/10 text-white/80 backdrop-blur-sm"
+                      key={badge.id}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-full bg-[#C9A227]/10 text-[#C9A227] border border-[#C9A227]/30"
                     >
-                      {spec}
+                      {badge.icon ? (
+                        <img src={badge.icon} alt="" className="w-4 h-4 object-contain" />
+                      ) : (
+                        getBadgeCategoryIcon(badge.category)
+                      )}
+                      {badge.label}
                     </span>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Click hint */}
-            <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm text-[10px] text-white/60 z-10 opacity-0 group-hover/card:opacity-100 transition-opacity">
-              Click to keep open
-            </div>
-          </div>
-
-          {/* BACK FACE */}
-          <div
-            className="absolute inset-0 rounded-xl overflow-hidden border border-[#C9A227]/30 bg-[#0D0D0D]"
-            style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-          >
-            {/* Gold top accent */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#C9A227] to-transparent z-10" />
-
-            <div className="absolute inset-0 p-5 flex flex-col overflow-y-auto">
-              {/* Name header */}
-              <div className="mb-3">
-                <h3 className="text-base font-display font-bold text-white">
-                  {member.name}
-                </h3>
-                <p className="text-xs text-[#C9A227] font-medium">{member.role}</p>
               </div>
+            )}
 
-              {/* Bio */}
-              <p className="text-sm text-gray-300 leading-relaxed mb-4 flex-shrink-0">
-                {member.bio}
-              </p>
+            {/* Spacer */}
+            <div className="flex-1" />
 
-              {/* Badges */}
-              {member.badges.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex flex-wrap gap-1.5">
-                    {member.badges.map((badge) => (
-                      <span
-                        key={badge.id}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-full bg-[#C9A227]/10 text-[#C9A227] border border-[#C9A227]/30"
-                      >
-                        {badge.icon ? (
-                          <img src={badge.icon} alt="" className="w-4 h-4 object-contain" />
-                        ) : (
-                          getBadgeCategoryIcon(badge.category)
-                        )}
-                        {badge.label}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+            {/* Social Links */}
+            {member.socialLinks.length > 0 && (
+              <div className="flex items-center gap-2 pt-3 border-t border-white/10">
+                {member.socialLinks.map((link, i) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    onTouchEnd={(e) => {
+                      e.stopPropagation();
+                      window.open(link.url, '_blank', 'noopener,noreferrer');
+                    }}
+                    className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-[#C9A227] hover:bg-[#C9A227]/10 transition-colors"
+                    title={link.label || link.platform}
+                  >
+                    {getSocialIcon(link.platform)}
+                  </a>
+                ))}
+              </div>
+            )}
 
-              {/* Spacer */}
-              <div className="flex-1" />
-
-              {/* Social Links */}
-              {member.socialLinks.length > 0 && (
-                <div className="flex items-center gap-2 pt-3 border-t border-white/10">
-                  {member.socialLinks.map((link, i) => (
-                    <a
-                      key={i}
-                      href={link.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-[#C9A227] hover:bg-[#C9A227]/10 transition-colors"
-                      title={link.label || link.platform}
-                    >
-                      {getSocialIcon(link.platform)}
-                    </a>
-                  ))}
-                </div>
-              )}
+            {/* Tap to close hint */}
+            <div className="mt-3 text-center text-[10px] text-white/40 sm:hidden">
+              Tap to close
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Hover glow */}
