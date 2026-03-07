@@ -70,7 +70,7 @@ export const HA_HERO: HeroSectionContent = {
   variant: 'split',
   imagePosition: 'right',
   title: 'Turn Your Booth Into the Most <em class="text-jhr-gold not-italic">Popular Spot</em> on the Floor',
-  subtitle: 'Headshot Activation\u2122',
+  subtitle: 'Headshot Activation',
   description:
     'A Headshot Activation isn\u2019t a photo booth \u2014 it\u2019s a professional engagement system that draws a crowd, captures qualified leads, and gives every attendee something they actually value. Your sales team gets natural conversations. Your attendees get a polished headshot they\u2019ll use for months. And your booth becomes the one everyone\u2019s talking about.',
   backgroundImage: {
@@ -138,7 +138,7 @@ export const HA_SOLUTION: FeatureGridSectionContent = {
   },
   heading: 'A Professional Experience Attendees Line Up For',
   subheading:
-    'A Headshot Activation is a turnkey, on-site professional headshot experience deployed directly at your booth or event space. We bring the lighting, the equipment, the professional direction, and the Camera Ready Touchup Service\u2122 \u2014 everything needed to make attendees feel like a VIP the moment they step in.',
+    'A Headshot Activation is a turnkey, on-site professional headshot experience deployed directly at your booth or event space. We bring the lighting, the equipment, the professional direction, and the Camera Ready Touchup Service \u2014 everything needed to make attendees feel like a VIP the moment they step in.',
   columns: 2,
   displayMode: 'alternating',
   showStepNumbers: true,
@@ -156,7 +156,7 @@ export const HA_SOLUTION: FeatureGridSectionContent = {
       icon: 'Heart',
       title: 'The Experience',
       description:
-        'Every attendee gets professional direction, confidence coaching, and a Camera Ready Touchup Service\u2122 before stepping in front of the camera. They feel prepared, valued, and taken care of \u2014 and that feeling gets associated with your brand.',
+        'Every attendee gets professional direction, confidence coaching, and a Camera Ready Touchup Service before stepping in front of the camera. They feel prepared, valued, and taken care of \u2014 and that feeling gets associated with your brand.',
       image: { src: '/images/generated/placeholder.jpg', alt: 'Attendee receiving Camera Ready Touchup before headshot' },
     },
     {
@@ -233,7 +233,7 @@ export const HA_USE_CASES: TabbedContentSectionContent = {
       ],
       listItems: [
         'Professional activation station with signature lighting',
-        'Camera Ready Touchup Service\u2122 (included full-day)',
+        'Camera Ready Touchup Service (included full-day)',
         'Integrated lead capture with real-time data delivery',
         'Direct-to-attendee headshot delivery',
         'White-label branding on gallery and images',
@@ -260,7 +260,7 @@ export const HA_USE_CASES: TabbedContentSectionContent = {
       ],
       listItems: [
         'Full-service headshot experience for attendees or tenants',
-        'Camera Ready Touchup Service\u2122 (included)',
+        'Camera Ready Touchup Service (included)',
         'Professional direction and confidence coaching',
         'Direct-to-individual delivery',
         'Branded gallery with your organization\u2019s identity',
@@ -308,7 +308,7 @@ export const HA_WHATS_INCLUDED: FeatureGridSectionContent = {
     {
       id: 'whats-included-card-1',
       icon: 'CheckCircle',
-      title: 'Camera Ready Touchup Service\u2122',
+      title: 'Camera Ready Touchup Service',
       description:
         'A professional touchup artist on-site all day, ensuring every attendee feels confident before they step in front of the camera.',
     },
@@ -350,7 +350,7 @@ export const HA_WHATS_INCLUDED: FeatureGridSectionContent = {
     {
       id: 'whats-included-card-7',
       icon: 'CheckCircle',
-      title: 'Final Frame Guarantee\u2122',
+      title: 'Final Frame Guarantee',
       description:
         'Every delivered image meets JHR\u2019s professional quality standard. Period.',
     },
@@ -514,7 +514,7 @@ export const HA_FAQS: FAQSectionContent = {
       id: 'faqs-item-0',
       question: 'What\u2019s the difference between a Headshot Activation and a regular headshot session?',
       answer:
-        'A Headshot Activation is a professional engagement system designed for live events \u2014 trade shows, conferences, and corporate programs. It\u2019s not a studio session. We deploy a complete setup at your event: professional lighting, a Camera Ready Touchup Service, live image selection, and direct-to-attendee delivery. The goal isn\u2019t just headshots \u2014 it\u2019s booth traffic, attendee engagement, and lead capture, all wrapped in a professional experience people genuinely enjoy. If you\u2019re looking for dedicated headshots for your leadership team or small group in a controlled setting, that\u2019s our Executive Imaging\u2122 service.',
+        'A Headshot Activation is a professional engagement system designed for live events \u2014 trade shows, conferences, and corporate programs. It\u2019s not a studio session. We deploy a complete setup at your event: professional lighting, a Camera Ready Touchup Service, live image selection, and direct-to-attendee delivery. The goal isn\u2019t just headshots \u2014 it\u2019s booth traffic, attendee engagement, and lead capture, all wrapped in a professional experience people genuinely enjoy. If you\u2019re looking for dedicated headshots for your leadership team or small group in a controlled setting, that\u2019s our Executive Imaging service.',
     },
     {
       id: 'faqs-item-1',
@@ -643,7 +643,7 @@ export const HEADSHOT_ACTIVATION_PAGE_SCHEMA: PageSchema = {
     metaDescription:
       'Turn your trade show booth into the most popular destination on the floor. Professional headshot activations with lead capture, Camera Ready Touchup Service, and instant delivery in Nashville.',
     ogImage: '/images/generated/service-headshot-activation.jpg',
-    ogTitle: 'Headshot Activation\u2122 - JHR Photography',
+    ogTitle: 'Headshot Activation - JHR Photography',
     ogDescription:
       'A professional engagement system that draws a crowd, captures qualified leads, and gives every attendee something they actually value.',
   },

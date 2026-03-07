@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
   generateServiceSchema,
+  generateProductSchema,
   generateBreadcrumbListSchema,
   serializeSchemas,
 } from "@/lib/structured-data";
@@ -28,6 +29,14 @@ const schemas = [
       "Event Headshot Activation",
       "Corporate Headshots",
     ],
+  }),
+  generateProductSchema({
+    name: "Headshot Activation",
+    description:
+      "A turnkey, on-site professional headshot experience for trade shows, conferences, and corporate events. Includes professional lighting, Camera Ready Touchup Service, live image selection, integrated lead capture, and direct-to-attendee delivery. Process 150+ attendees per day with white-label branding.",
+    url: "/services/headshot-activation",
+    image: "/images/generated/service-headshot-activation.jpg",
+    category: "Event Photography Services",
   }),
   generateBreadcrumbListSchema([
     { name: "Home", url: "/" },

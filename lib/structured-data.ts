@@ -395,6 +395,71 @@ export function generateVenueSchema(
 }
 
 // ============================================================================
+// Product Schema Generator
+// ============================================================================
+
+/** Input for generating a Product schema (for branded service offerings). */
+export interface ProductSchemaInput {
+  /** Product/offering name. */
+  name: string;
+  /** Detailed description of the product. */
+  description: string;
+  /** URL path to the product page. */
+  url: string;
+  /** Optional image URL. */
+  image?: string;
+  /** Product category. */
+  category?: string;
+  /** Brand name (defaults to JHR Photography). */
+  brand?: string;
+}
+
+/**
+ * Generates Product schema for a branded service offering.
+ * Use this for unique branded services like Headshot Activation
+ * that deserve their own entity in search results.
+ *
+ * @see https://schema.org/Product
+ */
+export function generateProductSchema(
+  input: ProductSchemaInput
+): StructuredDataSchema {
+  return {
+    type: 'Product',
+    data: {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      '@id': `${resolveUrl(input.url)}#product`,
+      name: input.name,
+      description: input.description,
+      url: resolveUrl(input.url),
+      brand: {
+        '@type': 'Brand',
+        name: input.brand || BUSINESS_NAME,
+      },
+      manufacturer: {
+        '@id': `${SITE_URL}/#organization`,
+      },
+      ...(input.image && { image: resolveUrl(input.image) }),
+      ...(input.category && { category: input.category }),
+      offers: {
+        '@type': 'Offer',
+        availability: 'https://schema.org/InStock',
+        priceCurrency: 'USD',
+        seller: {
+          '@id': `${SITE_URL}/#organization`,
+        },
+        areaServed: [
+          { '@type': 'City', name: 'Nashville' },
+          { '@type': 'State', name: 'Tennessee' },
+          { '@type': 'Country', name: 'United States' },
+        ],
+      },
+    },
+  };
+}
+
+// ============================================================================
 // WebSite Schema Generator
 // ============================================================================
 

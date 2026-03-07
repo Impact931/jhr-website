@@ -32,6 +32,7 @@ import { EXHIBITORS_SPONSORS_PAGE_SCHEMA } from './schemas/exhibitors-sponsors';
 import { VENUES_SOLUTION_PAGE_SCHEMA } from './schemas/venues-solution';
 import { VENUES_PAGE_SCHEMA } from './schemas/venues';
 import { CORPORATE_HEADSHOT_PROGRAM_PAGE_SCHEMA } from './schemas/corporate-headshot-program';
+import { NOT_FOUND_PAGE_SCHEMA } from './schemas/not-found';
 
 // Venue detail schemas (8)
 import {
@@ -79,6 +80,9 @@ export const SCHEMA_REGISTRY: Map<string, PageSchema> = new Map([
 
   // Venues overview
   ['venues', VENUES_PAGE_SCHEMA],
+
+  // Utility pages
+  ['not-found', NOT_FOUND_PAGE_SCHEMA],
 
   // Legacy slug (301 redirect to executive-imaging)
   ['corporate-headshot-program', CORPORATE_HEADSHOT_PROGRAM_PAGE_SCHEMA],
