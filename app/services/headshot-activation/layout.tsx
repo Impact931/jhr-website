@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import { generateServiceSchema, serializeSchemas } from "@/lib/structured-data";
+import {
+  generateServiceSchema,
+  generateBreadcrumbListSchema,
+  serializeSchemas,
+} from "@/lib/structured-data";
 
 export const metadata: Metadata = {
-  title: "Headshot Activation",
+  title: "Headshot Activation for Conferences & Trade Shows | Nashville",
   description:
     "On-site headshot activations for conferences and trade shows in Nashville. Professional headshots delivered in under 5 minutes with instant digital delivery by JHR Photography.",
   openGraph: {
@@ -12,18 +16,25 @@ export const metadata: Metadata = {
   },
 };
 
-const serviceSchema = generateServiceSchema({
-  name: "Headshot Activation",
-  description:
-    "On-site headshot activation stations for conferences, trade shows, and corporate events. Professional headshots in under 5 minutes with AI-retouched instant digital delivery.",
-  url: "/services/headshot-activation",
-  serviceTypes: [
-    "Professional Headshot Photography",
-    "On-Site Headshot Station",
-    "Event Headshot Activation",
-    "Corporate Headshots",
-  ],
-});
+const schemas = [
+  generateServiceSchema({
+    name: "Headshot Activation",
+    description:
+      "On-site headshot activation stations for conferences, trade shows, and corporate events. Professional headshots in under 5 minutes with AI-retouched instant digital delivery.",
+    url: "/services/headshot-activation",
+    serviceTypes: [
+      "Professional Headshot Photography",
+      "On-Site Headshot Station",
+      "Event Headshot Activation",
+      "Corporate Headshots",
+    ],
+  }),
+  generateBreadcrumbListSchema([
+    { name: "Home", url: "/" },
+    { name: "Services", url: "/services" },
+    { name: "Headshot Activation", url: "/services/headshot-activation" },
+  ]),
+];
 
 export default function HeadshotActivationLayout({
   children,
@@ -32,7 +43,7 @@ export default function HeadshotActivationLayout({
 }) {
   return (
     <>
-      {serializeSchemas([serviceSchema]).map((json, i) => (
+      {serializeSchemas(schemas).map((json, i) => (
         <script
           key={i}
           type="application/ld+json"

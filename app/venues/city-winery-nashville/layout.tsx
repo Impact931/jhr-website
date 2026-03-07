@@ -1,4 +1,9 @@
 import type { Metadata } from "next";
+import {
+  generateVenueSchema,
+  generateBreadcrumbListSchema,
+  serializeSchemas,
+} from "@/lib/structured-data";
 
 export const metadata: Metadata = {
   title: "City Winery Nashville | Unique Event Photography Downtown",
@@ -11,10 +16,35 @@ export const metadata: Metadata = {
   },
 };
 
+const schemas = [
+  generateVenueSchema({
+    name: "City Winery Nashville",
+    description:
+      "Unique downtown Nashville entertainment venue. JHR Photography captures the energy and intimate atmosphere for corporate and private events.",
+    url: "/venues/city-winery-nashville",
+  }),
+  generateBreadcrumbListSchema([
+    { name: "Home", url: "/" },
+    { name: "Venues", url: "/venues" },
+    { name: "City Winery Nashville", url: "/venues/city-winery-nashville" },
+  ]),
+];
+
 export default function CityWineryLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      {serializeSchemas(schemas).map((json, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: json }}
+        />
+      ))}
+      {children}
+    </>
+  );
 }

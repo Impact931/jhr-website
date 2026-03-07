@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import { generateServiceSchema, serializeSchemas } from "@/lib/structured-data";
+import {
+  generateServiceSchema,
+  generateBreadcrumbListSchema,
+  serializeSchemas,
+} from "@/lib/structured-data";
 
 export const metadata: Metadata = {
-  title: "Trade-Show Media Services",
+  title: "Nashville Trade Show Photographer | Booth & Convention Media Coverage",
   description:
     "Professional trade show photography and media coverage in Nashville. Booth documentation, exhibitor activations, and sponsor deliverables by JHR Photography.",
   openGraph: {
@@ -12,18 +16,25 @@ export const metadata: Metadata = {
   },
 };
 
-const serviceSchema = generateServiceSchema({
-  name: "Trade-Show Media Services",
-  description:
-    "Professional trade show photography and media coverage. Booth documentation, exhibitor activations, sponsor deliverables, and show floor highlights.",
-  url: "/services/trade-show-media",
-  serviceTypes: [
-    "Trade Show Photography",
-    "Exhibitor Photography",
-    "Booth Documentation",
-    "Trade Show Videography",
-  ],
-});
+const schemas = [
+  generateServiceSchema({
+    name: "Trade-Show Media Services",
+    description:
+      "Professional trade show photography and media coverage. Booth documentation, exhibitor activations, sponsor deliverables, and show floor highlights.",
+    url: "/services/trade-show-media",
+    serviceTypes: [
+      "Trade Show Photography",
+      "Exhibitor Photography",
+      "Booth Documentation",
+      "Trade Show Videography",
+    ],
+  }),
+  generateBreadcrumbListSchema([
+    { name: "Home", url: "/" },
+    { name: "Services", url: "/services" },
+    { name: "Trade-Show Media", url: "/services/trade-show-media" },
+  ]),
+];
 
 export default function TradeShowMediaLayout({
   children,
@@ -32,7 +43,7 @@ export default function TradeShowMediaLayout({
 }) {
   return (
     <>
-      {serializeSchemas([serviceSchema]).map((json, i) => (
+      {serializeSchemas(schemas).map((json, i) => (
         <script
           key={i}
           type="application/ld+json"

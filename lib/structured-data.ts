@@ -350,6 +350,51 @@ export function generateServiceSchema(
 }
 
 // ============================================================================
+// Venue/Place Schema Generator
+// ============================================================================
+
+/** Input for generating a Place/EventVenue schema. */
+export interface VenueSchemaInput {
+  /** Venue name. */
+  name: string;
+  /** Short description of photography services at this venue. */
+  description: string;
+  /** URL path to the venue page. */
+  url: string;
+  /** Venue city (defaults to Nashville). */
+  city?: string;
+  /** Venue state (defaults to TN). */
+  state?: string;
+}
+
+/**
+ * Generates Place schema for a venue page.
+ * Links the venue to JHR Photography's services.
+ *
+ * @see https://schema.org/EventVenue
+ */
+export function generateVenueSchema(
+  input: VenueSchemaInput
+): StructuredDataSchema {
+  return {
+    type: 'Place',
+    data: {
+      '@context': 'https://schema.org',
+      '@type': 'EventVenue',
+      name: input.name,
+      description: input.description,
+      url: resolveUrl(input.url),
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: input.city || 'Nashville',
+        addressRegion: input.state || 'TN',
+        addressCountry: 'US',
+      },
+    },
+  };
+}
+
+// ============================================================================
 // WebSite Schema Generator
 // ============================================================================
 

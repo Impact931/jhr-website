@@ -1,4 +1,9 @@
 import type { Metadata } from "next";
+import {
+  generateVenueSchema,
+  generateBreadcrumbListSchema,
+  serializeSchemas,
+} from "@/lib/structured-data";
 
 export const metadata: Metadata = {
   title: "Renaissance Hotel Nashville | Convention Center Event Photography",
@@ -11,10 +16,35 @@ export const metadata: Metadata = {
   },
 };
 
+const schemas = [
+  generateVenueSchema({
+    name: "Renaissance Nashville Hotel",
+    description:
+      "Connected to Music City Center with premium event spaces. JHR Photography knows the hotel's layout and lighting for seamless convention photography.",
+    url: "/venues/renaissance-hotel-nashville",
+  }),
+  generateBreadcrumbListSchema([
+    { name: "Home", url: "/" },
+    { name: "Venues", url: "/venues" },
+    { name: "Renaissance Hotel", url: "/venues/renaissance-hotel-nashville" },
+  ]),
+];
+
 export default function RenaissanceHotelLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      {serializeSchemas(schemas).map((json, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: json }}
+        />
+      ))}
+      {children}
+    </>
+  );
 }

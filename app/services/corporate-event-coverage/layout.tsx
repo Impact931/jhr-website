@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import { generateServiceSchema, serializeSchemas } from "@/lib/structured-data";
+import {
+  generateServiceSchema,
+  generateBreadcrumbListSchema,
+  serializeSchemas,
+} from "@/lib/structured-data";
 
 export const metadata: Metadata = {
-  title: "Corporate Event Coverage",
+  title: "Nashville Corporate Event Photographer | Conference & Meeting Coverage",
   description:
     "Professional corporate event photography in Nashville. Conferences, galas, trade shows, and corporate gatherings captured with editorial precision by JHR Photography.",
   openGraph: {
@@ -12,18 +16,25 @@ export const metadata: Metadata = {
   },
 };
 
-const serviceSchema = generateServiceSchema({
-  name: "Corporate Event Coverage",
-  description:
-    "Professional corporate event photography for conferences, galas, award ceremonies, and corporate gatherings. Editorial-quality documentation with same-day delivery.",
-  url: "/services/corporate-event-coverage",
-  serviceTypes: [
-    "Corporate Event Photography",
-    "Conference Photography",
-    "Gala Photography",
-    "Award Ceremony Photography",
-  ],
-});
+const schemas = [
+  generateServiceSchema({
+    name: "Corporate Event Coverage",
+    description:
+      "Professional corporate event photography for conferences, galas, award ceremonies, and corporate gatherings. Editorial-quality documentation with same-day delivery.",
+    url: "/services/corporate-event-coverage",
+    serviceTypes: [
+      "Corporate Event Photography",
+      "Conference Photography",
+      "Gala Photography",
+      "Award Ceremony Photography",
+    ],
+  }),
+  generateBreadcrumbListSchema([
+    { name: "Home", url: "/" },
+    { name: "Services", url: "/services" },
+    { name: "Corporate Event Coverage", url: "/services/corporate-event-coverage" },
+  ]),
+];
 
 export default function CorporateEventCoverageLayout({
   children,
@@ -32,7 +43,7 @@ export default function CorporateEventCoverageLayout({
 }) {
   return (
     <>
-      {serializeSchemas([serviceSchema]).map((json, i) => (
+      {serializeSchemas(schemas).map((json, i) => (
         <script
           key={i}
           type="application/ld+json"

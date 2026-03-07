@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { generateBreadcrumbListSchema, serializeSchemas } from "@/lib/structured-data";
 
 export const metadata: Metadata = {
   title: "Our Team | JHR Photography",
@@ -11,10 +12,28 @@ export const metadata: Metadata = {
   },
 };
 
+const schemas = [
+  generateBreadcrumbListSchema([
+    { name: "Home", url: "/" },
+    { name: "Team", url: "/team" },
+  ]),
+];
+
 export default function TeamLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      {serializeSchemas(schemas).map((json, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: json }}
+        />
+      ))}
+      {children}
+    </>
+  );
 }
