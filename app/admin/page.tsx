@@ -527,8 +527,17 @@ export default function AdminDashboard() {
                 : 'N/A'
           }
           icon={<Share2 className="w-6 h-6 text-jhr-gold" />}
-          status="neutral"
+          status={
+            socialLoading
+              ? 'neutral'
+              : socialPlatforms.length > 0 && socialPlatforms.every((p) => p.connected)
+                ? 'good'
+                : socialPlatforms.some((p) => p.connected)
+                  ? 'warning'
+                  : 'error'
+          }
           loading={socialLoading}
+          href="/admin/social"
         >
           {!socialLoading && socialPlatforms.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
