@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import { generateBreadcrumbListSchema, serializeSchemas } from '@/lib/structured-data';
 
 export const metadata: Metadata = {
-  title: 'Nashville Insider Blog',
+  title: 'Nashville Event Photography Insider | Tips & Guides',
   description:
-    'Expert insights on corporate event photography, headshot activations, venue guides, and making the most of Nashville\'s premier event spaces. Tips from JHR Photography.',
+    'Expert insights from a Nashville event photographer on corporate event coverage, headshot activations, conference photography tips, and venue guides for Nashville\'s premier event spaces.',
   openGraph: {
-    title: 'Nashville Insider | JHR Photography Blog',
+    title: 'Nashville Event Photography Insider | JHR Photography Blog',
     description:
-      'Expert insights on corporate event photography, headshot activations, and Nashville venue guides.',
+      'Expert insights on corporate event photography, headshot activations, conference tips, and Nashville venue guides.',
     type: 'website',
   },
 };
