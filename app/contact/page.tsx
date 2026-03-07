@@ -123,10 +123,10 @@ function ContactForm() {
                 <div>
                   <p className="text-body-sm text-jhr-white-dim">Phone</p>
                   <a
-                    href="tel:+16155550123"
+                    href="tel:+16152498096"
                     className="text-body-md text-jhr-white hover:text-jhr-gold transition-colors"
                   >
-                    (615) 555-0123
+                    (615) 249-8096
                   </a>
                 </div>
               </div>

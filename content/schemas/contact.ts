@@ -90,7 +90,7 @@ export const CONTACT_INFO: TextBlockSectionContent = {
   content:
     '<p>Prefer a direct conversation? Use the information below to reach us directly, or schedule a strategy call for a more in-depth discussion.</p>' +
     '<p><strong>Email:</strong> info@jhr-photography.com</p>' +
-    '<p><strong>Phone:</strong> (615) 555-0123</p>' +
+    '<p><strong>Phone:</strong> (615) 249-8096</p>' +
     '<p><strong>Location:</strong> Nashville, Tennessee</p>',
   alignment: 'left',
 };

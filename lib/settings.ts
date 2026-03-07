@@ -132,7 +132,7 @@ const defaultSettings: SiteSettings = {
   siteName: 'JHR Photography',
   siteTagline: 'Nashville Corporate Event Photography',
   contactEmail: 'info@jhr-photography.com',
-  contactPhone: '(615) 555-0123',
+  contactPhone: '(615) 249-8096',
   defaultMetaTitle: 'JHR Photography | Nashville Corporate Event Photography',
   defaultMetaDescription:
     'Professional corporate event photography and headshot services in Nashville. Specializing in conferences, conventions, and corporate events.',

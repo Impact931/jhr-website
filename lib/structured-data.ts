@@ -25,7 +25,7 @@ import type {
 
 const SITE_URL = 'https://jhr-photography.com';
 const BUSINESS_NAME = 'JHR Photography';
-const BUSINESS_PHONE = '+1-615-555-0123';
+const BUSINESS_PHONE = '+1-615-249-8096';
 const BUSINESS_EMAIL = 'info@jhr-photography.com';
 const BUSINESS_LOGO = `${SITE_URL}/images/jhr-logo-white.png`;
 
@@ -146,7 +146,7 @@ export function generateOrganizationSchema(): StructuredDataSchema {
         'Headshot Activations',
       ],
       sameAs: [
-        'https://www.linkedin.com/company/jhr-photography',
+        'https://www.linkedin.com/company/jhr-photography/',
         'https://www.instagram.com/jhrphotos',
         'https://www.facebook.com/jhrphotos/',
       ],
