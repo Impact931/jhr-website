@@ -9,8 +9,6 @@ import {
   FileText,
   Image,
   Users,
-  BookOpen,
-  BarChart3,
   Settings,
   LogOut,
   Menu,
@@ -19,6 +17,12 @@ import {
   ChevronRight,
   PenLine,
   CheckCircle,
+  Wand2,
+  Search,
+  Gauge,
+  Globe,
+  Share2,
+  Bell,
 } from 'lucide-react';
 
 interface NavItem {
@@ -27,15 +31,39 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const navItems: NavItem[] = [
-  { label: 'Dashboard', href: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { label: 'Pages', href: '/admin/pages', icon: <FileText className="w-5 h-5" /> },
-  { label: 'Media', href: '/admin/media', icon: <Image className="w-5 h-5" /> },
-  { label: 'Blog', href: '/admin/blog', icon: <PenLine className="w-5 h-5" /> },
-  { label: 'Leads', href: '/admin/leads', icon: <Users className="w-5 h-5" /> },
-  { label: 'Knowledge', href: '/admin/knowledge', icon: <BookOpen className="w-5 h-5" /> },
-  { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
-  { label: 'Settings', href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'Content',
+    items: [
+      { label: 'Dashboard', href: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
+      { label: 'Pages', href: '/admin/pages', icon: <FileText className="w-5 h-5" /> },
+      { label: 'Media', href: '/admin/media', icon: <Image className="w-5 h-5" /> },
+      { label: 'Blog', href: '/admin/blog', icon: <PenLine className="w-5 h-5" /> },
+      { label: 'Articles', href: '/admin/articles', icon: <Wand2 className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { label: 'Leads', href: '/admin/leads', icon: <Users className="w-5 h-5" /> },
+      { label: 'SEO', href: '/admin/seo', icon: <Search className="w-5 h-5" /> },
+      { label: 'Performance', href: '/admin/performance', icon: <Gauge className="w-5 h-5" /> },
+      { label: 'GEO', href: '/admin/geo', icon: <Globe className="w-5 h-5" /> },
+      { label: 'Social', href: '/admin/social', icon: <Share2 className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { label: 'Alerts', href: '/admin/alerts', icon: <Bell className="w-5 h-5" /> },
+      { label: 'Settings', href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
+    ],
+  },
 ];
 
 export default function AdminSidebar() {
@@ -78,30 +106,39 @@ export default function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${
-                active
-                  ? 'bg-jhr-gold/10 text-jhr-gold'
-                  : 'text-jhr-white-dim hover:bg-jhr-black-lighter hover:text-jhr-white'
-              }`}
-            >
-              <span className={active ? 'text-jhr-gold' : 'text-jhr-white-dim group-hover:text-jhr-white'}>
-                {item.icon}
-              </span>
-              <span className="font-medium">{item.label}</span>
-              {active && (
-                <ChevronRight className="w-4 h-4 ml-auto text-jhr-gold" />
-              )}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-4 py-2 overflow-y-auto">
+        {navGroups.map((group) => (
+          <div key={group.label}>
+            <p className="px-4 pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-jhr-white-dim/50">
+              {group.label}
+            </p>
+            <div className="space-y-1">
+              {group.items.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${
+                      active
+                        ? 'bg-jhr-gold/10 text-jhr-gold'
+                        : 'text-jhr-white-dim hover:bg-jhr-black-lighter hover:text-jhr-white'
+                    }`}
+                  >
+                    <span className={active ? 'text-jhr-gold' : 'text-jhr-white-dim group-hover:text-jhr-white'}>
+                      {item.icon}
+                    </span>
+                    <span className="font-medium">{item.label}</span>
+                    {active && (
+                      <ChevronRight className="w-4 h-4 ml-auto text-jhr-gold" />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* User section */}
