@@ -46,11 +46,13 @@ function extractJsonLd(html: string): object[] {
   return schemas;
 }
 
+const ORG_TYPES = ['Organization', 'LocalBusiness', 'ProfessionalService', 'Corporation', 'PhotographyBusiness'];
+
 function checkOrganizationSchema(schemas: object[]): boolean {
   return schemas.some((s) => {
     const type = (s as Record<string, unknown>)['@type'];
-    if (Array.isArray(type)) return type.includes('Organization');
-    return type === 'Organization';
+    if (Array.isArray(type)) return type.some((t) => ORG_TYPES.includes(t));
+    return typeof type === 'string' && ORG_TYPES.includes(type);
   });
 }
 
@@ -63,8 +65,16 @@ function checkFaqSchema(schemas: object[]): boolean {
 }
 
 function countWords(html: string): number {
-  // Strip HTML tags
-  const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  // Try to extract main content area, fall back to full page
+  const mainMatch = html.match(/<main[\s>][\s\S]*?<\/main>/i);
+  const content = mainMatch ? mainMatch[0] : html;
+  // Strip HTML tags and scripts/styles
+  const text = content
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   return text.split(' ').filter((w) => w.length > 0).length;
 }
 
@@ -129,22 +139,40 @@ export async function GET() {
   const robotsTxt = await fetchPage('/robots.txt');
   const crawlerBots = ['GPTBot', 'ClaudeBot', 'PerplexityBot'];
   if (robotsTxt) {
+    const lines = robotsTxt.split('\n').map((l) => l.trim());
     const missingBots: string[] = [];
+
     for (const bot of crawlerBots) {
-      const botRegex = new RegExp(`user-agent:\\s*${bot}`, 'i');
-      const disallowRegex = new RegExp(
-        `user-agent:\\s*${bot}[\\s\\S]*?disallow:\\s*/`,
-        'i'
-      );
-      if (disallowRegex.test(robotsTxt)) {
+      // Find the bot's section and check if it has a root disallow
+      let inBotSection = false;
+      let isBlocked = false;
+      let isFound = false;
+
+      for (const line of lines) {
+        if (/^user-agent:\s*/i.test(line)) {
+          const ua = line.replace(/^user-agent:\s*/i, '').trim();
+          inBotSection = ua.toLowerCase() === bot.toLowerCase();
+          if (inBotSection) isFound = true;
+        } else if (inBotSection) {
+          // Only count as blocked if Disallow is exactly "/" (root block)
+          if (/^disallow:\s*\/\s*$/i.test(line)) {
+            isBlocked = true;
+          }
+          // Allow: / overrides a disallow
+          if (/^allow:\s*\/\s*$/i.test(line) || /^allow:\s*\/$/i.test(line)) {
+            isBlocked = false;
+          }
+        }
+      }
+
+      if (isBlocked) {
         missingBots.push(bot);
-      } else if (botRegex.test(robotsTxt)) {
-        breakdown.crawlers.score += 5;
       } else {
-        // Not specified = not blocked but not explicitly allowed
+        // Found and not blocked, or not found (default allow)
         breakdown.crawlers.score += 5;
       }
     }
+
     if (breakdown.crawlers.score === 15) {
       breakdown.crawlers.detail = 'All AI crawlers have access';
     } else {

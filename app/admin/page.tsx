@@ -265,8 +265,8 @@ export default function AdminDashboard() {
     fetch('/api/admin/psi?url=https://jhr-photography.com&strategy=desktop')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data && typeof data.score === 'number') {
-          setPsiData(data);
+        if (data && typeof data.performanceScore === 'number') {
+          setPsiData({ score: data.performanceScore, strategy: data.strategy || 'desktop' });
         }
       })
       .catch(() => {})
@@ -303,8 +303,8 @@ export default function AdminDashboard() {
     fetch('/api/admin/geo/score')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data && typeof data.score === 'number') {
-          setGeoData(data);
+        if (data && typeof data.totalScore === 'number') {
+          setGeoData({ score: data.totalScore, lastChecked: data.checkedAt });
         }
       })
       .catch(() => {})
@@ -334,11 +334,11 @@ export default function AdminDashboard() {
       );
       if (res.ok) {
         const data = await res.json();
-        if (data && typeof data.score === 'number') {
-          setPsiData(data);
+        if (data && typeof data.performanceScore === 'number') {
+          setPsiData({ score: data.performanceScore, strategy: data.strategy || 'desktop' });
           setToast({
-            message: `PSI Score: ${data.score}/100`,
-            type: data.score >= 90 ? 'success' : data.score >= 70 ? 'info' : 'error',
+            message: `PSI Score: ${data.performanceScore}/100`,
+            type: data.performanceScore >= 90 ? 'success' : data.performanceScore >= 70 ? 'info' : 'error',
           });
         } else {
           setToast({ message: 'PSI audit returned no score', type: 'error' });

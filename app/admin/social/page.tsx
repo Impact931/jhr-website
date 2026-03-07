@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Loader2, ExternalLink, ChevronDown, ChevronUp, Heart, MessageCircle, Eye, ThumbsUp, Play, Users } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -280,6 +280,76 @@ function SummaryCard({
 }
 
 /* ------------------------------------------------------------------ */
+/* Recent Posts Grid (small thumbnails + show more)                     */
+/* ------------------------------------------------------------------ */
+
+function RecentPostsGrid({
+  posts,
+}: {
+  posts: NonNullable<MetaData['recentMedia']>;
+}) {
+  const INITIAL_COUNT = 8;
+  const [showAll, setShowAll] = useState(false);
+  const visiblePosts = useMemo(
+    () => (showAll ? posts : posts.slice(0, INITIAL_COUNT)),
+    [posts, showAll]
+  );
+  const hasMore = posts.length > INITIAL_COUNT;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-medium text-jhr-white-dim">
+          Recent Posts ({posts.length})
+        </h3>
+        {hasMore && (
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="flex items-center gap-1 text-xs text-jhr-gold hover:text-jhr-gold/80 transition-colors"
+          >
+            {showAll ? (
+              <>
+                Show less <ChevronUp className="w-3 h-3" />
+              </>
+            ) : (
+              <>
+                Show all {posts.length} <ChevronDown className="w-3 h-3" />
+              </>
+            )}
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+        {visiblePosts.map((post) => (
+          <a
+            key={post.id}
+            href={post.permalink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative aspect-square bg-jhr-black rounded-md overflow-hidden border border-jhr-black-lighter hover:border-jhr-gold/30 transition-colors"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={post.thumbnailUrl || post.mediaUrl}
+              alt={post.caption?.slice(0, 60) || 'Instagram post'}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <span className="flex items-center gap-0.5 text-[10px] text-white">
+                <Heart className="w-3 h-3" /> {post.likeCount}
+              </span>
+              <span className="flex items-center gap-0.5 text-[10px] text-white">
+                <MessageCircle className="w-3 h-3" /> {post.commentsCount}
+              </span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Main Page                                                           */
 /* ------------------------------------------------------------------ */
 
@@ -328,7 +398,7 @@ export default function AdminSocialPage() {
   }
 
   const igConnected = metaData?.connected ?? false;
-  const fbConnected = false; // Facebook uses separate Page token — stub for now
+  const fbConnected = metaData?.connected ?? false; // Same Meta token covers both IG and FB
   const ytConnected = youtubeData?.connected ?? false;
 
   return (
@@ -397,37 +467,9 @@ export default function AdminSocialPage() {
               />
             </div>
 
-            {/* Recent posts grid */}
+            {/* Recent posts grid — small thumbnails */}
             {metaData.recentMedia && metaData.recentMedia.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-jhr-white-dim mb-3">Recent Posts</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {metaData.recentMedia.map((post) => (
-                    <a
-                      key={post.id}
-                      href={post.permalink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group relative aspect-square bg-jhr-black rounded-lg overflow-hidden border border-jhr-black-lighter hover:border-jhr-gold/30 transition-colors"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={post.thumbnailUrl || post.mediaUrl}
-                        alt={post.caption?.slice(0, 60) || 'Instagram post'}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                        <span className="flex items-center gap-1 text-sm text-white">
-                          <Heart className="w-4 h-4" /> {post.likeCount}
-                        </span>
-                        <span className="flex items-center gap-1 text-sm text-white">
-                          <MessageCircle className="w-4 h-4" /> {post.commentsCount}
-                        </span>
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
+              <RecentPostsGrid posts={metaData.recentMedia} />
             )}
           </div>
         ) : (
@@ -462,27 +504,47 @@ export default function AdminSocialPage() {
           <FacebookIcon className="w-5 h-5 text-blue-500" />
           Facebook
         </h2>
-        <NotConnectedCard
-          icon={<FacebookIcon className="w-6 h-6 text-blue-500" />}
-          title="Connect Facebook"
-          description="Connect your Facebook Business Page to monitor page reach, post engagement, and audience demographics."
-          accentColor="bg-blue-500/10"
-          setupTitle="How to connect Facebook"
-          envVars={[
-            { name: 'META_PAGE_ACCESS_TOKEN', description: 'Long-lived Page Access Token (same as Instagram if using the same Page)' },
-            { name: 'FB_PAGE_ID', description: 'Facebook Page ID' },
-            { name: 'META_APP_ID', description: 'Meta App ID from developer.facebook.com' },
-            { name: 'META_APP_SECRET', description: 'Meta App Secret (keep secure)' },
-          ]}
-          setupSteps={[
-            'Create or use an existing Meta App at developers.facebook.com',
-            'Add the Pages API product to your app',
-            'Generate a Page Access Token with pages_show_list and read_insights permissions',
-            'Exchange for a long-lived token (60 days)',
-            'Find your Page ID from your Facebook Page settings or the /me/accounts endpoint',
-            'Add credentials to your environment variables and redeploy',
-          ]}
-        />
+        {fbConnected ? (
+          <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 rounded-lg bg-blue-500/10">
+                <FacebookIcon className="w-6 h-6 text-blue-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-jhr-white">
+                  {metaData?.account?.name || 'JHR Photography'}
+                </h3>
+                <StatusBadge connected={true} />
+              </div>
+            </div>
+            <p className="text-sm text-jhr-white-dim">
+              Facebook Page is linked via the same Meta Business token as Instagram.
+              Detailed Facebook Page analytics will be available in a future update.
+            </p>
+          </div>
+        ) : (
+          <NotConnectedCard
+            icon={<FacebookIcon className="w-6 h-6 text-blue-500" />}
+            title="Connect Facebook"
+            description="Connect your Facebook Business Page to monitor page reach, post engagement, and audience demographics."
+            accentColor="bg-blue-500/10"
+            setupTitle="How to connect Facebook"
+            envVars={[
+              { name: 'META_PAGE_ACCESS_TOKEN', description: 'Long-lived Page Access Token (same as Instagram if using the same Page)' },
+              { name: 'FB_PAGE_ID', description: 'Facebook Page ID' },
+              { name: 'META_APP_ID', description: 'Meta App ID from developer.facebook.com' },
+              { name: 'META_APP_SECRET', description: 'Meta App Secret (keep secure)' },
+            ]}
+            setupSteps={[
+              'Create or use an existing Meta App at developers.facebook.com',
+              'Add the Pages API product to your app',
+              'Generate a Page Access Token with pages_show_list and read_insights permissions',
+              'Exchange for a long-lived token (60 days)',
+              'Find your Page ID from your Facebook Page settings or the /me/accounts endpoint',
+              'Add credentials to your environment variables and redeploy',
+            ]}
+          />
+        )}
       </div>
 
       {/* YouTube Panel */}
@@ -581,11 +643,11 @@ export default function AdminSocialPage() {
                           })}
                         </p>
                         <div className="flex items-center gap-4 mt-2 text-xs text-jhr-white-dim">
-                          <span className="flex items-center gap-1">
-                            <Eye className="w-3 h-3" /> {video.viewCount.toLocaleString()}
+                          <span className="flex items-center gap-1 font-medium text-jhr-white">
+                            <Eye className="w-3 h-3 text-jhr-white-dim" /> {video.viewCount.toLocaleString()} views
                           </span>
                           <span className="flex items-center gap-1">
-                            <ThumbsUp className="w-3 h-3" /> {video.likeCount.toLocaleString()}
+                            <ThumbsUp className="w-3 h-3" /> {video.likeCount.toLocaleString()} likes
                           </span>
                           <span className="flex items-center gap-1">
                             <MessageCircle className="w-3 h-3" /> {video.commentCount.toLocaleString()}
