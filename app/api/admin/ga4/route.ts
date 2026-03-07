@@ -21,11 +21,15 @@ export async function GET(req: NextRequest) {
   if (isNaN(days) || days < 1) days = 7;
   if (days > 90) days = 90;
 
-  const client = new BetaAnalyticsDataClient({
-    keyFilename:
-      process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE ||
-      './google-service-account.json',
-  });
+  // Support both a key file path (local dev) and inline JSON (Amplify/production)
+  const clientOptions = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON
+    ? { credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON) }
+    : {
+        keyFilename:
+          process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE ||
+          './google-service-account.json',
+      };
+  const client = new BetaAnalyticsDataClient(clientOptions);
 
   const property = `properties/${propertyId}`;
   const dateRange = {
