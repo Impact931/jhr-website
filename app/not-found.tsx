@@ -1,105 +1,20 @@
-"use client";
-
-import { useEffect, useCallback } from "react";
-import { useEditMode } from "@/context/inline-editor/EditModeContext";
-import { useContent } from "@/context/inline-editor/ContentContext";
-import { NOT_FOUND_SECTIONS } from "@/content/schemas/not-found";
-import { SectionRenderer } from "@/components/inline-editor/SectionRenderer";
-import { SectionWrapper, AddSectionButton } from "@/components/inline-editor/SectionWrapper";
-import { createDefaultSection } from "@/types/inline-editor";
-import type {
-  PageSectionContent,
-  InlineSectionType,
-  SectionSEOAttributes,
-} from "@/types/inline-editor";
-
-// ============================================================================
-// 404 Not Found Page - Editable with inline CMS
-// ============================================================================
+import { getSSRSections } from '@/lib/ssr-content';
+import { EditablePage } from '@/components/inline-editor/EditablePage';
+import { NOT_FOUND_SECTIONS } from '@/content/schemas/not-found';
 
 const SECTION_CLASS_MAP: Record<string, string> = {
   hero: "min-h-[60vh]",
   nav: "section-padding bg-jhr-black-light",
 };
 
-export default function NotFoundPage() {
-  const { isEditMode } = useEditMode();
-  const {
-    sections,
-    loadSectionsForPage,
-    addSection,
-    updateSection,
-    deleteSection,
-    moveSectionUp,
-    moveSectionDown,
-  } = useContent();
-
-  useEffect(() => {
-    loadSectionsForPage('not-found', NOT_FOUND_SECTIONS);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleAddSection = useCallback(
-    (type: InlineSectionType, afterIndex: number) => {
-      const newSection = createDefaultSection(type, afterIndex + 1);
-      addSection(newSection, afterIndex + 1);
-    },
-    [addSection]
-  );
-
-  const handleAddSectionWithContent = useCallback(
-    (section: PageSectionContent, afterIndex: number) => {
-      addSection(section, afterIndex + 1);
-    },
-    [addSection]
-  );
-
-  const handleUpdateSEO = useCallback(
-    (sectionId: string, seo: SectionSEOAttributes) => {
-      updateSection(sectionId, { seo } as Partial<PageSectionContent>);
-    },
-    [updateSection]
-  );
-
+export default async function NotFoundPage() {
+  const sections = await getSSRSections('not-found');
   return (
-    <div>
-      {isEditMode && sections.length === 0 && (
-        <AddSectionButton
-          onAddSection={(type) => {
-            const newSection = createDefaultSection(type, 0);
-            addSection(newSection, 0);
-          }}
-          onAddSectionWithContent={(section) => {
-            addSection(section, 0);
-          }}
-          variant="first"
-          insertOrder={0}
-        />
-      )}
-
-      {sections.map((section, index) => (
-        <SectionWrapper
-          key={section.id}
-          sectionType={section.type as InlineSectionType}
-          sectionId={section.id}
-          index={index}
-          totalSections={sections.length}
-          {...(isEditMode ? {
-            onMoveUp: moveSectionUp,
-            onMoveDown: moveSectionDown,
-            onDelete: deleteSection,
-            onAddSection: handleAddSection,
-            onAddSectionWithContent: handleAddSectionWithContent,
-            onUpdateSEO: handleUpdateSEO,
-          } : {})}
-          sectionSEO={section.seo}
-        >
-          <SectionRenderer
-            section={section}
-            pageSlug="not-found"
-            sectionClassMap={SECTION_CLASS_MAP}
-          />
-        </SectionWrapper>
-      ))}
-    </div>
+    <EditablePage
+      pageSlug="not-found"
+      initialSections={sections}
+      defaultSections={NOT_FOUND_SECTIONS}
+      sectionClassMap={SECTION_CLASS_MAP}
+    />
   );
 }

@@ -1,17 +1,6 @@
-"use client";
-
-import { useEffect, useCallback } from "react";
-import { useEditMode } from "@/context/inline-editor/EditModeContext";
-import { useContent } from "@/context/inline-editor/ContentContext";
-import { VSOL_SECTIONS } from "@/content/schemas/venues-solution";
-import { SectionRenderer } from "@/components/inline-editor/SectionRenderer";
-import { SectionWrapper, AddSectionButton } from "@/components/inline-editor/SectionWrapper";
-import { createDefaultSection } from "@/types/inline-editor";
-import type {
-  PageSectionContent,
-  InlineSectionType,
-  SectionSEOAttributes,
-} from "@/types/inline-editor";
+import { getSSRSections } from '@/lib/ssr-content';
+import { EditablePage } from '@/components/inline-editor/EditablePage';
+import { VSOL_SECTIONS } from '@/content/schemas/venues-solution';
 
 // ============================================================================
 // Static FAQ data for JSON-LD schema
@@ -45,7 +34,6 @@ const staticFaqs = [
   },
 ];
 
-// ICP Page Schema
 const pageSchema = {
   "@context": "https://schema.org",
   "@type": "WebPage",
@@ -71,56 +59,15 @@ const faqSchema = {
   })),
 };
 
-// ============================================================================
-// Venues Solution Page - Editable with inline CMS
-// ============================================================================
-
 const SECTION_CLASS_MAP: Record<string, string> = {
   "partnership": "section-padding bg-jhr-black-light",
   "venue-experience": "section-padding bg-jhr-black-light",
 };
 
-export default function VenueCoordinatorsPage() {
-  const { isEditMode } = useEditMode();
-  const {
-    sections,
-    loadSectionsForPage,
-    addSection,
-    updateSection,
-    deleteSection,
-    moveSectionUp,
-    moveSectionDown,
-  } = useContent();
-
-  useEffect(() => {
-    loadSectionsForPage('venues-solution', VSOL_SECTIONS);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleAddSection = useCallback(
-    (type: InlineSectionType, afterIndex: number) => {
-      const newSection = createDefaultSection(type, afterIndex + 1);
-      addSection(newSection, afterIndex + 1);
-    },
-    [addSection]
-  );
-
-  const handleAddSectionWithContent = useCallback(
-    (section: PageSectionContent, afterIndex: number) => {
-      addSection(section, afterIndex + 1);
-    },
-    [addSection]
-  );
-
-  const handleUpdateSEO = useCallback(
-    (sectionId: string, seo: SectionSEOAttributes) => {
-      updateSection(sectionId, { seo } as Partial<PageSectionContent>);
-    },
-    [updateSection]
-  );
-
+export default async function VenueCoordinatorsPage() {
+  const sections = await getSSRSections('venues-solution');
   return (
     <div className="pt-16 lg:pt-20">
-      {/* Schema Markup */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pageSchema) }}
@@ -129,45 +76,12 @@ export default function VenueCoordinatorsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-
-      {isEditMode && sections.length === 0 && (
-        <AddSectionButton
-          onAddSection={(type) => {
-            const newSection = createDefaultSection(type, 0);
-            addSection(newSection, 0);
-          }}
-          onAddSectionWithContent={(section) => {
-            addSection(section, 0);
-          }}
-          variant="first"
-          insertOrder={0}
-        />
-      )}
-
-      {sections.map((section, index) => (
-        <SectionWrapper
-          key={section.id}
-          sectionType={section.type as InlineSectionType}
-          sectionId={section.id}
-          index={index}
-          totalSections={sections.length}
-          {...(isEditMode ? {
-            onMoveUp: moveSectionUp,
-            onMoveDown: moveSectionDown,
-            onDelete: deleteSection,
-            onAddSection: handleAddSection,
-            onAddSectionWithContent: handleAddSectionWithContent,
-            onUpdateSEO: handleUpdateSEO,
-          } : {})}
-          sectionSEO={section.seo}
-        >
-          <SectionRenderer
-            section={section}
-            pageSlug="venues-solution"
-            sectionClassMap={SECTION_CLASS_MAP}
-          />
-        </SectionWrapper>
-      ))}
+      <EditablePage
+        pageSlug="venues-solution"
+        initialSections={sections}
+        defaultSections={VSOL_SECTIONS}
+        sectionClassMap={SECTION_CLASS_MAP}
+      />
     </div>
   );
 }
