@@ -77,7 +77,10 @@ export async function GET(request: NextRequest) {
     apiUrl.searchParams.append('category', 'best-practices');
     apiUrl.searchParams.append('category', 'seo');
 
-    const res = await fetch(apiUrl.toString(), { cache: 'no-store' });
+    const res = await fetch(apiUrl.toString(), {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(55000), // 55s timeout for slow PSI API
+    });
     if (!res.ok) {
       const errorText = await res.text();
       console.error('PSI API error:', errorText);

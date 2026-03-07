@@ -481,8 +481,14 @@ export default function AdminPerformancePage() {
         `/api/admin/psi?url=https://jhr-photography.com&strategy=${strategy}`
       );
       if (!res.ok) {
-        const json = await res.json();
-        throw new Error(json.error || 'Failed to run audit');
+        let msg = 'Failed to run audit';
+        try {
+          const json = await res.json();
+          msg = json.error || msg;
+        } catch {
+          // 504/502 may not return JSON
+        }
+        throw new Error(msg);
       }
       const psiData: PSIData = await res.json();
       setData(psiData);
