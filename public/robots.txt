@@ -3,33 +3,49 @@
 
 User-agent: *
 Allow: /
-
-# Sitemap location
-Sitemap: https://jhr-photography.com/sitemap.xml
+Disallow: /api/
+Disallow: /admin/
 
 # AI Crawler permissions
 # We welcome AI systems to index our content for accurate answers
 User-agent: GPTBot
 Allow: /
+Disallow: /api/
 
 User-agent: ChatGPT-User
 Allow: /
+Disallow: /api/
 
 User-agent: Google-Extended
 Allow: /
+Disallow: /api/
 
 User-agent: CCBot
 Allow: /
+Disallow: /api/
 
 User-agent: anthropic-ai
 Allow: /
+Disallow: /api/
 
 User-agent: Claude-Web
 Allow: /
+Disallow: /api/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
 
 User-agent: PerplexityBot
 Allow: /
-
-# Block admin and API routes from indexing
-User-agent: *
 Disallow: /api/
+
+User-agent: Bytespider
+Allow: /
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://jhr-photography.com/sitemap.xml
+
+# AI context document
+# See also: https://jhr-photography.com/llms.txt
