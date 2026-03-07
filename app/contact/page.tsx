@@ -137,7 +137,9 @@ function ContactForm() {
                 <div>
                   <p className="text-body-sm text-jhr-white-dim">Location</p>
                   <p className="text-body-md text-jhr-white">
-                    Nashville, Tennessee
+                    2300 Rotary Park Dr. Suite A
+                    <br />
+                    Clarksville, TN 37043
                   </p>
                 </div>
               </div>

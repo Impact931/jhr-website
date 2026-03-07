@@ -91,7 +91,7 @@ export const CONTACT_INFO: TextBlockSectionContent = {
     '<p>Prefer a direct conversation? Use the information below to reach us directly, or schedule a strategy call for a more in-depth discussion.</p>' +
     '<p><strong>Email:</strong> info@jhr-photography.com</p>' +
     '<p><strong>Phone:</strong> (615) 249-8096</p>' +
-    '<p><strong>Location:</strong> Nashville, Tennessee</p>',
+    '<p><strong>Location:</strong> 2300 Rotary Park Dr. Suite A, Clarksville, TN 37043</p>',
   alignment: 'left',
 };
 

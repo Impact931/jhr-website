@@ -122,9 +122,10 @@ export function generateOrganizationSchema(): StructuredDataSchema {
       email: BUSINESS_EMAIL,
       address: {
         '@type': 'PostalAddress',
-        addressLocality: 'Nashville',
+        streetAddress: '2300 Rotary Park Dr. Suite A',
+        addressLocality: 'Clarksville',
         addressRegion: 'TN',
-        postalCode: '37203',
+        postalCode: '37043',
         addressCountry: 'US',
       },
       geo: {
