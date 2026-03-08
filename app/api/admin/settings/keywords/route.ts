@@ -55,7 +55,7 @@ export async function GET() {
  * PUT /api/admin/settings/keywords
  * Replace the tracked keywords list.
  */
-export async function PUT(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {

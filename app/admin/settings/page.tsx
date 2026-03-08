@@ -267,7 +267,7 @@ export default function AdminSettingsPage() {
     setKeywordsSaving(true);
     try {
       await fetch('/api/admin/settings/keywords', {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ keywords: updated }),
       });
@@ -285,7 +285,7 @@ export default function AdminSettingsPage() {
     setKeywordsSaving(true);
     try {
       await fetch('/api/admin/settings/keywords', {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ keywords: updated }),
       });
@@ -301,7 +301,7 @@ export default function AdminSettingsPage() {
     setThresholdsSaving(true);
     try {
       const res = await fetch('/api/admin/settings/thresholds', {
-        method: 'PUT',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ thresholds }),
       });
