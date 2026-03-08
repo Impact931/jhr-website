@@ -6,7 +6,7 @@ import { getItem, putItem } from '@/lib/dynamodb';
 const PK = 'SETTINGS#config';
 const SK = 'thresholds';
 
-export interface AlertThresholds {
+interface AlertThresholds {
   psiDesktopMin: number;
   psiMobileMin: number;
   keywordDropPositions: number;
@@ -21,7 +21,7 @@ interface ThresholdsRecord extends AlertThresholds {
   updatedAt: string;
 }
 
-export const DEFAULT_THRESHOLDS: AlertThresholds = {
+const DEFAULT_THRESHOLDS: AlertThresholds = {
   psiDesktopMin: 85,
   psiMobileMin: 70,
   keywordDropPositions: 5,
