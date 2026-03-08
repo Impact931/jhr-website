@@ -9,3 +9,4 @@ build/
 .DS_Store
 .next/
 coverage/
+docs/JHR API & Keys.md
