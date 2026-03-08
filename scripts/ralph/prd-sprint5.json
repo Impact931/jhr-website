@@ -125,7 +125,7 @@
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Settings page is referenced in PRD but not built. Admin sidebar already has Settings link."
     },
     {
@@ -142,7 +142,7 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "PRD Section 3.7 specifies these events. Need Google Tag Manager or inline gtag calls."
     },
     {
@@ -191,7 +191,7 @@
         "Typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Currently broken due to CORS - client-side fetch to live site blocked by browser. Needs server-side proxy."
     },
     {
@@ -211,7 +211,7 @@
         "Typecheck passes"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "PRD Section 4.1 wireframe shows 12 cards in 2 rows. Current dashboard has 6 cards. Need to expand."
     }
   ]

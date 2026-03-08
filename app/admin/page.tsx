@@ -361,15 +361,63 @@ export default function AdminDashboard() {
       .catch(() => {})
       .finally(() => setSocialLoading(false));
 
-    // Active alerts count
+    // Active alerts
     fetch('/api/admin/alerts')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.count) {
           setActiveAlertCount(data.count);
         }
+        if (data?.alerts) {
+          setActiveAlerts(data.alerts);
+        }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setAlertsLoading(false));
+
+    // Organic Clicks (from GSC)
+    fetch('/api/admin/gsc?type=status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.connected && typeof data.clicks === 'number') {
+          setOrganicClicks(data.clicks);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setOrganicClicksLoading(false));
+
+    // IG Reach (from Meta API)
+    fetch('/api/admin/social/meta')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.connected && data.insights?.reach !== undefined) {
+          setIgReach(data.insights.reach);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIgReachLoading(false));
+
+    // YT Views (from YouTube API)
+    fetch('/api/admin/social/youtube')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.connected && data.statistics?.viewCount !== undefined) {
+          setYtViews(data.statistics.viewCount);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setYtViewsLoading(false));
+
+    // AI Insights
+    fetch('/api/admin/insights')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setInsightData(data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setInsightsLoading(false));
   }, []);
 
   // -------------------------------------------------------------------------
@@ -625,7 +673,104 @@ export default function AdminDashboard() {
         </KPICard>
       </div>
 
-      {/* Row 3: Quick Actions */}
+      {/* Row 3: Organic Clicks, IG Reach, YT Views */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Organic Clicks */}
+        <KPICard
+          title="Organic Clicks"
+          value={organicClicks !== null ? organicClicks.toLocaleString() : '--'}
+          icon={<MousePointerClick className="w-6 h-6 text-jhr-gold" />}
+          status={organicClicks !== null && organicClicks > 0 ? 'good' : 'neutral'}
+          loading={organicClicksLoading}
+          href="/admin/seo"
+        >
+          {organicClicks !== null && (
+            <p className="text-body-sm text-jhr-white-dim">
+              Last 7 days via GSC
+            </p>
+          )}
+        </KPICard>
+
+        {/* IG Reach */}
+        <KPICard
+          title="IG Reach"
+          value={igReach !== null ? igReach.toLocaleString() : '--'}
+          icon={<Instagram className="w-6 h-6 text-jhr-gold" />}
+          status={igReach !== null && igReach > 0 ? 'good' : 'neutral'}
+          loading={igReachLoading}
+          href="/admin/social"
+        >
+          {igReach !== null && (
+            <p className="text-body-sm text-jhr-white-dim">
+              7-day reach via Meta API
+            </p>
+          )}
+        </KPICard>
+
+        {/* YT Views */}
+        <KPICard
+          title="YT Views"
+          value={ytViews !== null ? ytViews.toLocaleString() : '--'}
+          icon={<Youtube className="w-6 h-6 text-jhr-gold" />}
+          status={ytViews !== null && ytViews > 0 ? 'good' : 'neutral'}
+          loading={ytViewsLoading}
+          href="/admin/social"
+        >
+          {ytViews !== null && (
+            <p className="text-body-sm text-jhr-white-dim">
+              Total channel views
+            </p>
+          )}
+        </KPICard>
+      </div>
+
+      {/* AI Insight Preview Card */}
+      <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-lg bg-purple-500/10">
+              <Sparkles className="w-5 h-5 text-purple-400" />
+            </div>
+            <h2 className="text-heading-md font-display font-semibold text-jhr-white">
+              AI Insight
+            </h2>
+          </div>
+          <Link
+            href="/admin/alerts"
+            className="text-body-sm text-jhr-gold hover:underline flex items-center gap-1"
+          >
+            View all <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+        {insightsLoading ? (
+          <div className="space-y-2">
+            <div className="h-4 w-3/4 animate-pulse bg-jhr-black-lighter rounded" />
+            <div className="h-4 w-1/2 animate-pulse bg-jhr-black-lighter rounded" />
+          </div>
+        ) : insightData?.recommendations && insightData.recommendations.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-body-sm text-jhr-white">
+              {insightData.recommendations[0]}
+            </p>
+            {insightData.recommendations.length > 1 && (
+              <p className="text-xs text-jhr-white-dim">
+                +{insightData.recommendations.length - 1} more recommendation{insightData.recommendations.length - 1 !== 1 ? 's' : ''}
+              </p>
+            )}
+            {insightData.generatedAt && (
+              <p className="text-xs text-jhr-white-dim mt-2">
+                Generated: {new Date(insightData.generatedAt).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-body-sm text-jhr-white-dim">
+            No AI recommendations yet. Insights are generated weekly.
+          </p>
+        )}
+      </div>
+
+      {/* Row 4: Quick Actions */}
       <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-6">
         <h2 className="text-heading-md font-display font-semibold text-jhr-white mb-4">
           Quick Actions

@@ -74,3 +74,32 @@
   - Entity definition checks are case-insensitive on the about page HTML
   - StructuredDataSchema type must be imported from @/lib/structured-data for layout files
 ---
+
+## 2026-03-07 - US-507, US-508, US-511, US-512: Settings panel, GA4 events, schema proxy, dashboard KPIs
+- **US-507**: Enhanced /app/admin/settings/page.tsx with three new sections:
+  - API Connection Status: Created /app/api/admin/settings/status/route.ts checking env vars for PSI, GSC, GA4, Meta, YouTube, Notion. Shows green/red indicators.
+  - Tracked Keywords: Created /app/api/admin/settings/keywords/route.ts (GET/PUT) with DynamoDB persistence (pk=SETTINGS#config, sk=keywords). UI supports add/remove with tag-style display.
+  - Alert Thresholds: Created /app/api/admin/settings/thresholds/route.ts (GET/PUT) with DynamoDB persistence (pk=SETTINGS#config, sk=thresholds). 6 configurable thresholds with save button.
+- **US-508**: Added GA4 conversion event tracking:
+  - Created /lib/gtag.ts with trackEvent, trackContactFormSubmit, trackScheduleCallClick, trackPhoneClick helpers.
+  - GA4 already loaded via TrackingScriptsClient with measurement ID from settings.
+  - ContactForm.tsx: gtag('event', 'contact_form_submit') on success with form_page and service_interest params.
+  - Header.tsx: gtag('event', 'schedule_call_click') on both desktop and mobile Schedule CTA buttons.
+  - EditableCTA.tsx: gtag('event', 'schedule_call_click') on primary and secondary CTA buttons (view mode).
+  - EditableHero.tsx: gtag('event', 'schedule_call_click') on hero primary and secondary CTA buttons (view mode).
+  - ContactForm.tsx phone link: gtag('event', 'phone_click') on phone number click.
+- **US-511**: Created /app/api/admin/geo/schemas/route.ts as server-side proxy:
+  - Fetches 9 key pages from jhr-photography.com server-side, extracts JSON-LD schemas.
+  - Returns [{page, url, schemas: [{type, valid}]}] format.
+  - Updated /app/admin/geo/page.tsx fetchSchemaInventory to call API instead of client-side fetch.
+- **US-512**: Expanded /app/admin/page.tsx Command Center:
+  - Added Row 3 with Organic Clicks (GSC), IG Reach (Meta), YT Views (YouTube) KPI cards.
+  - Added AI Insight preview card showing latest recommendation snippet.
+  - Alert banner already present from US-506.
+  - All new cards follow existing fetch/loading pattern.
+- **Learnings:**
+  - GA4 tracking is already configured via TrackingScriptsClient — just need gtag helpers for custom events.
+  - Settings page already existed with general/integration/SEO sections — new sections added above existing ones.
+  - GEO schema check was broken client-side due to CORS — server-side proxy solves it cleanly.
+  - Dashboard KPI cards use the same KPICard component; just add new fetch calls and state vars.
+---
