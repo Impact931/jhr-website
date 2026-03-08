@@ -1,0 +1,218 @@
+{
+  "project": "JHR-Website",
+  "sprint": 5,
+  "branchName": "ralph/sprint5-analytics-intelligence",
+  "description": "Sprint 5: Analytics Intelligence & Automation — BigQuery trend storage, EventBridge daily cron, Claude AI weekly recommendations, alert threshold engine, GEO score improvements (FAQ schema, content depth, founder signal), GA4 conversion tracking, Settings panel, and ContentOps enhancements (Apify competitor scrape, GEO post-generation scoring).",
+  "fonts": {
+    "display": "Outfit",
+    "body": "Inter",
+    "weights": ["300", "400", "500", "600", "700"]
+  },
+  "userStories": [
+    {
+      "id": "US-501",
+      "title": "Add FAQPage schema to 3+ service pages for GEO scoring",
+      "description": "As the site owner, I need FAQ sections with structured data on service pages so AI engines can extract and cite our content, improving the GEO readiness score from 0/20 to 20/20.",
+      "acceptanceCriteria": [
+        "Add FAQ section with 5+ Q&A pairs to /services/corporate-event-coverage",
+        "Add FAQ section with 5+ Q&A pairs to /services/headshot-activation",
+        "Add FAQ section with 5+ Q&A pairs to /services/trade-show-media",
+        "Add FAQ section with 5+ Q&A pairs to /services/executive-imaging",
+        "Each FAQ section includes FAQPage JSON-LD structured data in the page layout",
+        "FAQ content is relevant, keyword-rich, and answers real search queries",
+        "GEO score endpoint returns 20/20 for FAQ category",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Currently 0/20. Need FAQPage schema on 3+ pages. Check existing layout.tsx files for where to inject schema."
+    },
+    {
+      "id": "US-502",
+      "title": "Expand service page content for GEO citable content score",
+      "description": "As the site owner, I need service pages to have 500+ words and proper heading structure so they qualify as citable content for AI engines.",
+      "acceptanceCriteria": [
+        "Corporate Event Coverage page has 500+ words in main content area with 2+ H2 headings",
+        "Headshot Activation page has 500+ words in main content area with 2+ H2 headings",
+        "Trade Show Media page has 500+ words in main content area with 2+ H2 headings",
+        "Content is substantive, keyword-rich, and formatted with proper semantic HTML",
+        "GEO score endpoint returns 15/15 for citable content category",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Currently 0/15. Service pages need more structured content. Update content schemas in /content/schemas/."
+    },
+    {
+      "id": "US-503",
+      "title": "Add founder signal to About page for entity definition",
+      "description": "As the site owner, I need the About page to include founder/owner information so AI engines can build a complete entity profile, improving GEO entity score from 15/20 to 20/20.",
+      "acceptanceCriteria": [
+        "About page includes founder name (Jayson Rivas) with title (Founder/Owner)",
+        "Content mentions founder role in context of the business narrative",
+        "GEO score endpoint returns 20/20 for entity definition category",
+        "About page content reads naturally, not keyword-stuffed",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Currently 15/20 - missing 'founder' signal. The GEO scorer checks for 'founder', 'owner', or 'ceo' on the /about page."
+    },
+    {
+      "id": "US-504",
+      "title": "Build EventBridge daily cron endpoint",
+      "description": "As the system, I need an automated daily data refresh at 6am CT that fetches all API data and stores snapshots, so trend charts have historical data beyond what APIs retain.",
+      "acceptanceCriteria": [
+        "Create /api/admin/cron/refresh route protected by CRON_SECRET header",
+        "Route fetches PSI scores (desktop + mobile) and stores snapshot in DynamoDB",
+        "Route fetches social metrics (IG followers/reach, FB page views, YT subscribers/views) and stores in DynamoDB",
+        "Route fetches GEO score and stores snapshot in DynamoDB",
+        "Route fetches GSC summary (clicks, impressions) and stores in DynamoDB",
+        "All snapshots keyed by date for time-series retrieval",
+        "Add CRON_SECRET to .env and Amplify env vars",
+        "Document EventBridge setup steps in code comments",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "PRD specifies BigQuery but DynamoDB is simpler for this scale. Use pk=SNAPSHOT#{date} sk={metric-type} pattern. EventBridge cron(0 11 * * ? *) = 6am CT."
+    },
+    {
+      "id": "US-505",
+      "title": "Build Claude AI weekly recommendations engine",
+      "description": "As the site owner, I need weekly AI-generated recommendations that analyze all dashboard data and provide 3-5 specific, prioritized actions to take.",
+      "acceptanceCriteria": [
+        "Create /api/admin/insights/route.ts that calls Claude API with performance data bundle",
+        "Data bundle includes: PSI scores, keyword positions, GEO breakdown, social metrics, lead counts",
+        "Claude returns 3-5 numbered, specific, actionable recommendations",
+        "Recommendations are stored in DynamoDB (pk=INSIGHTS#weekly, sk={date})",
+        "Alerts page (/admin/alerts) displays latest AI recommendations",
+        "Recommendations refresh on demand via button + auto on Monday cron",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "Use claude-sonnet-4-6 model. System prompt from PRD Section 4.7. Cost ~$0.03/week."
+    },
+    {
+      "id": "US-506",
+      "title": "Build alert threshold engine with dashboard banners",
+      "description": "As the site owner, I need automated alerts when metrics breach thresholds so I catch problems before they become costly.",
+      "acceptanceCriteria": [
+        "Define threshold config: PSI < 85 desktop, keyword drops 5+ positions, no leads in 5 days, IG reach drops 30%+, GEO score drops 10+",
+        "Cron endpoint evaluates thresholds on each run",
+        "Active alerts stored in DynamoDB (pk=ALERT#{id}, sk=active)",
+        "Alerts page shows active alerts with severity (critical/warning), metric, threshold, actual value",
+        "Dashboard command center shows sticky alert banner when active alerts exist",
+        "Alerts can be dismissed/resolved from the alerts page",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "PRD Section 4.7 has full threshold definitions. Start with PSI, keyword, and lead alerts."
+    },
+    {
+      "id": "US-507",
+      "title": "Build admin Settings panel",
+      "description": "As the site owner, I need a Settings page to manage tracked keywords, alert thresholds, and view API connection status.",
+      "acceptanceCriteria": [
+        "Create /admin/settings/page.tsx",
+        "API Connection Status section: shows green/red for each integration (PSI, GSC, GA4, Meta, YouTube, Notion)",
+        "Tracked Keywords section: list current 10 keywords, add/remove keywords, stored in DynamoDB",
+        "Alert Thresholds section: edit threshold values for each alert type",
+        "Settings persist to DynamoDB (pk=SETTINGS#config, sk=keywords/thresholds)",
+        "Create /api/admin/settings route for CRUD operations",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "Settings page is referenced in PRD but not built. Admin sidebar already has Settings link."
+    },
+    {
+      "id": "US-508",
+      "title": "Add GA4 conversion event tracking for form submissions",
+      "description": "As the site owner, I need form submissions tracked as GA4 conversion events with source page attribution so I can measure which pages drive leads.",
+      "acceptanceCriteria": [
+        "Add gtag('event', 'contact_form_submit') on successful form submission",
+        "Event includes parameters: form_page (which page they came from), service_interest, event_type",
+        "Add gtag('event', 'schedule_call_click') on Schedule CTA button clicks across all pages",
+        "Add gtag('event', 'phone_click') on phone number link clicks",
+        "GA4 route includes conversion event data in the dashboard response",
+        "Performance page shows form submission events by source page",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "PRD Section 3.7 specifies these events. Need Google Tag Manager or inline gtag calls."
+    },
+    {
+      "id": "US-509",
+      "title": "Add Apify competitor content scraping to ContentOps",
+      "description": "As a content creator, I need ContentOps to scrape competitor pages before generating articles so Claude can identify gaps and create more comprehensive content.",
+      "acceptanceCriteria": [
+        "Update ContentOps research phase to call Apify web scraper after Perplexity research",
+        "Scrape top 3 competitor URLs returned by Perplexity",
+        "Extract: word count, heading structure (H1/H2/H3), external links count",
+        "Pass competitor context to Claude generation prompt as 'competitorContext' field",
+        "ContentOps generate route uses competitor data to instruct Claude to exceed competitor depth",
+        "Graceful fallback if Apify call fails (proceed without competitor data)",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "APIFY_API_KEY already in env. Use apify/web-scraper or apify/cheerio-scraper actor. ContentOps spec Section 6.2."
+    },
+    {
+      "id": "US-510",
+      "title": "Add GEO scoring to ContentOps post-generation validation",
+      "description": "As a content creator, I need each generated article scored for GEO quotability before publishing so low-quality articles are caught automatically.",
+      "acceptanceCriteria": [
+        "After article generation, run a second Claude call to score GEO quotability (0-100)",
+        "Scoring rubric: Quick Answer (20pts), Statistics Density (20pts), Quotable Definition (15pts), Heading Structure (15pts), Entity Density (10pts), External Citations (10pts), FAQ Quality (10pts)",
+        "Articles scoring below 70 are held in DRAFT status with improvement notes",
+        "Articles scoring 85+ are flagged as 'High GEO Priority'",
+        "GEO score visible in blog admin list and article detail view",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "ContentOps spec Section 11 has full scoring rubric. Use claude-sonnet-4-6 for scoring call."
+    },
+    {
+      "id": "US-511",
+      "title": "GEO Schema Inventory server-side proxy",
+      "description": "As an admin viewing the GEO page, I need the Schema Inventory to actually show schema data instead of failing due to CORS when fetching live pages.",
+      "acceptanceCriteria": [
+        "Create /api/admin/geo/schemas route that fetches pages server-side",
+        "Route checks key pages (homepage, service pages, venue pages, about, FAQ) for JSON-LD schemas",
+        "Returns per-page schema inventory: page URL, schema types found, validation status",
+        "GEO page client code calls this API instead of fetching pages directly",
+        "Schema inventory renders correctly showing all detected schema types",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "Currently broken due to CORS - client-side fetch to live site blocked by browser. Needs server-side proxy."
+    },
+    {
+      "id": "US-512",
+      "title": "Command Center KPI enhancements per PRD wireframe",
+      "description": "As the site owner, I need the Command Center to show the full 12-card KPI grid from the PRD with trend arrows and Notion pipeline data.",
+      "acceptanceCriteria": [
+        "Add Organic Clicks card (from GSC data, 7d with trend)",
+        "Add Indexed Pages card (count of indexed pages from GSC)",
+        "Add Avg SERP Position card (average position of tracked keywords)",
+        "Add Pipeline Value card (sum of open deal values from Notion)",
+        "Add IG Reach card (7d reach from Meta API)",
+        "Add YT Views card (30d views from YouTube API)",
+        "Each card shows trend arrow (up/down) vs prior period",
+        "Active alerts banner at top when alerts exist",
+        "AI Insight preview card showing latest recommendation snippet",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "PRD Section 4.1 wireframe shows 12 cards in 2 rows. Current dashboard has 6 cards. Need to expand."
+    }
+  ]
+}

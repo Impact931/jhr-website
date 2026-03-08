@@ -1,0 +1,17 @@
+## Codebase Patterns
+- Admin pages are client components ('use client') at /app/admin/[module]/page.tsx
+- API routes at /app/api/admin/[module]/route.ts, all check getServerSession(authOptions)
+- Content schemas live in /content/schemas/*.ts, registered in /content/schema-registry.ts
+- DynamoDB helpers: getItem, putItem, queryItems from /lib/dynamodb.ts
+- DynamoDB uses CUSTOM_AWS_* env vars on Amplify (AWS_* prefix is reserved)
+- Service page layouts at /app/services/[service]/layout.tsx contain structured data (JSON-LD)
+- GEO scoring at /api/admin/geo/score/route.ts checks: Organization schema, FAQPage schema, robots.txt, sitemap, content depth, entity signals
+- Social APIs: /api/admin/social/meta (IG), /api/admin/social/facebook (FB), /api/admin/social/youtube (YT)
+- GA4 uses @google-analytics/data with service account (GOOGLE_SERVICE_ACCOUNT_KEY_JSON on Amplify)
+- PSI history stored in DynamoDB via /api/admin/psi/history
+- Recharts used for all charts (AreaChart, LineChart, BarChart)
+- Amplify build spec writes env vars to .env.production via grep exclusion pattern
+- CRON_SECRET not yet in env - needs to be added for US-504
+
+## Sprint 5 Progress Log
+---
