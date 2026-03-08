@@ -130,6 +130,9 @@ function DropdownButton({ label, isOpen, onClick, width = 'w-28' }: DropdownButt
 // FloatingToolbar Component
 // ============================================================================
 
+// Load editor fonts dynamically (only when toolbar mounts in edit mode)
+const EDITOR_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Lato:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Merriweather:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&display=swap';
+
 export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps) {
   const [activeDropdown, setActiveDropdown] = useState<DropdownType>(null);
   const [showLinkInput, setShowLinkInput] = useState(false);
@@ -141,6 +144,15 @@ export function FloatingToolbar({ editor, visible = true }: FloatingToolbarProps
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const isDragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
+
+  // Load editor fonts on mount (only when edit mode toolbar appears)
+  useEffect(() => {
+    if (document.querySelector(`link[href="${EDITOR_FONTS_URL}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = EDITOR_FONTS_URL;
+    document.head.appendChild(link);
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {

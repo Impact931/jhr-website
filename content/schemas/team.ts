@@ -47,16 +47,11 @@ export const TEAM_HERO: HeroSectionContent = {
     sectionId: 'hero',
     dataSectionName: 'hero',
   },
-  variant: 'split',
-  imagePosition: 'right',
+  variant: 'banner',
   title: 'Certified Operators. Not Freelancers.',
   subtitle: 'Meet Our Team',
   description:
     'Every JHR operator is recruited through military and professional networks, trained to our standard, and held accountable after every event. When they show up to your event, they\'re ready.',
-  backgroundImage: {
-    src: '/images/generated/hero-about.jpg',
-    alt: 'JHR Photography team at a corporate event',
-  },
   buttons: [
     { text: 'Schedule a Strategy Call', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
   ],

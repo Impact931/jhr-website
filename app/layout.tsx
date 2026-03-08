@@ -107,11 +107,7 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{ __html: json }}
           />
         ))}
-        {/* Editor fonts — Google Fonts for inline editor font picker */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;800&family=Open+Sans:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&family=Merriweather:wght@300;400;700&family=Poppins:wght@300;400;500;600;700;800&family=Raleway:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
+        {/* Editor fonts loaded dynamically by FloatingToolbar when edit mode is active */}
       </head>
       <body
         className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-jhr-black text-jhr-white min-h-screen flex flex-col`}

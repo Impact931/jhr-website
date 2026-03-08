@@ -44,20 +44,78 @@ const nextConfig = {
 
     return [
       {
-        // All pages: cache + security headers
-        source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
+        // Static assets (JS/CSS bundles) — immutable, hashed filenames
+        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, s-maxage=60, stale-while-revalidate=300',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        // Optimized images via Next.js image optimizer
+        source: '/_next/image/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        // Static images in /public
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=86400',
           },
           ...securityHeaders,
         ],
       },
       {
-        // API routes: security headers only
+        // Fonts
+        source: '/fonts/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        // Favicon and manifest
+        source: '/(favicon.ico|manifest.webmanifest|robots.txt|sitemap.xml)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, s-maxage=604800',
+          },
+          ...securityHeaders,
+        ],
+      },
+      {
+        // All pages: cache + security headers
+        source: '/((?!api|_next/static|_next/image|favicon.ico|images|fonts).*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=3600, stale-while-revalidate=86400',
+          },
+          ...securityHeaders,
+        ],
+      },
+      {
+        // API routes: security headers only, no cache
         source: '/api/:path*',
-        headers: securityHeaders,
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate',
+          },
+          ...securityHeaders,
+        ],
       },
     ];
   },

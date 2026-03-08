@@ -326,7 +326,7 @@ export function SectionRenderer({
           title={hero.title}
           subtitle={hero.subtitle}
           description={hero.description}
-          image={hero.backgroundImage?.src || '/images/generated/hero-homepage.jpg'}
+          image={hero.backgroundImage?.src || ''}
           imageAlt={hero.backgroundImage?.alt || 'Hero background'}
           imagePositionY={hero.backgroundImage?.positionY ?? 50}
           primaryCta={hero.buttons?.[0]}

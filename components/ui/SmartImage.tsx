@@ -13,6 +13,8 @@ interface SmartImageProps {
   quality?: number;
   /** Object position for fill mode (e.g., "center 30%", "center top"). */
   objectPosition?: string;
+  /** Responsive sizes hint for browser (e.g., "(max-width: 768px) 100vw, 50vw"). */
+  sizes?: string;
 }
 
 /**
@@ -30,6 +32,7 @@ export default function SmartImage({
   priority,
   quality,
   objectPosition,
+  sizes,
 }: SmartImageProps) {
   const isExternal = src.startsWith('http://') || src.startsWith('https://');
 
@@ -42,6 +45,8 @@ export default function SmartImage({
           className={`${className} absolute inset-0 w-full h-full`}
           style={objectPosition ? { objectPosition } : undefined}
           loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : undefined}
+          decoding={priority ? 'sync' : 'async'}
         />
       );
     }
@@ -53,6 +58,8 @@ export default function SmartImage({
         width={width}
         height={height}
         loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : undefined}
+        decoding={priority ? 'sync' : 'async'}
       />
     );
   }
@@ -68,6 +75,7 @@ export default function SmartImage({
       style={objectPosition ? { objectPosition } : undefined}
       priority={priority}
       quality={quality}
+      sizes={sizes || (fill ? '100vw' : undefined)}
     />
   );
 }

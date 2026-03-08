@@ -417,6 +417,7 @@ export function EditableHero({
               objectPosition={objectPosition}
               priority
               quality={90}
+              sizes="(max-width: 768px) 100vw, 55vw"
             />
           </div>
         </div>
@@ -424,12 +425,15 @@ export function EditableHero({
     );
   }
 
+  // Check if hero has a real background image (not the generic fallback)
+  const hasBackgroundImage = image && image !== '/images/generated/hero-homepage.jpg' && image !== '';
+
   // ---- View Mode ----
   if (!isEditMode) {
     return (
       <section className={`relative ${heightClass} flex items-center overflow-hidden`}>
-        {/* Background Image (hidden when video background is active) */}
-        {!hasVideoBackground && (
+        {/* Background Image (hidden when video background is active or no image) */}
+        {!hasVideoBackground && hasBackgroundImage && (
           <div className="absolute inset-0 z-0">
             <SmartImage
               src={image}
@@ -442,6 +446,10 @@ export function EditableHero({
             />
             <div className={`absolute inset-0 ${overlayClass}`} />
           </div>
+        )}
+        {/* Solid background when no image */}
+        {!hasVideoBackground && !hasBackgroundImage && (
+          <div className="absolute inset-0 z-0 bg-[#0B0C0F]" />
         )}
 
         {/* Video Background — uploaded file */}
