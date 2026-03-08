@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
 import { EditableImage } from "@/components/inline-editor/EditableImage";
+import { trackContactFormSubmit, trackPhoneClick } from "@/lib/gtag";
 
 export function ContactForm() {
   const [formData, setFormData] = useState({
@@ -36,6 +37,12 @@ export function ContactForm() {
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || "Submission failed");
       }
+
+      // Track GA4 conversion event
+      trackContactFormSubmit({
+        form_page: window.location.pathname,
+        service_interest: formData.eventType || undefined,
+      });
 
       setSubmitStatus("success");
       setFormData({
@@ -103,6 +110,7 @@ export function ContactForm() {
                   <p className="text-body-sm text-jhr-white-dim">Phone</p>
                   <a
                     href="tel:+16152498096"
+                    onClick={() => trackPhoneClick('contact_page')}
                     className="text-body-md text-jhr-white hover:text-jhr-gold transition-colors"
                   >
                     (615) 249-8096

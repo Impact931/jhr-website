@@ -456,13 +456,34 @@ export const HA_HEADSHOT_STYLES: FeatureGridSectionContent = {
 };
 
 /**
- * Section 9: Social Proof (Testimonials)
+ * Section 9: Why Headshot Activations Work
+ * Component: EditableTextBlock
+ */
+export const HA_WHY_ACTIVATIONS_WORK: TextBlockSectionContent = {
+  id: 'why-activations-work',
+  type: 'text-block',
+  order: 9,
+  seo: {
+    ariaLabel: 'Why headshot activations work for trade shows and corporate events',
+    sectionId: 'why-activations-work',
+    dataSectionName: 'why-activations-work',
+  },
+  heading: 'Why Headshot Activations Outperform Traditional Booth Engagement',
+  alignment: 'left',
+  content:
+    '<p>Traditional trade show engagement tactics are failing. Branded pens end up in junk drawers. Badge scans produce lists of people who barely remember stopping by. And the swag that cost your company thousands of dollars gets left in hotel rooms. Headshot activations solve this problem by offering something every professional genuinely needs — a high-quality, updated headshot — and delivering it in a way that creates meaningful engagement with your brand.</p>' +
+    '<p>The data tells the story. The average dwell time at a booth running a headshot activation is over five minutes per attendee, compared to seconds for traditional setups. That extended engagement creates natural conversation opportunities for your sales team. Attendees are relaxed, appreciative, and associating your brand with a positive, professional experience. When they update their LinkedIn profile photo that evening, your brand\'s impression stays with them.</p>' +
+    '<p>For corporate event hosts, headshot activations serve a different but equally powerful purpose. Offering attendees a professional headshot update positions your event as genuinely valuable, not just another conference on the calendar. Companies like property management firms and enterprise employers have used JHR Photography\'s headshot activations as tenant appreciation events, employee engagement programs, and conference attendee benefits — consistently generating the kind of positive feedback that drives repeat attendance and stronger stakeholder relationships.</p>',
+};
+
+/**
+ * Section 10: Social Proof (Testimonials)
  * Component: EditableTestimonials (grid layout)
  */
 export const HA_SOCIAL_PROOF: TestimonialsSectionContent = {
   id: 'social-proof',
   type: 'testimonials',
-  order: 9,
+  order: 10,
   seo: {
     ariaLabel: 'What happens when you activate - testimonials from exhibitors and event hosts',
     sectionId: 'social-proof',
@@ -502,7 +523,7 @@ export const HA_SOCIAL_PROOF: TestimonialsSectionContent = {
 export const HA_FAQS: FAQSectionContent = {
   id: 'faqs',
   type: 'faq',
-  order: 10,
+  order: 11,
   seo: {
     ariaLabel: 'Frequently asked questions about headshot activations',
     sectionId: 'faqs',
@@ -592,7 +613,7 @@ export const HA_FAQS: FAQSectionContent = {
 export const HA_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 11,
+  order: 12,
   seo: {
     ariaLabel: 'Talk with JHR Photography about headshot activation for your event',
     sectionId: 'final-cta',
@@ -630,6 +651,7 @@ export const HA_SECTIONS: PageSectionContent[] = [
   HA_WHATS_INCLUDED,
   HA_GALLERY_STRIP_2,
   HA_HEADSHOT_STYLES,
+  HA_WHY_ACTIVATIONS_WORK,
   HA_SOCIAL_PROOF,
   HA_FAQS,
   HA_FINAL_CTA,

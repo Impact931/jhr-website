@@ -195,13 +195,56 @@ export const TSM_WHATS_INCLUDED: FeatureGridSectionContent = {
 };
 
 /**
- * Section 4: Add Video to Your Trade Show Coverage
+ * Section 4: Why Nashville Trade Show Photography Matters
+ * Component: EditableTextBlock
+ */
+export const TSM_WHY_NASHVILLE: TextBlockSectionContent = {
+  id: 'why-nashville',
+  type: 'text-block',
+  order: 4,
+  seo: {
+    ariaLabel: 'Why professional trade show photography matters in Nashville',
+    sectionId: 'why-nashville',
+    dataSectionName: 'why-nashville',
+  },
+  heading: 'Why Professional Trade Show Photography Matters in Nashville',
+  alignment: 'left',
+  content:
+    '<p>Nashville has become one of the fastest-growing convention destinations in the United States. With world-class venues like Music City Center, Gaylord Opryland Resort and Convention Center, and a growing portfolio of downtown hotels, the city hosts hundreds of major trade shows, industry conferences, and exhibitor-driven events every year. For show organizers, exhibitors, and sponsors, the stakes are high — and the media coverage needs to match.</p>' +
+    '<p>Professional trade show photography is not a luxury. It is a strategic investment that directly impacts exhibitor satisfaction, sponsor renewals, and post-show marketing effectiveness. When exhibitors receive polished, ready-to-use images of their booth presence, they see tangible proof that their participation delivered value. When sponsors see professional documentation of their brand visibility on the show floor, renewal conversations become easier. And when your marketing team has a comprehensive media library from the event, social media content, press releases, and stakeholder reports practically write themselves.</p>' +
+    '<p>JHR Photography understands the unique demands of trade show environments in Nashville. Our certified operators know the venues, the loading dock logistics, the lighting conditions on the show floor, and the pace at which these events move. We deploy as an integrated part of your event team — not as outside vendors who need hand-holding. The result is comprehensive documentation that serves every stakeholder, delivered on a timeline that makes the content actually useful.</p>',
+};
+
+/**
+ * Section 5: Choosing the Right Trade Show Photographer
+ * Component: EditableTextBlock
+ */
+export const TSM_CHOOSING: TextBlockSectionContent = {
+  id: 'choosing',
+  type: 'text-block',
+  order: 5,
+  seo: {
+    ariaLabel: 'How to choose the right trade show photographer for your event',
+    sectionId: 'choosing',
+    dataSectionName: 'choosing',
+  },
+  heading: 'How to Choose the Right Trade Show Photographer',
+  alignment: 'left',
+  content:
+    '<p>Not every photographer understands trade show environments. The show floor moves fast, lighting conditions change from booth to booth, and exhibitors expect documentation that looks professional enough to use in their own marketing. Here are the factors that separate experienced trade show media teams from general event photographers.</p>' +
+    '<p>First, look for a team that understands exhibitor deliverables. Individual booth documentation, sponsor asset packages, and organized galleries sorted by exhibitor are not standard offerings from most photographers. JHR Photography builds these deliverables into every trade show engagement because we know they drive exhibitor satisfaction and sponsor retention.</p>' +
+    '<p>Second, same-day delivery capability is essential. Your marketing team, your exhibitors, and your sponsors all need content while the show is still happening — not weeks after it ends. JHR delivers edited highlights daily, giving your team fresh content for social media, email communications, and real-time promotion throughout the event.</p>' +
+    '<p>Third, consistency across multi-day shows matters. When you hire a team that maintains the same certified operators throughout your event, the quality stays consistent and the coverage gets better each day as the team learns your show\'s rhythm. JHR assigns dedicated teams to multi-day trade shows, ensuring seamless coverage from opening day through teardown.</p>',
+};
+
+/**
+ * Section 6: Add Video to Your Trade Show Coverage
  * Component: EditableCTA (solid background variant)
  */
 export const TSM_VIDEO_PAIRING: CTASectionContent = {
   id: 'video-pairing',
   type: 'cta',
-  order: 4,
+  order: 6,
   seo: {
     ariaLabel: 'Add video coverage to your trade show media package',
     sectionId: 'video-pairing',
@@ -220,13 +263,13 @@ export const TSM_VIDEO_PAIRING: CTASectionContent = {
 };
 
 /**
- * Section 5: Pair With Headshot Activation (Exhibitor Crossover)
+ * Section 7: Pair With Headshot Activation (Exhibitor Crossover)
  * Component: EditableFeatureGrid (horizontal, 2 columns)
  */
 export const TSM_EXHIBITOR_CROSSOVER: FeatureGridSectionContent = {
   id: 'exhibitor-crossover',
   type: 'feature-grid',
-  order: 5,
+  order: 7,
   seo: {
     ariaLabel: 'Pair trade show media with headshot activation for exhibitor engagement',
     sectionId: 'exhibitor-crossover',
@@ -263,7 +306,7 @@ export const TSM_EXHIBITOR_CROSSOVER: FeatureGridSectionContent = {
 export const TSM_SOCIAL_PROOF: TestimonialsSectionContent = {
   id: 'social-proof',
   type: 'testimonials',
-  order: 6,
+  order: 8,
   seo: {
     ariaLabel: 'Testimonials from trade show organizers who chose JHR Photography',
     sectionId: 'social-proof',
@@ -303,7 +346,7 @@ export const TSM_SOCIAL_PROOF: TestimonialsSectionContent = {
 export const TSM_FAQS: FAQSectionContent = {
   id: 'faqs',
   type: 'faq',
-  order: 7,
+  order: 9,
   seo: {
     ariaLabel: 'Frequently asked questions about trade show media services',
     sectionId: 'faqs',
@@ -351,7 +394,7 @@ export const TSM_FAQS: FAQSectionContent = {
 export const TSM_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 8,
+  order: 10,
   seo: {
     ariaLabel: 'Schedule a consultation for trade show media coverage',
     sectionId: 'final-cta',
@@ -378,6 +421,8 @@ export const TSM_SECTIONS: PageSectionContent[] = [
   TSM_PROBLEM,
   TSM_SOLUTION,
   TSM_WHATS_INCLUDED,
+  TSM_WHY_NASHVILLE,
+  TSM_CHOOSING,
   TSM_VIDEO_PAIRING,
   TSM_EXHIBITOR_CROSSOVER,
   TSM_SOCIAL_PROOF,

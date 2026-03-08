@@ -11,7 +11,43 @@
 - PSI history stored in DynamoDB via /api/admin/psi/history
 - Recharts used for all charts (AreaChart, LineChart, BarChart)
 - Amplify build spec writes env vars to .env.production via grep exclusion pattern
-- CRON_SECRET not yet in env - needs to be added for US-504
+- CRON_SECRET added to .env for US-504 cron auth
+- Cron auth pattern: x-cron-secret header compared against process.env.CRON_SECRET
+- DynamoDB snapshot pattern: pk=SNAPSHOT#{date}, sk={metric-type} for time-series data
+- Alert pattern: pk=ALERT#{uuid}, sk=active — scan by prefix, filter by sk
+- Insights pattern: pk=INSIGHTS#weekly, sk={date} — query and sort by sk desc for latest
 
 ## Sprint 5 Progress Log
+---
+
+## 2026-03-07 - US-509: Add Apify competitor content scraping to ContentOps
+- Created /lib/contentops/competitor-scrape.ts with Apify cheerio-scraper integration
+- Added CompetitorPage and CompetitorContext types to /lib/contentops/types.ts
+- Updated /lib/contentops/generate.ts to accept CompetitorContext and build competitor analysis prompt block
+- Updated /app/api/admin/contentops/research/route.ts to scrape competitors after Perplexity research
+- Updated /app/api/admin/contentops/generate/route.ts to run competitor scraping in the full pipeline
+- Graceful fallback: all Apify errors are caught and logged, pipeline proceeds without competitor data
+- Files changed: types.ts, generate.ts, competitor-scrape.ts (new), research/route.ts, generate/route.ts
+- **Learnings:**
+  - Apify run-sync-get-dataset-items endpoint returns dataset items directly, no polling needed
+  - CompetitorContext is optional throughout the pipeline — null means "no competitor data available"
+
+## 2026-03-07 - US-510: Add GEO scoring to ContentOps post-generation validation
+- Created /lib/contentops/geo-score.ts with Claude API GEO scoring (7-criterion rubric, 100pts total)
+- Added geoScore, geoScoreNotes, highGeoPriority optional fields to ArticlePayload type
+- Updated generate route: Phase 4 runs GEO scoring after validation, sets status/flags based on score
+- Articles <70: held as DRAFT with geoScoreNotes explaining deficiencies
+- Articles 85+: flagged as highGeoPriority: true
+- Updated /app/admin/articles/page.tsx: ArticleRecord type extended, GEO score column shows HI-GEO badge (green) or NEEDS WORK badge (red with tooltip showing notes)
+- Files changed: types.ts, geo-score.ts (new), generate/route.ts, articles/page.tsx
+- **Learnings:**
+  - Existing validate.ts already had a local GEO scoring function; the new geo-score.ts uses Claude API for richer qualitative scoring
+  - The admin page already had geoScore in the ArticleRecord — just needed the badge/notes fields added
+---
+
+## 2026-03-07 - US-504, US-505, US-506: EventBridge cron, AI recommendations, alert engine
+- **US-504**: Created /app/api/admin/cron/refresh/route.ts — POST endpoint protected by CRON_SECRET header. Fetches PSI (desktop+mobile), social metrics (IG followers, FB followers/fans, YT subscribers/views), GEO score, and GSC clicks/impressions. Stores each as DynamoDB snapshot with pk=SNAPSHOT#{YYYY-MM-DD}, sk={metric-type}. After data collection, triggers alert evaluation. Added CRON_SECRET to .env.
+- **US-505**: Created /app/api/admin/insights/route.ts — GET endpoint with session auth. Gathers PSI, GEO, social, GSC keywords, GSC analytics, and lead data. Calls Claude API (claude-sonnet-4-6) with system prompt for 3-5 tactical recommendations. Stores in DynamoDB pk=INSIGHTS#weekly sk={date}. Caches for 7 days unless ?refresh=true.
+- **US-506**: Created /app/api/admin/alerts/route.ts — GET returns active alerts, POST evaluates thresholds, DELETE dismisses alerts. Thresholds: PSI desktop <85 warning, <70 critical; no leads in 5 days warning; GEO score drops 10+ points warning. Updated alerts page with severity badge table and AI recommendations section. Updated dashboard with sticky alert banner.
+- Files changed: app/api/admin/cron/refresh/route.ts (new), app/api/admin/insights/route.ts (new), app/api/admin/alerts/route.ts (new), app/admin/alerts/page.tsx (rewritten), app/admin/page.tsx (updated), .env (CRON_SECRET added), scripts/ralph/prd-sprint5.json (passes: true for 504-506)
 ---

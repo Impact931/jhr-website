@@ -13,6 +13,7 @@ import { EditableImage } from './EditableImage';
 import MediaPicker from '@/components/admin/media/MediaPicker';
 import type { MediaPickerResult } from '@/types/media';
 import type { HeroVariant, CTAButton, HeroSectionContent } from '@/types/inline-editor';
+import { trackScheduleCallClick } from '@/lib/gtag';
 
 // ============================================================================
 // Types
@@ -381,13 +382,13 @@ export function EditableHero({
                 className="flex flex-col sm:flex-row gap-4"
               >
                 {primaryCta && (
-                  <Link href={primaryCtaHref} className="btn-primary">
+                  <Link href={primaryCtaHref} className="btn-primary" onClick={() => trackScheduleCallClick('hero_primary')}>
                     {primaryCtaText}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Link>
                 )}
                 {secondaryCta && (
-                  <Link href={secondaryCtaHref} className="btn-secondary">
+                  <Link href={secondaryCtaHref} className="btn-secondary" onClick={() => trackScheduleCallClick('hero_secondary')}>
                     {secondaryCtaText}
                   </Link>
                 )}
@@ -526,13 +527,13 @@ export function EditableHero({
                 className="flex flex-col sm:flex-row gap-4"
               >
                 {primaryCta && (
-                  <Link href={primaryCtaHref} className="btn-primary">
+                  <Link href={primaryCtaHref} className="btn-primary" onClick={() => trackScheduleCallClick('hero_primary')}>
                     {primaryCtaText}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Link>
                 )}
                 {secondaryCta && (
-                  <Link href={secondaryCtaHref} className="btn-secondary">
+                  <Link href={secondaryCtaHref} className="btn-secondary" onClick={() => trackScheduleCallClick('hero_secondary')}>
                     {secondaryCtaText}
                   </Link>
                 )}

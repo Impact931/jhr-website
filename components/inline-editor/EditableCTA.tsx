@@ -24,6 +24,7 @@ import { EditableImage } from './EditableImage';
 import MediaPicker from '@/components/admin/media/MediaPicker';
 import type { MediaPickerResult } from '@/types/media';
 import type { CTAButton, CTABackground } from '@/types/inline-editor';
+import { trackScheduleCallClick } from '@/lib/gtag';
 
 // ============================================================================
 // Types
@@ -604,7 +605,7 @@ export function EditableCTA({
             >
               {!isButtonEmpty(primaryBtnText, primaryBtnHref) && (
                 <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
-                  <Link href={primaryBtnHref} className={getButtonClasses(primaryBtnVariant)}>
+                  <Link href={primaryBtnHref} className={getButtonClasses(primaryBtnVariant)} onClick={() => trackScheduleCallClick('cta_primary')}>
                     {primaryBtnText}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Link>
@@ -613,7 +614,7 @@ export function EditableCTA({
 
               {!isButtonEmpty(secondaryBtnText, secondaryBtnHref) && (
                 <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
-                  <Link href={secondaryBtnHref} className={getButtonClasses(secondaryBtnVariant)}>
+                  <Link href={secondaryBtnHref} className={getButtonClasses(secondaryBtnVariant)} onClick={() => trackScheduleCallClick('cta_secondary')}>
                     {secondaryBtnText}
                   </Link>
                 </motion.div>

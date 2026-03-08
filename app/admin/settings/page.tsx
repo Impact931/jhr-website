@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Settings, Globe, Link2, Search, Save, Loader2, CheckCircle, AlertCircle, Image as ImageIcon, X, Sparkles, RotateCcw } from 'lucide-react';
+import { Settings, Globe, Link2, Search, Save, Loader2, CheckCircle, AlertCircle, Image as ImageIcon, X, Sparkles, RotateCcw, Wifi, WifiOff, Tag, Plus, Trash2, ShieldAlert } from 'lucide-react';
 import MediaPicker from '@/components/admin/media/MediaPicker';
 import type { MediaPickerResult } from '@/types/media';
 
@@ -39,6 +39,31 @@ interface SiteSettings {
 
 type MediaField = 'logo' | 'favicon' | 'ogImage';
 
+interface IntegrationStatus {
+  name: string;
+  key: string;
+  connected: boolean;
+  details?: string;
+}
+
+interface AlertThresholds {
+  psiDesktopMin: number;
+  psiMobileMin: number;
+  keywordDropPositions: number;
+  noLeadsDays: number;
+  igReachDropPercent: number;
+  geoScoreDropPoints: number;
+}
+
+const DEFAULT_THRESHOLDS: AlertThresholds = {
+  psiDesktopMin: 85,
+  psiMobileMin: 70,
+  keywordDropPositions: 5,
+  noLeadsDays: 5,
+  igReachDropPercent: 30,
+  geoScoreDropPoints: 10,
+};
+
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +75,22 @@ export default function AdminSettingsPage() {
   const [loadingPreset, setLoadingPreset] = useState(false);
   const [defaultPrompt, setDefaultPrompt] = useState<string>('');
 
+  // API Connection Status
+  const [integrations, setIntegrations] = useState<IntegrationStatus[]>([]);
+  const [integrationsLoading, setIntegrationsLoading] = useState(true);
+
+  // Tracked Keywords
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywordsLoading, setKeywordsLoading] = useState(true);
+  const [keywordsSaving, setKeywordsSaving] = useState(false);
+  const [newKeyword, setNewKeyword] = useState('');
+
+  // Alert Thresholds
+  const [thresholds, setThresholds] = useState<AlertThresholds>(DEFAULT_THRESHOLDS);
+  const [thresholdsLoading, setThresholdsLoading] = useState(true);
+  const [thresholdsSaving, setThresholdsSaving] = useState(false);
+  const [thresholdsSaved, setThresholdsSaved] = useState(false);
+
   useEffect(() => {
     async function fetchSettings() {
       try {
@@ -57,7 +98,6 @@ export default function AdminSettingsPage() {
         if (!res.ok) throw new Error('Failed to fetch settings');
         const data = await res.json();
         setSettings(data.settings);
-        // Fetch default prompt for reset functionality
         if (data.defaultPrompt) {
           setDefaultPrompt(data.defaultPrompt);
         }
@@ -67,7 +107,53 @@ export default function AdminSettingsPage() {
         setLoading(false);
       }
     }
+
+    async function fetchIntegrations() {
+      try {
+        const res = await fetch('/api/admin/settings/status');
+        if (res.ok) {
+          const data = await res.json();
+          setIntegrations(data.integrations || []);
+        }
+      } catch {
+        // silently fail
+      } finally {
+        setIntegrationsLoading(false);
+      }
+    }
+
+    async function fetchKeywords() {
+      try {
+        const res = await fetch('/api/admin/settings/keywords');
+        if (res.ok) {
+          const data = await res.json();
+          setKeywords(data.keywords || []);
+        }
+      } catch {
+        // silently fail
+      } finally {
+        setKeywordsLoading(false);
+      }
+    }
+
+    async function fetchThresholds() {
+      try {
+        const res = await fetch('/api/admin/settings/thresholds');
+        if (res.ok) {
+          const data = await res.json();
+          setThresholds(data.thresholds || DEFAULT_THRESHOLDS);
+        }
+      } catch {
+        // silently fail
+      } finally {
+        setThresholdsLoading(false);
+      }
+    }
+
     fetchSettings();
+    fetchIntegrations();
+    fetchKeywords();
+    fetchThresholds();
   }, []);
 
   const handleSave = useCallback(async () => {
@@ -172,6 +258,64 @@ export default function AdminSettingsPage() {
     });
   };
 
+  const addKeyword = useCallback(async () => {
+    const trimmed = newKeyword.trim();
+    if (!trimmed || keywords.includes(trimmed)) return;
+    const updated = [...keywords, trimmed];
+    setNewKeyword('');
+    setKeywords(updated);
+    setKeywordsSaving(true);
+    try {
+      await fetch('/api/admin/settings/keywords', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywords: updated }),
+      });
+    } catch {
+      // revert
+      setKeywords(keywords);
+    } finally {
+      setKeywordsSaving(false);
+    }
+  }, [newKeyword, keywords]);
+
+  const removeKeyword = useCallback(async (keyword: string) => {
+    const updated = keywords.filter((k) => k !== keyword);
+    setKeywords(updated);
+    setKeywordsSaving(true);
+    try {
+      await fetch('/api/admin/settings/keywords', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywords: updated }),
+      });
+    } catch {
+      // revert
+      setKeywords(keywords);
+    } finally {
+      setKeywordsSaving(false);
+    }
+  }, [keywords]);
+
+  const saveThresholds = useCallback(async () => {
+    setThresholdsSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings/thresholds', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ thresholds }),
+      });
+      if (res.ok) {
+        setThresholdsSaved(true);
+        setTimeout(() => setThresholdsSaved(false), 3000);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setThresholdsSaving(false);
+    }
+  }, [thresholds]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -225,6 +369,253 @@ export default function AdminSettingsPage() {
           <p className="text-body-sm text-red-400">{error}</p>
         </div>
       )}
+
+      {/* API Connection Status Section */}
+      <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter overflow-hidden">
+        <div className="p-6 border-b border-jhr-black-lighter">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-lg bg-emerald-500/10">
+              <Wifi className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="text-body-lg font-semibold text-jhr-white">API Connection Status</h2>
+              <p className="text-body-sm text-jhr-white-dim">
+                Real-time connection status for all integrations.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="p-6">
+          {integrationsLoading ? (
+            <div className="space-y-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-10 animate-pulse bg-jhr-black-lighter rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {integrations.map((integration) => (
+                <div
+                  key={integration.key}
+                  className="flex items-center justify-between p-3 rounded-lg border border-jhr-black-lighter"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        integration.connected ? 'bg-green-400' : 'bg-red-400'
+                      }`}
+                    />
+                    <span className="text-body-sm font-medium text-jhr-white">
+                      {integration.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        integration.connected
+                          ? 'bg-green-400/10 text-green-400 border border-green-400/20'
+                          : 'bg-red-400/10 text-red-400 border border-red-400/20'
+                      }`}
+                    >
+                      {integration.connected ? 'Connected' : 'Disconnected'}
+                    </span>
+                    {integration.details && (
+                      <span className="text-xs text-jhr-white-dim hidden sm:inline">
+                        {integration.details}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tracked Keywords Section */}
+      <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter overflow-hidden">
+        <div className="p-6 border-b border-jhr-black-lighter">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-lg bg-blue-500/10">
+              <Tag className="w-6 h-6 text-blue-400" />
+            </div>
+            <div>
+              <h2 className="text-body-lg font-semibold text-jhr-white">Tracked Keywords</h2>
+              <p className="text-body-sm text-jhr-white-dim">
+                Keywords monitored for search position changes.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="p-6">
+          {keywordsLoading ? (
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-8 animate-pulse bg-jhr-black-lighter rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-2 mb-4">
+                <input
+                  type="text"
+                  value={newKeyword}
+                  onChange={(e) => setNewKeyword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addKeyword()}
+                  placeholder="Add a keyword..."
+                  className="flex-1 px-4 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white placeholder:text-jhr-white-dim focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold text-sm"
+                />
+                <button
+                  onClick={addKeyword}
+                  disabled={keywordsSaving || !newKeyword.trim()}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-jhr-gold text-jhr-black font-medium text-sm hover:bg-jhr-gold/90 transition-colors disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {keywords.map((keyword) => (
+                  <span
+                    key={keyword}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-jhr-black border border-jhr-black-lighter text-sm text-jhr-white"
+                  >
+                    {keyword}
+                    <button
+                      onClick={() => removeKeyword(keyword)}
+                      className="text-jhr-white-dim hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              {keywords.length === 0 && (
+                <p className="text-body-sm text-jhr-white-dim text-center py-4">
+                  No keywords tracked yet. Add keywords above to monitor search positions.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Alert Thresholds Section */}
+      <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter overflow-hidden">
+        <div className="p-6 border-b border-jhr-black-lighter">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-amber-500/10">
+                <ShieldAlert className="w-6 h-6 text-amber-400" />
+              </div>
+              <div>
+                <h2 className="text-body-lg font-semibold text-jhr-white">Alert Thresholds</h2>
+                <p className="text-body-sm text-jhr-white-dim">
+                  Configure when alerts are triggered for each metric.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={saveThresholds}
+              disabled={thresholdsSaving || thresholdsLoading}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-jhr-gold text-jhr-black font-medium text-sm hover:bg-jhr-gold/90 transition-colors disabled:opacity-50"
+            >
+              {thresholdsSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : thresholdsSaved ? (
+                <CheckCircle className="w-4 h-4" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {thresholdsSaving ? 'Saving...' : thresholdsSaved ? 'Saved' : 'Save'}
+            </button>
+          </div>
+        </div>
+        <div className="p-6">
+          {thresholdsLoading ? (
+            <div className="space-y-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-12 animate-pulse bg-jhr-black-lighter rounded-lg" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-body-sm font-medium text-jhr-white mb-2">
+                  PSI Desktop Minimum
+                </label>
+                <input
+                  type="number"
+                  value={thresholds.psiDesktopMin}
+                  onChange={(e) => setThresholds({ ...thresholds, psiDesktopMin: Number(e.target.value) })}
+                  className="w-full px-4 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold"
+                />
+                <p className="mt-1 text-xs text-jhr-white-dim">Alert when PSI desktop drops below this.</p>
+              </div>
+              <div>
+                <label className="block text-body-sm font-medium text-jhr-white mb-2">
+                  PSI Mobile Minimum
+                </label>
+                <input
+                  type="number"
+                  value={thresholds.psiMobileMin}
+                  onChange={(e) => setThresholds({ ...thresholds, psiMobileMin: Number(e.target.value) })}
+                  className="w-full px-4 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold"
+                />
+                <p className="mt-1 text-xs text-jhr-white-dim">Alert when PSI mobile drops below this.</p>
+              </div>
+              <div>
+                <label className="block text-body-sm font-medium text-jhr-white mb-2">
+                  Keyword Drop (positions)
+                </label>
+                <input
+                  type="number"
+                  value={thresholds.keywordDropPositions}
+                  onChange={(e) => setThresholds({ ...thresholds, keywordDropPositions: Number(e.target.value) })}
+                  className="w-full px-4 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold"
+                />
+                <p className="mt-1 text-xs text-jhr-white-dim">Alert when a keyword drops this many positions.</p>
+              </div>
+              <div>
+                <label className="block text-body-sm font-medium text-jhr-white mb-2">
+                  No Leads (days)
+                </label>
+                <input
+                  type="number"
+                  value={thresholds.noLeadsDays}
+                  onChange={(e) => setThresholds({ ...thresholds, noLeadsDays: Number(e.target.value) })}
+                  className="w-full px-4 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold"
+                />
+                <p className="mt-1 text-xs text-jhr-white-dim">Alert when no leads come in for this many days.</p>
+              </div>
+              <div>
+                <label className="block text-body-sm font-medium text-jhr-white mb-2">
+                  IG Reach Drop (%)
+                </label>
+                <input
+                  type="number"
+                  value={thresholds.igReachDropPercent}
+                  onChange={(e) => setThresholds({ ...thresholds, igReachDropPercent: Number(e.target.value) })}
+                  className="w-full px-4 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold"
+                />
+                <p className="mt-1 text-xs text-jhr-white-dim">Alert when IG reach drops by this percentage.</p>
+              </div>
+              <div>
+                <label className="block text-body-sm font-medium text-jhr-white mb-2">
+                  GEO Score Drop (points)
+                </label>
+                <input
+                  type="number"
+                  value={thresholds.geoScoreDropPoints}
+                  onChange={(e) => setThresholds({ ...thresholds, geoScoreDropPoints: Number(e.target.value) })}
+                  className="w-full px-4 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold"
+                />
+                <p className="mt-1 text-xs text-jhr-white-dim">Alert when GEO score drops by this many points.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* General Settings Section */}
       <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter overflow-hidden">

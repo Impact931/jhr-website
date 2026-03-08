@@ -77,6 +77,27 @@ export interface ArticlePayload {
   schemaMarkup: SchemaMarkup;
   openGraph: OpenGraphData;
   status: ArticleStatus;
+  geoScore?: number;
+  geoScoreNotes?: string;
+  highGeoPriority?: boolean;
+}
+
+export interface CompetitorPage {
+  url: string;
+  wordCount: number;
+  headings: {
+    h1: string[];
+    h2: string[];
+    h3: string[];
+  };
+  externalLinkCount: number;
+}
+
+export interface CompetitorContext {
+  pages: CompetitorPage[];
+  avgWordCount: number;
+  avgH2Count: number;
+  avgExternalLinks: number;
 }
 
 export interface GEOScore {

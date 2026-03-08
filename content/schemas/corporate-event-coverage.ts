@@ -408,13 +408,34 @@ export const CEC_DELIVERABLES: FeatureGridSectionContent = {
 };
 
 // ============================================================================
-// Section 10: Multi-Day Callout (text block)
+// Section 10: Why Nashville Event Professionals Choose JHR
+// ============================================================================
+
+export const CEC_WHY_NASHVILLE: TextBlockSectionContent = {
+  id: 'why-nashville',
+  type: 'text-block',
+  order: 10,
+  seo: {
+    ariaLabel: 'Why Nashville event professionals choose JHR Photography for corporate events',
+    sectionId: 'why-nashville',
+    dataSectionName: 'why-nashville',
+  },
+  heading: 'Why Nashville Corporate Event Professionals Choose JHR Photography',
+  alignment: 'left',
+  content:
+    '<p>Nashville hosts over 800 conventions, conferences, and corporate events each year. As the city\'s convention infrastructure has grown — with Music City Center, Gaylord Opryland, and a rapidly expanding hotel corridor — so has the demand for professional corporate event photography that meets the standards of national organizations, Fortune 500 companies, and major industry associations.</p>' +
+    '<p>JHR Photography has built its reputation by operating at the level these events demand. Our certified operators understand the operational vocabulary of major events: EAC forms, marshaling yards, drayage schedules, and union jurisdictions. When you partner with JHR, you are not explaining the basics. You are working with a team that already understands the logistics, the stakeholder expectations, and the pace at which corporate events move in Nashville.</p>' +
+    '<p>Our deep familiarity with Nashville\'s premier venues — including the loading docks, the lighting conditions, the venue contacts, and the best angles for every type of shot — means we execute without a learning curve. Whether your event is a 5,000-attendee national conference at Music City Center or a 50-person leadership retreat at a boutique downtown hotel, our coverage plan is built around your specific programming and stakeholder priorities.</p>',
+};
+
+// ============================================================================
+// Section 11: Multi-Day Callout (text block)
 // ============================================================================
 
 export const CEC_MULTI_DAY: TextBlockSectionContent = {
   id: 'multi-day',
   type: 'text-block',
-  order: 10,
+  order: 11,
   seo: {
     ariaLabel: 'Multi-day event coverage capabilities',
     sectionId: 'multi-day',
@@ -435,7 +456,7 @@ export const CEC_MULTI_DAY: TextBlockSectionContent = {
 export const CEC_VIDEO_BUNDLING: FeatureGridSectionContent = {
   id: 'video-bundling',
   type: 'feature-grid',
-  order: 11,
+  order: 12,
   seo: {
     ariaLabel: 'Add video to your corporate event coverage',
     sectionId: 'video-bundling',
@@ -481,7 +502,7 @@ export const CEC_VIDEO_BUNDLING: FeatureGridSectionContent = {
 export const CEC_VIDEO_CTA: CTASectionContent = {
   id: 'video-cta',
   type: 'cta',
-  order: 12,
+  order: 13,
   seo: {
     ariaLabel: 'Connect with the JHR video production team',
     sectionId: 'video-cta',
@@ -506,7 +527,7 @@ export const CEC_VIDEO_CTA: CTASectionContent = {
 export const CEC_TESTIMONIALS: TestimonialsSectionContent = {
   id: 'social-proof',
   type: 'testimonials',
-  order: 13,
+  order: 14,
   seo: {
     ariaLabel: 'Client testimonials for corporate event coverage',
     sectionId: 'social-proof',
@@ -547,7 +568,7 @@ export const CEC_TESTIMONIALS: TestimonialsSectionContent = {
 export const CEC_FAQS: FAQSectionContent = {
   id: 'faqs',
   type: 'faq',
-  order: 14,
+  order: 15,
   seo: {
     ariaLabel: 'Frequently asked questions about corporate event coverage',
     sectionId: 'faqs',
@@ -637,7 +658,7 @@ export const CEC_FAQS: FAQSectionContent = {
 export const CEC_FINAL_CTA: CTASectionContent = {
   id: 'final-cta',
   type: 'cta',
-  order: 15,
+  order: 16,
   seo: {
     ariaLabel: 'Schedule a strategy call for corporate event coverage',
     sectionId: 'final-cta',
@@ -675,6 +696,7 @@ export const CEC_SECTIONS: PageSectionContent[] = [
   CEC_FILMSTRIP,
   CEC_HOW_IT_WORKS,
   CEC_DELIVERABLES,
+  CEC_WHY_NASHVILLE,
   CEC_MULTI_DAY,
   CEC_VIDEO_BUNDLING,
   CEC_VIDEO_CTA,

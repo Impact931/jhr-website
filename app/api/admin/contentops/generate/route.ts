@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { runResearch } from '@/lib/contentops/research';
 import { generateArticle } from '@/lib/contentops/generate';
 import { validateArticle } from '@/lib/contentops/validate';
+import { scrapeCompetitors } from '@/lib/contentops/competitor-scrape';
+import { scoreArticleGEO } from '@/lib/contentops/geo-score';
 import { saveBlogPost } from '@/lib/blog-content';
 import { generateSlug } from '@/types/blog';
 import type { PageSectionContent } from '@/types/inline-editor';
@@ -53,7 +55,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Phase 2: Generate article
+    // Phase 1.5: Competitor scraping (graceful fallback)
+    let competitorContext = null;
+    if (researchResult.data.competitorUrls && researchResult.data.competitorUrls.length > 0) {
+      competitorContext = await scrapeCompetitors(researchResult.data.competitorUrls);
+    }
+
+    // Phase 2: Generate article (with competitor context)
     const config = {
       topic,
       primaryKeyword,
@@ -63,7 +71,7 @@ export async function POST(request: NextRequest) {
       ctaPath: ctaPath || '/schedule',
     };
 
-    const articleResult = await generateArticle(config, researchResult.data);
+    const articleResult = await generateArticle(config, researchResult.data, competitorContext);
     if (articleResult.error || !articleResult.data) {
       return NextResponse.json(
         { error: articleResult.error || 'Article generation returned no data' },
@@ -75,6 +83,19 @@ export async function POST(request: NextRequest) {
 
     // Phase 3: Validate
     const validation = await validateArticle(article);
+
+    // Phase 4: GEO scoring via Claude API
+    const geoResult = await scoreArticleGEO(article);
+    if (geoResult) {
+      article.geoScore = geoResult.totalScore;
+
+      if (geoResult.totalScore < 70) {
+        article.status = 'draft';
+        article.geoScoreNotes = geoResult.notes;
+      } else if (geoResult.totalScore >= 85) {
+        article.highGeoPriority = true;
+      }
+    }
 
     // Build sections from the article body and FAQ
     const sections: PageSectionContent[] = [];
@@ -138,6 +159,8 @@ export async function POST(request: NextRequest) {
       article,
       validation,
       slug,
+      competitorContext,
+      geoScoring: geoResult,
     });
   } catch (error) {
     console.error('ContentOps generate error:', error);

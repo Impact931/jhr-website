@@ -81,9 +81,9 @@ export const ABOUT_GUIDE: TextBlockSectionContent = {
     sectionId: 'guide',
     dataSectionName: 'guide',
   },
-  heading: 'Meet Jayson Rivas',
+  heading: 'Meet Jayson Rivas, Founder & Owner',
   content:
-    '<p>Jayson spent decades as a Green Beret in the U.S. Army Special Forces. Not the kind of service where you follow a script — the kind where you build teams from scratch in unfamiliar environments, with limited resources, and figure out how to win anyway. That\'s the DNA behind everything JHR Photography does.</p>' +
+    '<p>Jayson Rivas is the founder and owner of JHR Photography. He spent decades as a Green Beret in the U.S. Army Special Forces. Not the kind of service where you follow a script — the kind where you build teams from scratch in unfamiliar environments, with limited resources, and figure out how to win anyway. That\'s the DNA behind everything JHR Photography does.</p>' +
     '<p>But the story didn\'t start in the military. Jayson comes from a family of entrepreneurs going back to the 1960s — people who built businesses with their hands, served their communities, and understood that your name is your brand. That heritage shaped a simple belief: if someone trusts you with their business, you don\'t cut corners. You deliver.</p>' +
     '<p>Today, Jayson is married 24 years with six kids, two granddaughters, and a fat basset hound who runs the house. The same values that hold a family together — reliability, showing up when it matters, doing what you said you\'d do — are the values that hold this company together.</p>' +
     '<p>JHR Photography exists because Jayson saw event professionals getting let down by media vendors who didn\'t understand the stakes. You\'ve spent months coordinating speakers, managing budgets, aligning stakeholders. The last thing you need is a photographer who treats your event like a side gig. You deserve a partner who operates at your level — someone who arrives prepared, executes under pressure, and delivers assets you\'re proud to share with leadership.</p>',

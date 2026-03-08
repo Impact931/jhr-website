@@ -67,6 +67,8 @@ interface ArticleRecord {
   title: string;
   status: 'draft' | 'published' | 'failed';
   geoScore: number;
+  geoScoreNotes?: string;
+  highGeoPriority?: boolean;
   createdAt: string;
 }
 
@@ -1105,6 +1107,16 @@ function ArticlesTab() {
                       <span className={`text-sm font-medium ${geoScoreTextColor(article.geoScore)}`}>
                         {article.geoScore}
                       </span>
+                      {article.highGeoPriority && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 uppercase tracking-wide" title="High GEO Priority">
+                          HI-GEO
+                        </span>
+                      )}
+                      {article.geoScore < 70 && article.geoScoreNotes && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 uppercase tracking-wide" title={article.geoScoreNotes}>
+                          NEEDS WORK
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="p-3">

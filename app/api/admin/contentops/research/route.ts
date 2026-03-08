@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { runResearch } from '@/lib/contentops/research';
+import { scrapeCompetitors } from '@/lib/contentops/competitor-scrape';
 
 /**
- * POST /api/admin/contentops/research — Run Phase 1 research only
+ * POST /api/admin/contentops/research — Run Phase 1 research + competitor scraping
  *
  * Body: { topic: string, icpTag: string, primaryKeyword: string }
- * Response: { research: ResearchPayload } or { error: string }
+ * Response: { research: ResearchPayload, competitorContext?: CompetitorContext } or { error: string }
  */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -32,7 +33,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json({ research: result.data });
+    // Scrape competitor URLs from research results (graceful fallback on failure)
+    let competitorContext = null;
+    if (result.data?.competitorUrls && result.data.competitorUrls.length > 0) {
+      competitorContext = await scrapeCompetitors(result.data.competitorUrls);
+    }
+
+    return NextResponse.json({
+      research: result.data,
+      competitorContext,
+    });
   } catch (error) {
     console.error('ContentOps research error:', error);
     return NextResponse.json(

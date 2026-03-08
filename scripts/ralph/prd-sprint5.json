@@ -24,7 +24,7 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Currently 0/20. Need FAQPage schema on 3+ pages. Check existing layout.tsx files for where to inject schema."
     },
     {
@@ -40,7 +40,7 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Currently 0/15. Service pages need more structured content. Update content schemas in /content/schemas/."
     },
     {
@@ -55,7 +55,7 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Currently 15/20 - missing 'founder' signal. The GEO scorer checks for 'founder', 'owner', or 'ceo' on the /about page."
     },
     {
@@ -74,7 +74,7 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "PRD specifies BigQuery but DynamoDB is simpler for this scale. Use pk=SNAPSHOT#{date} sk={metric-type} pattern. EventBridge cron(0 11 * * ? *) = 6am CT."
     },
     {
@@ -91,7 +91,7 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Use claude-sonnet-4-6 model. System prompt from PRD Section 4.7. Cost ~$0.03/week."
     },
     {
@@ -108,7 +108,7 @@
         "Typecheck passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "PRD Section 4.7 has full threshold definitions. Start with PSI, keyword, and lead alerts."
     },
     {
@@ -159,7 +159,7 @@
         "Typecheck passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "APIFY_API_KEY already in env. Use apify/web-scraper or apify/cheerio-scraper actor. ContentOps spec Section 6.2."
     },
     {
@@ -175,7 +175,7 @@
         "Typecheck passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "ContentOps spec Section 11 has full scoring rubric. Use claude-sonnet-4-6 for scoring call."
     },
     {

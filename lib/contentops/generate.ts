@@ -1,7 +1,7 @@
 // ContentOps Engine — Phase 2: Article Generation via Anthropic Claude
 
 import Anthropic from '@anthropic-ai/sdk';
-import type { ContentOpsConfig, ResearchPayload, ArticlePayload } from './types';
+import type { ContentOpsConfig, ResearchPayload, ArticlePayload, CompetitorContext } from './types';
 import { getICPPromptBlock } from './icp-templates';
 
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
@@ -39,7 +39,23 @@ const PROHIBITED_PHRASES = [
   'without further ado',
 ];
 
-function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload): string {
+function buildCompetitorBlock(competitor: CompetitorContext): string {
+  const pageDetails = competitor.pages
+    .map((p) => `- ${p.url}: ${p.wordCount} words, ${p.headings.h2.length} H2s, ${p.externalLinkCount} external links\n  H2s: ${p.headings.h2.join(' | ') || '(none)'}`)
+    .join('\n');
+
+  return `## Competitor Analysis
+
+The top ${competitor.pages.length} ranking articles for this topic have been analyzed:
+
+${pageDetails}
+
+**Averages:** ${competitor.avgWordCount} words, ${competitor.avgH2Count} H2 sections, ${competitor.avgExternalLinks} external links.
+
+Competitor analysis shows the top ${competitor.pages.length} ranking articles average ${competitor.avgWordCount} words with ${competitor.avgH2Count} H2 sections. Your article must exceed this depth — aim for at least ${Math.round(competitor.avgWordCount * 1.2)} words and ${competitor.avgH2Count + 1}+ H2 sections to outperform competitors.`;
+}
+
+function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, competitorContext?: CompetitorContext | null): string {
   const icpBlock = getICPPromptBlock(config.icpTag);
 
   const internalLinkLines = Object.entries(INTERNAL_LINK_MAP)
@@ -116,7 +132,7 @@ ${statsBlock}
 ${expertQuotesBlock}
 
 ### Related questions (use for FAQ and section inspiration):
-${relatedQuestionsBlock}`;
+${relatedQuestionsBlock}${competitorContext ? '\n\n' + buildCompetitorBlock(competitorContext) : ''}`;
 }
 
 function buildUserPrompt(config: ContentOpsConfig): string {
@@ -204,14 +220,15 @@ function parseArticleResponse(content: string): ArticlePayload {
 
 export async function generateArticle(
   config: ContentOpsConfig,
-  research: ResearchPayload
+  research: ResearchPayload,
+  competitorContext?: CompetitorContext | null
 ): Promise<{ data?: ArticlePayload; error?: string }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return { error: 'ANTHROPIC_API_KEY environment variable is not set' };
   }
 
-  const systemPrompt = buildSystemPrompt(config, research);
+  const systemPrompt = buildSystemPrompt(config, research, competitorContext);
   const userPrompt = buildUserPrompt(config);
 
   try {

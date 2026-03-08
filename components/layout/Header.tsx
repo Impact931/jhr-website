@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useCallback } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
+import { trackScheduleCallClick } from "@/lib/gtag";
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -110,7 +111,7 @@ export function Header() {
 
           {/* CTA Button */}
           <div className="hidden lg:block">
-            <Link href="/schedule" className="btn-primary">
+            <Link href="/schedule" className="btn-primary" onClick={() => trackScheduleCallClick('header_desktop')}>
               Schedule a Strategy Call
             </Link>
           </div>
@@ -192,7 +193,7 @@ export function Header() {
               <Link
                 href="/schedule"
                 className="btn-primary w-full text-center"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() => { trackScheduleCallClick('header_mobile'); setMobileMenuOpen(false); }}
               >
                 Schedule a Strategy Call
               </Link>

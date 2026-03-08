@@ -21,6 +21,14 @@ import {
   XCircle,
   Loader2,
   Clock,
+  ShieldAlert,
+  TrendingUp,
+  TrendingDown,
+  MousePointerClick,
+  Instagram,
+  Youtube,
+  Bell,
+  Sparkles,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -247,6 +255,9 @@ export default function AdminDashboard() {
   const [socialPlatforms, setSocialPlatforms] = useState<SocialPlatform[]>([]);
   const [socialLoading, setSocialLoading] = useState(true);
 
+  // Active alerts for banner
+  const [activeAlertCount, setActiveAlertCount] = useState(0);
+
   // Toast
   const [toast, setToast] = useState<{
     message: string;
@@ -320,6 +331,16 @@ export default function AdminDashboard() {
       })
       .catch(() => {})
       .finally(() => setSocialLoading(false));
+
+    // Active alerts count
+    fetch('/api/admin/alerts')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.count) {
+          setActiveAlertCount(data.count);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // -------------------------------------------------------------------------
@@ -400,6 +421,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Active Alerts Banner */}
+      {activeAlertCount > 0 && (
+        <div className="sticky top-0 z-30">
+          <Link
+            href="/admin/alerts"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/15 transition-colors"
+          >
+            <ShieldAlert className="w-5 h-5 shrink-0" />
+            <span className="text-sm font-medium">
+              {activeAlertCount} active alert{activeAlertCount !== 1 ? 's' : ''} require attention
+            </span>
+            <ArrowRight className="w-4 h-4 ml-auto shrink-0" />
+          </Link>
+        </div>
+      )}
+
       {/* Welcome Header */}
       <div>
         <h1 className="text-display-sm font-display font-bold text-jhr-white">

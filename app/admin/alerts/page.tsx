@@ -8,7 +8,14 @@ import {
   AlertCircle,
   RefreshCw,
   Loader2,
+  Sparkles,
+  X,
+  ShieldAlert,
 } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface Alert {
   id: string;
@@ -19,6 +26,28 @@ interface Alert {
   link: string;
   linkLabel: string;
 }
+
+interface ActiveAlert {
+  pk: string;
+  sk: string;
+  alert_type: string;
+  metric_name: string;
+  threshold_value: number;
+  actual_value: number;
+  triggered_at: string;
+  severity: 'critical' | 'warning';
+  message: string;
+}
+
+interface InsightData {
+  recommendations: string;
+  generatedAt: string;
+  cached: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -54,10 +83,98 @@ function SeverityIcon({ severity }: { severity: Alert['severity'] }) {
   }
 }
 
+function SeverityBadge({ severity }: { severity: 'critical' | 'warning' }) {
+  const colors =
+    severity === 'critical'
+      ? 'bg-red-400/10 text-red-400 border-red-400/20'
+      : 'bg-amber-400/10 text-amber-400 border-amber-400/20';
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${colors}`}
+    >
+      {severity}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
 export default function AdminAlertsPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [activeAlerts, setActiveAlerts] = useState<ActiveAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // AI Recommendations
+  const [insights, setInsights] = useState<InsightData | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [insightsRefreshing, setInsightsRefreshing] = useState(false);
+
+  // -------------------------------------------------------------------------
+  // Fetch active alerts from /api/admin/alerts
+  // -------------------------------------------------------------------------
+
+  const fetchActiveAlerts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/alerts');
+      if (res.ok) {
+        const data = await res.json();
+        setActiveAlerts(data.alerts || []);
+      }
+    } catch {
+      // Alert endpoint unavailable
+    }
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Fetch AI Recommendations
+  // -------------------------------------------------------------------------
+
+  const fetchInsights = useCallback(async (forceRefresh = false) => {
+    if (forceRefresh) setInsightsRefreshing(true);
+    else setInsightsLoading(true);
+
+    try {
+      const url = forceRefresh
+        ? '/api/admin/insights?refresh=true'
+        : '/api/admin/insights';
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setInsights(data);
+      }
+    } catch {
+      // Insights unavailable
+    } finally {
+      setInsightsLoading(false);
+      setInsightsRefreshing(false);
+    }
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Dismiss an active alert
+  // -------------------------------------------------------------------------
+
+  const dismissAlert = useCallback(async (alertPk: string) => {
+    // Extract the ID portion after "ALERT#"
+    const alertId = alertPk.replace('ALERT#', '');
+    try {
+      const res = await fetch(`/api/admin/alerts?id=${encodeURIComponent(alertId)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setActiveAlerts((prev) => prev.filter((a) => a.pk !== alertPk));
+      }
+    } catch {
+      // Failed to dismiss
+    }
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Fetch health check alerts (existing pattern)
+  // -------------------------------------------------------------------------
 
   const fetchAlerts = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -114,7 +231,7 @@ export default function AdminAlertsPage() {
         }
       }
     } catch {
-      // PSI endpoint unavailable - skip
+      // PSI endpoint unavailable
     }
 
     // Check blog drafts
@@ -150,7 +267,7 @@ export default function AdminAlertsPage() {
         }
       }
     } catch {
-      // Blog endpoint unavailable - skip
+      // Blog endpoint unavailable
     }
 
     // Check GEO score
@@ -183,7 +300,7 @@ export default function AdminAlertsPage() {
         }
       }
     } catch {
-      // GEO endpoint unavailable - skip
+      // GEO endpoint unavailable
     }
 
     setAlerts(newAlerts);
@@ -193,7 +310,9 @@ export default function AdminAlertsPage() {
 
   useEffect(() => {
     fetchAlerts();
-  }, [fetchAlerts]);
+    fetchActiveAlerts();
+    fetchInsights();
+  }, [fetchAlerts, fetchActiveAlerts, fetchInsights]);
 
   return (
     <div className="space-y-8">
@@ -202,11 +321,14 @@ export default function AdminAlertsPage() {
         <div>
           <h1 className="text-2xl font-display font-bold text-jhr-white">Alerts</h1>
           <p className="text-body-sm text-jhr-white-dim mt-1">
-            System health checks and notifications
+            System health checks, threshold alerts, and AI recommendations
           </p>
         </div>
         <button
-          onClick={() => fetchAlerts(true)}
+          onClick={() => {
+            fetchAlerts(true);
+            fetchActiveAlerts();
+          }}
           disabled={refreshing}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-jhr-black-light border border-jhr-black-lighter text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter transition-colors disabled:opacity-50"
         >
@@ -215,51 +337,185 @@ export default function AdminAlertsPage() {
         </button>
       </div>
 
-      {/* Alerts List */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-16 text-jhr-white-dim">
-          <Loader2 className="w-8 h-8 animate-spin mb-4" />
-          <p className="text-body-sm">Checking system health...</p>
-        </div>
-      ) : alerts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-jhr-white-dim">
-          <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
-            <Bell className="w-8 h-8 text-green-400" />
-          </div>
-          <p className="text-body-sm font-medium text-jhr-white">No active alerts</p>
-          <p className="text-body-sm text-jhr-white-dim mt-1">
-            All systems are performing within thresholds.
-          </p>
-        </div>
-      ) : (
+      {/* Active Threshold Alerts */}
+      {activeAlerts.length > 0 && (
         <div className="space-y-3">
-          {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              className="flex items-start gap-4 p-4 bg-jhr-black-light rounded-xl border border-jhr-black-lighter"
-            >
-              <SeverityIcon severity={alert.severity} />
-              <div className="flex-1">
-                <p className="text-body-sm font-medium text-jhr-white">
-                  {alert.title}
-                </p>
-                <p className="text-body-sm text-jhr-white-dim mt-1">
-                  {alert.message}
-                </p>
-                <div className="mt-2 flex items-center gap-4 text-xs text-jhr-white-dim">
-                  <span>{alert.timestamp}</span>
-                  <a
-                    href={alert.link}
-                    className="text-jhr-gold hover:text-jhr-gold/80"
+          <h2 className="text-heading-md font-display font-semibold text-jhr-white flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-red-400" />
+            Active Threshold Alerts
+          </h2>
+          <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-jhr-black-lighter">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-jhr-white-dim uppercase tracking-wider">
+                    Severity
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-jhr-white-dim uppercase tracking-wider">
+                    Metric
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-jhr-white-dim uppercase tracking-wider">
+                    Threshold
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-jhr-white-dim uppercase tracking-wider">
+                    Actual
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-jhr-white-dim uppercase tracking-wider">
+                    Triggered
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-jhr-white-dim uppercase tracking-wider">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeAlerts.map((alert) => (
+                  <tr
+                    key={alert.pk}
+                    className="border-b border-jhr-black-lighter last:border-0 hover:bg-jhr-black-lighter/50"
                   >
-                    {alert.linkLabel} &rarr;
-                  </a>
-                </div>
-              </div>
-            </div>
-          ))}
+                    <td className="px-4 py-3">
+                      <SeverityBadge severity={alert.severity} />
+                    </td>
+                    <td className="px-4 py-3 text-body-sm text-jhr-white">
+                      {alert.metric_name}
+                    </td>
+                    <td className="px-4 py-3 text-body-sm text-jhr-white-dim">
+                      {alert.threshold_value}
+                    </td>
+                    <td className="px-4 py-3 text-body-sm text-jhr-white font-medium">
+                      {alert.actual_value}
+                    </td>
+                    <td className="px-4 py-3 text-body-sm text-jhr-white-dim">
+                      {timeAgo(new Date(alert.triggered_at))}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => dismissAlert(alert.pk)}
+                        className="p-1 rounded hover:bg-jhr-black-lighter text-jhr-white-dim hover:text-jhr-white transition-colors"
+                        title="Dismiss alert"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+
+      {/* AI Recommendations */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-heading-md font-display font-semibold text-jhr-white flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-jhr-gold" />
+            AI Weekly Recommendations
+          </h2>
+          <button
+            onClick={() => fetchInsights(true)}
+            disabled={insightsRefreshing}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-jhr-gold/10 border border-jhr-gold/20 text-jhr-gold hover:bg-jhr-gold/20 transition-colors disabled:opacity-50 text-sm"
+          >
+            {insightsRefreshing ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
+            <span>{insightsRefreshing ? 'Generating...' : 'Regenerate'}</span>
+          </button>
+        </div>
+
+        <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-6">
+          {insightsLoading ? (
+            <div className="flex flex-col items-center justify-center py-8 text-jhr-white-dim">
+              <Loader2 className="w-6 h-6 animate-spin mb-3" />
+              <p className="text-body-sm">Loading AI recommendations...</p>
+            </div>
+          ) : insights?.recommendations ? (
+            <div>
+              <div className="prose prose-invert prose-sm max-w-none">
+                <div className="whitespace-pre-wrap text-body-sm text-jhr-white leading-relaxed">
+                  {insights.recommendations}
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t border-jhr-black-lighter flex items-center gap-2 text-xs text-jhr-white-dim">
+                <Sparkles className="w-3 h-3 text-jhr-gold" />
+                <span>
+                  Generated {insights.generatedAt
+                    ? timeAgo(new Date(insights.generatedAt))
+                    : 'recently'}
+                  {insights.cached ? ' (cached)' : ''}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-jhr-white-dim">
+              <Sparkles className="w-8 h-8 text-jhr-gold/30 mb-3" />
+              <p className="text-body-sm">No recommendations available yet.</p>
+              <button
+                onClick={() => fetchInsights(true)}
+                className="mt-3 text-jhr-gold hover:underline text-sm"
+              >
+                Generate now
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Health Check Alerts */}
+      <div className="space-y-3">
+        <h2 className="text-heading-md font-display font-semibold text-jhr-white">
+          System Health Checks
+        </h2>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 text-jhr-white-dim">
+            <Loader2 className="w-8 h-8 animate-spin mb-4" />
+            <p className="text-body-sm">Checking system health...</p>
+          </div>
+        ) : alerts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-jhr-white-dim">
+            <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
+              <Bell className="w-8 h-8 text-green-400" />
+            </div>
+            <p className="text-body-sm font-medium text-jhr-white">No active alerts</p>
+            <p className="text-body-sm text-jhr-white-dim mt-1">
+              All systems are performing within thresholds.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {alerts.map((alert) => (
+              <div
+                key={alert.id}
+                className="flex items-start gap-4 p-4 bg-jhr-black-light rounded-xl border border-jhr-black-lighter"
+              >
+                <SeverityIcon severity={alert.severity} />
+                <div className="flex-1">
+                  <p className="text-body-sm font-medium text-jhr-white">
+                    {alert.title}
+                  </p>
+                  <p className="text-body-sm text-jhr-white-dim mt-1">
+                    {alert.message}
+                  </p>
+                  <div className="mt-2 flex items-center gap-4 text-xs text-jhr-white-dim">
+                    <span>{alert.timestamp}</span>
+                    <a
+                      href={alert.link}
+                      className="text-jhr-gold hover:text-jhr-gold/80"
+                    >
+                      {alert.linkLabel} &rarr;
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

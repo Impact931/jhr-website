@@ -57,6 +57,7 @@ interface Citation {
 interface SchemaPageInfo {
   page: string;
   path: string;
+  url?: string;
   schemaTypes: string[];
   status: 'complete' | 'partial' | 'missing';
 }
@@ -199,51 +200,25 @@ export default function GeoPage() {
   const fetchSchemaInventory = useCallback(async () => {
     setSchemaLoading(true);
     try {
-      const results: SchemaPageInfo[] = [];
-      for (const page of SCHEMA_CHECK_PAGES) {
-        try {
-          const res = await fetch(`${SITE_URL}${page.path}`, { signal: AbortSignal.timeout(10000) });
-          if (!res.ok) {
-            results.push({ page: page.label, path: page.path, schemaTypes: [], status: 'missing' });
-            continue;
-          }
-          const html = await res.text();
-          const schemas: string[] = [];
-          const regex = /<script\s+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
-          let match;
-          while ((match = regex.exec(html)) !== null) {
+      const res = await fetch('/api/admin/geo/schemas');
+      if (res.ok) {
+        const data = await res.json();
+        const results: SchemaPageInfo[] = (data.pages || []).map(
+          (p: { page: string; url: string; schemas: { type: string; valid: boolean }[] }) => {
+            const schemaTypes = [...new Set(p.schemas.filter((s) => s.valid).map((s) => s.type))];
+            const status = schemaTypes.length >= 2 ? 'complete' : schemaTypes.length === 1 ? 'partial' : 'missing';
+            // Extract path from URL
+            let path = '/';
             try {
-              const parsed = JSON.parse(match[1]);
-              const type = parsed['@type'];
-              if (Array.isArray(type)) {
-                schemas.push(...type);
-              } else if (type) {
-                schemas.push(type);
-              }
-              // Check @graph
-              if (parsed['@graph'] && Array.isArray(parsed['@graph'])) {
-                for (const item of parsed['@graph']) {
-                  if (item['@type']) {
-                    if (Array.isArray(item['@type'])) {
-                      schemas.push(...item['@type']);
-                    } else {
-                      schemas.push(item['@type']);
-                    }
-                  }
-                }
-              }
+              path = new URL(p.url).pathname;
             } catch {
-              // skip
+              // keep default
             }
+            return { page: p.page, path, url: p.url, schemaTypes, status };
           }
-          const unique = [...new Set(schemas)];
-          const status = unique.length >= 2 ? 'complete' : unique.length === 1 ? 'partial' : 'missing';
-          results.push({ page: page.label, path: page.path, schemaTypes: unique, status });
-        } catch {
-          results.push({ page: page.label, path: page.path, schemaTypes: [], status: 'missing' });
-        }
+        );
+        setSchemaPages(results);
       }
-      setSchemaPages(results);
     } catch {
       // silently fail
     } finally {
