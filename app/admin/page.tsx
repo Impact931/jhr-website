@@ -83,6 +83,19 @@ interface SocialPlatform {
   connected: boolean;
 }
 
+interface AlertItem {
+  id: string;
+  severity: 'error' | 'warning' | 'success';
+  title: string;
+  message: string;
+  timestamp: string;
+}
+
+interface InsightData {
+  recommendations?: string[];
+  generatedAt?: string;
+}
+
 // ---------------------------------------------------------------------------
 // KPI Card Component
 // ---------------------------------------------------------------------------
@@ -255,8 +268,24 @@ export default function AdminDashboard() {
   const [socialPlatforms, setSocialPlatforms] = useState<SocialPlatform[]>([]);
   const [socialLoading, setSocialLoading] = useState(true);
 
+  // New KPI data
+  const [organicClicks, setOrganicClicks] = useState<number | null>(null);
+  const [organicClicksLoading, setOrganicClicksLoading] = useState(true);
+
+  const [igReach, setIgReach] = useState<number | null>(null);
+  const [igReachLoading, setIgReachLoading] = useState(true);
+
+  const [ytViews, setYtViews] = useState<number | null>(null);
+  const [ytViewsLoading, setYtViewsLoading] = useState(true);
+
   // Active alerts for banner
+  const [activeAlerts, setActiveAlerts] = useState<AlertItem[]>([]);
   const [activeAlertCount, setActiveAlertCount] = useState(0);
+  const [alertsLoading, setAlertsLoading] = useState(true);
+
+  // AI Insights
+  const [insightData, setInsightData] = useState<InsightData | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(true);
 
   // Toast
   const [toast, setToast] = useState<{

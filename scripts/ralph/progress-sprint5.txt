@@ -51,3 +51,26 @@
 - **US-506**: Created /app/api/admin/alerts/route.ts — GET returns active alerts, POST evaluates thresholds, DELETE dismisses alerts. Thresholds: PSI desktop <85 warning, <70 critical; no leads in 5 days warning; GEO score drops 10+ points warning. Updated alerts page with severity badge table and AI recommendations section. Updated dashboard with sticky alert banner.
 - Files changed: app/api/admin/cron/refresh/route.ts (new), app/api/admin/insights/route.ts (new), app/api/admin/alerts/route.ts (new), app/admin/alerts/page.tsx (rewritten), app/admin/page.tsx (updated), .env (CRON_SECRET added), scripts/ralph/prd-sprint5.json (passes: true for 504-506)
 ---
+
+## 2026-03-07 - US-501, US-502, US-503: GEO score improvements (FAQ schema, content depth, founder signal)
+- **US-501**: Added FAQPage JSON-LD structured data to 4 service page layouts:
+  - /app/services/corporate-event-coverage/layout.tsx — 5 Q&A pairs about event coverage
+  - /app/services/headshot-activation/layout.tsx — 5 Q&A pairs about headshot activations
+  - /app/services/trade-show-media/layout.tsx — 5 Q&A pairs about trade show photography
+  - /app/services/executive-imaging/layout.tsx — 5 Q&A pairs about executive headshots
+  - Each layout imports StructuredDataSchema type and defines a faqSchema constant with @type FAQPage
+- **US-502**: Expanded content schemas with substantive text-block sections for GEO citable content:
+  - /content/schemas/corporate-event-coverage.ts — Added CEC_WHY_NASHVILLE text section with H2 heading
+  - /content/schemas/headshot-activation.ts — Added HA_WHY_ACTIVATIONS_WORK text section with H2 heading
+  - /content/schemas/trade-show-media.ts — Added TSM_WHY_NASHVILLE and TSM_CHOOSING text sections with H2 headings
+  - All sections array and order numbers updated accordingly
+- **US-503**: Updated /content/schemas/about.ts:
+  - Changed heading from "Meet Jayson Rivas" to "Meet Jayson Rivas, Founder & Owner"
+  - Added "Jayson Rivas is the founder and owner of JHR Photography" as opening sentence
+  - GEO scorer will now detect "founder" and "owner" signals on the /about page
+- **Learnings:**
+  - FAQPage JSON-LD goes in layout.tsx alongside existing Service/BreadcrumbList schemas
+  - GEO scorer checks SERVICE_PAGES.slice(0, 3) for citable content (corporate-event-coverage, headshot-activation, executive-imaging)
+  - Entity definition checks are case-insensitive on the about page HTML
+  - StructuredDataSchema type must be imported from @/lib/structured-data for layout files
+---
