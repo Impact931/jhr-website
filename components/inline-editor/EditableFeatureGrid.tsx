@@ -573,6 +573,8 @@ function LogoScrollView({
                   src={feature.image.src}
                   alt={feature.image.alt || feature.title}
                   className="h-20 w-auto object-contain opacity-90 transition-all duration-500"
+                  loading="lazy"
+                  decoding="async"
                 />
               ) : (
                 <div className="h-20 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity duration-500">
