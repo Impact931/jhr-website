@@ -1,5 +1,19 @@
 import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+/**
+ * Redirect www to non-www (301) for SEO canonicalization.
+ * Must run before NextAuth middleware.
+ */
+function handleWwwRedirect(req: NextRequest): NextResponse | null {
+  const host = req.headers.get('host') || '';
+  if (host.startsWith('www.')) {
+    const url = req.nextUrl.clone();
+    url.host = host.replace('www.', '');
+    return NextResponse.redirect(url, 301);
+  }
+  return null;
+}
 
 /**
  * NextAuth middleware for protecting admin routes
@@ -8,9 +22,8 @@ import { NextResponse } from 'next/server';
  * - Unauthenticated users are redirected to /admin/login
  * - All other routes (/, /services/*, etc.) are public
  */
-export default withAuth(
+const authMiddleware = withAuth(
   function middleware(req) {
-    // Continue to the requested page if authenticated
     return NextResponse.next();
   },
   {
@@ -18,17 +31,14 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
 
-        // Allow access to login page without authentication
         if (pathname === '/admin/login') {
           return true;
         }
 
-        // Require authentication for all other /admin routes
         if (pathname.startsWith('/admin')) {
           return !!token;
         }
 
-        // Allow all other routes (public pages)
         return true;
       },
     },
@@ -38,10 +48,19 @@ export default withAuth(
   }
 );
 
-// Configure which routes the middleware applies to
+export default function middleware(req: NextRequest) {
+  // www → non-www redirect (runs on all routes)
+  const wwwRedirect = handleWwwRedirect(req);
+  if (wwwRedirect) return wwwRedirect;
+
+  // Auth middleware for admin routes
+  // @ts-expect-error - withAuth returns a compatible middleware function
+  return authMiddleware(req, {} as never);
+}
+
+// Match admin routes + all public routes for www redirect
 export const config = {
   matcher: [
-    // Match all admin routes
-    '/admin/:path*',
+    '/((?!_next/static|_next/image|favicon.ico|images|fonts|api).*)',
   ],
 };

@@ -48,9 +48,6 @@ export const metadata: Metadata = {
     telephone: false,
   },
   metadataBase: new URL("https://jhr-photography.com"),
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     title: "JHR Photography | Nashville Corporate Event & Headshot Specialists",
     description:
