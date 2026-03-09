@@ -41,22 +41,6 @@ const nextConfig = {
         value: 'strict-origin-when-cross-origin',
       },
       {
-        key: 'Content-Security-Policy',
-        value: [
-          "default-src 'self'",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://www.youtube.com https://www.youtube-nocookie.com",
-          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-          "font-src 'self' https://fonts.gstatic.com data:",
-          "img-src 'self' data: blob: https://*.amazonaws.com https://*.cloudfront.net https://www.google-analytics.com https://www.facebook.com https://placehold.co",
-          "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://www.facebook.com https://connect.facebook.net https://pagespeedonline.googleapis.com",
-          "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
-          "media-src 'self' https://*.amazonaws.com https://*.cloudfront.net",
-          "object-src 'none'",
-          "base-uri 'self'",
-          "form-action 'self'",
-        ].join('; '),
-      },
-      {
         key: 'Permissions-Policy',
         value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
       },

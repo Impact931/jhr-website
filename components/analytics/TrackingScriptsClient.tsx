@@ -10,14 +10,14 @@ interface TrackingScriptsClientProps {
 export function TrackingScriptsClient({ ga4Id, metaPixelId }: TrackingScriptsClientProps) {
   return (
     <>
-      {/* Google Analytics 4 — deferred to lazyOnload for better PSI */}
+      {/* Google Analytics 4 */}
       {ga4Id && (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
-            strategy="lazyOnload"
+            strategy="afterInteractive"
           />
-          <Script id="ga4-init" strategy="lazyOnload">
+          <Script id="ga4-init" strategy="afterInteractive">
             {`
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
@@ -28,9 +28,9 @@ export function TrackingScriptsClient({ ga4Id, metaPixelId }: TrackingScriptsCli
         </>
       )}
 
-      {/* Meta Pixel — deferred to lazyOnload for better PSI */}
+      {/* Meta Pixel */}
       {metaPixelId && (
-        <Script id="meta-pixel-init" strategy="lazyOnload">
+        <Script id="meta-pixel-init" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
