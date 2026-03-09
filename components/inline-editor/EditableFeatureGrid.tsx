@@ -572,6 +572,8 @@ function LogoScrollView({
                 <img
                   src={feature.image.src}
                   alt={feature.image.alt || feature.title}
+                  width={160}
+                  height={80}
                   className="h-20 w-auto object-contain opacity-90 transition-all duration-500"
                   loading="lazy"
                   decoding="async"
@@ -1012,8 +1014,11 @@ function DefaultCardView({
             <img
               src={feature.image.src}
               alt={feature.image.alt || feature.title}
+              width={600}
+              height={450}
               className="w-full h-auto block group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
+              decoding="async"
             />
           ) : (
             <SmartImage
