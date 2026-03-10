@@ -165,7 +165,22 @@ function mergeSection(
       break;
     }
 
-    // hero, cta, text-block, stats — existing content preserved as-is
+    case 'hero': {
+      // Sync buttons from schema (href changes like Notion → /inquiry must propagate)
+      if (schema.buttons) {
+        merged.buttons = schema.buttons;
+      }
+      break;
+    }
+
+    case 'cta': {
+      // Sync CTA button hrefs from schema
+      if (schema.primaryButton) merged.primaryButton = schema.primaryButton;
+      if (schema.secondaryButton) merged.secondaryButton = schema.secondaryButton;
+      break;
+    }
+
+    // text-block, stats — existing content preserved as-is
   }
 
   return merged as PageSectionContent;
