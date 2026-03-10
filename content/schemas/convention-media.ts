@@ -67,7 +67,7 @@ export const CM_HERO: HeroSectionContent = {
     alt: 'Professional convention media coverage at large-scale event',
   },
   buttons: [
-    { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
+    { text: 'Talk With Our Team', href: '/inquiry', variant: 'primary' },
   ],
 };
 
@@ -364,7 +364,7 @@ export const CM_FINAL_CTA: CTASectionContent = {
   backgroundValue: 'radial-gradient(circle at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 50%), linear-gradient(180deg, #0B0C0F 0%, #0B0C0F 100%)',
   primaryButton: {
     text: 'Talk With Our Team',
-    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
+    href: '/inquiry',
     variant: 'primary',
   },
 };

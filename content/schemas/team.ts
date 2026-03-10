@@ -53,7 +53,7 @@ export const TEAM_HERO: HeroSectionContent = {
   description:
     'Every JHR operator is recruited through military and professional networks, trained to our standard, and held accountable after every event. When they show up to your event, they\'re ready.',
   buttons: [
-    { text: 'Schedule a Strategy Call', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
+    { text: 'Schedule a Strategy Call', href: '/inquiry', variant: 'primary' },
   ],
 };
 
@@ -336,7 +336,7 @@ export const TEAM_CTA: CTASectionContent = {
   backgroundValue: '/images/generated/hero-homepage.jpg',
   primaryButton: {
     text: 'Schedule a Strategy Call',
-    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
+    href: '/inquiry',
     variant: 'primary',
   },
 };

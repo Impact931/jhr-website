@@ -66,8 +66,8 @@ export const CEC_HERO: HeroSectionContent = {
     alt: 'Professional event photography at corporate conference in Nashville',
   },
   buttons: [
-    { text: 'Talk With Our Team', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'primary' },
-    { text: 'Check Availability', href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105', variant: 'secondary' },
+    { text: 'Talk With Our Team', href: '/inquiry', variant: 'primary' },
+    { text: 'Check Availability', href: '/inquiry', variant: 'secondary' },
   ],
 };
 
@@ -671,12 +671,12 @@ export const CEC_FINAL_CTA: CTASectionContent = {
   backgroundValue: '#111318',
   primaryButton: {
     text: 'Talk With Our Team',
-    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
+    href: '/inquiry',
     variant: 'primary',
   },
   secondaryButton: {
     text: 'Check Availability',
-    href: 'https://potent-apparatus-4da.notion.site/2e4c2a32df0d80d586d8e924d98f02ca?pvs=105',
+    href: '/inquiry',
     variant: 'secondary',
   },
 };
