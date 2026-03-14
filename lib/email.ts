@@ -1,8 +1,10 @@
-import { google } from 'googleapis';
+import crypto from 'crypto';
 
 const FROM_EMAIL = process.env.SES_FROM_EMAIL || 'assignments@jhr-photography.com';
+const GMAIL_API_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send';
+const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
-function getServiceAccountCredentials() {
+function getServiceAccountCredentials(): { client_email: string; private_key: string } | null {
   const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON;
   if (!keyJson) return null;
   try {
@@ -12,21 +14,54 @@ function getServiceAccountCredentials() {
   }
 }
 
-function getGmailClient() {
-  const credentials = getServiceAccountCredentials();
-  if (!credentials) {
+function base64url(input: string | Buffer): string {
+  const buf = typeof input === 'string' ? Buffer.from(input) : input;
+  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function getAccessToken(): Promise<string | null> {
+  const creds = getServiceAccountCredentials();
+  if (!creds) {
     console.error('GOOGLE_SERVICE_ACCOUNT_KEY_JSON not configured');
     return null;
   }
 
-  const auth = new google.auth.JWT({
-    email: credentials.client_email,
-    key: credentials.private_key,
-    scopes: ['https://www.googleapis.com/auth/gmail.send'],
-    subject: FROM_EMAIL, // Impersonate the sender via domain-wide delegation
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const payload = {
+    iss: creds.client_email,
+    sub: FROM_EMAIL,
+    scope: 'https://www.googleapis.com/auth/gmail.send',
+    aud: TOKEN_URL,
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const headerB64 = base64url(JSON.stringify(header));
+  const payloadB64 = base64url(JSON.stringify(payload));
+  const signingInput = `${headerB64}.${payloadB64}`;
+
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(signingInput);
+  const signature = sign.sign(creds.private_key);
+  const signatureB64 = base64url(signature);
+
+  const jwt = `${signingInput}.${signatureB64}`;
+
+  const tokenRes = await fetch(TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   });
 
-  return google.gmail({ version: 'v1', auth });
+  if (!tokenRes.ok) {
+    const err = await tokenRes.text();
+    console.error('Failed to get Google access token:', err);
+    return null;
+  }
+
+  const tokenData = await tokenRes.json();
+  return tokenData.access_token;
 }
 
 function buildMimeMessage({
@@ -42,7 +77,7 @@ function buildMimeMessage({
 }): string {
   const boundary = `boundary_${crypto.randomUUID().replace(/-/g, '')}`;
 
-  const mime = [
+  return [
     `From: JHR Photography <${FROM_EMAIL}>`,
     `To: ${to}`,
     `Subject: ${subject}`,
@@ -63,8 +98,6 @@ function buildMimeMessage({
     '',
     `--${boundary}--`,
   ].join('\r\n');
-
-  return mime;
 }
 
 export async function sendEmail({
@@ -78,30 +111,31 @@ export async function sendEmail({
   htmlBody: string;
   textBody: string;
 }): Promise<boolean> {
-  const gmail = getGmailClient();
-  if (!gmail) {
-    console.error('Gmail client not available, email not sent');
-    return false;
-  }
-
   try {
-    const rawMessage = buildMimeMessage({ to, subject, htmlBody, textBody });
-    const encodedMessage = Buffer.from(rawMessage)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+    const accessToken = await getAccessToken();
+    if (!accessToken) return false;
 
-    await gmail.users.messages.send({
-      userId: 'me',
-      requestBody: {
-        raw: encodedMessage,
+    const rawMessage = buildMimeMessage({ to, subject, htmlBody, textBody });
+    const encodedMessage = base64url(rawMessage);
+
+    const res = await fetch(GMAIL_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({ raw: encodedMessage }),
     });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error('Gmail API send failed:', res.status, err);
+      return false;
+    }
 
     return true;
   } catch (error) {
-    console.error('Gmail send failed:', error);
+    console.error('Email send failed:', error);
     return false;
   }
 }
