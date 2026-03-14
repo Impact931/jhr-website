@@ -81,13 +81,13 @@ const ICP_OPTIONS = [
   { value: 'ICP-4', label: 'ICP-4 Venue Partners' },
 ];
 
-const ARTICLE_TYPE_OPTIONS = [
-  'Standard',
-  'Statistics Hub',
-  'Ultimate Guide',
-  'Pricing Data',
-  'Named Framework',
-  'Expert Roundup',
+const ARTICLE_TYPE_OPTIONS: { label: string; value: string }[] = [
+  { label: 'Standard', value: 'standard' },
+  { label: 'Statistics Hub', value: 'statistics-hub' },
+  { label: 'Ultimate Guide', value: 'ultimate-guide' },
+  { label: 'Pricing Data', value: 'pricing-data' },
+  { label: 'Named Framework', value: 'framework' },
+  { label: 'Expert Roundup', value: 'roundup' },
 ];
 
 const CTA_PATH_OPTIONS = [
@@ -221,7 +221,7 @@ function GenerateTab() {
   const [topic, setTopic] = useState('');
   const [keyword, setKeyword] = useState('');
   const [icp, setIcp] = useState('ICP-1');
-  const [articleType, setArticleType] = useState('Standard');
+  const [articleType, setArticleType] = useState('standard');
   const [wordCount, setWordCount] = useState(1200);
   const [ctaPath, setCtaPath] = useState('/schedule');
 
@@ -239,10 +239,10 @@ function GenerateTab() {
 
   const formPayload = useCallback(() => ({
     topic,
-    keyword,
-    icp,
+    primaryKeyword: keyword,
+    icpTag: icp,
     articleType,
-    wordCount,
+    wordCountTarget: wordCount,
     ctaPath,
   }), [topic, keyword, icp, articleType, wordCount, ctaPath]);
 
@@ -363,7 +363,7 @@ function GenerateTab() {
               className="w-full bg-jhr-black border border-jhr-black-lighter rounded-lg px-4 py-2.5 text-jhr-white focus:outline-none focus:border-jhr-gold transition-colors"
             >
               {ARTICLE_TYPE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
@@ -674,7 +674,7 @@ function BatchTab() {
         topic: '',
         keyword: '',
         icp: 'ICP-1',
-        articleType: 'Standard',
+        articleType: 'standard',
         status: 'pending',
       },
     ]);
@@ -690,7 +690,7 @@ function BatchTab() {
         topic,
         keyword,
         icp: 'ICP-1',
-        articleType: 'Standard',
+        articleType: 'standard',
         status: 'pending',
       },
     ]);
@@ -720,10 +720,10 @@ function BatchTab() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          articles: rows.map((r) => ({
+          topics: rows.map((r) => ({
             topic: r.topic,
-            keyword: r.keyword,
-            icp: r.icp,
+            primaryKeyword: r.keyword,
+            icpTag: r.icp,
             articleType: r.articleType,
           })),
         }),
@@ -912,7 +912,7 @@ function BatchTab() {
                         className="bg-jhr-black border border-jhr-black-lighter rounded px-2 py-1.5 text-sm text-jhr-white focus:outline-none focus:border-jhr-gold disabled:opacity-50 transition-colors"
                       >
                         {ARTICLE_TYPE_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>
                     </td>

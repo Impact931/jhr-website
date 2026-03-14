@@ -165,22 +165,9 @@ function mergeSection(
       break;
     }
 
-    case 'hero': {
-      // Sync buttons from schema (href changes like Notion → /inquiry must propagate)
-      if (schema.buttons) {
-        merged.buttons = schema.buttons;
-      }
-      break;
-    }
-
-    case 'cta': {
-      // Sync CTA button hrefs from schema
-      if (schema.primaryButton) merged.primaryButton = schema.primaryButton;
-      if (schema.secondaryButton) merged.secondaryButton = schema.secondaryButton;
-      break;
-    }
-
-    // text-block, stats — existing content preserved as-is
+    // hero, cta, text-block, stats — existing content preserved as-is
+    // To update specific fields (e.g. button hrefs), use the
+    // /api/admin/content/find-replace endpoint instead of re-seeding.
   }
 
   return merged as PageSectionContent;
@@ -265,7 +252,26 @@ function mergePageContent(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { slugs, force } = body as { slugs?: string[]; force?: boolean };
+    const { slugs, force, confirmForce } = body as {
+      slugs?: string[];
+      force?: boolean;
+      confirmForce?: string;
+    };
+
+    // Force seed is destructive — require explicit confirmation string
+    if (force && confirmForce !== 'DESTROY_AND_OVERWRITE') {
+      return NextResponse.json(
+        {
+          error:
+            'Force seed DESTROYS all user edits (text, images, links). ' +
+            'This cannot be undone. To confirm, include ' +
+            '"confirmForce": "DESTROY_AND_OVERWRITE" in the request body. ' +
+            'For targeted changes (e.g. updating URLs), use ' +
+            '/api/admin/content/find-replace instead.',
+        },
+        { status: 400 }
+      );
+    }
 
     if (!Array.isArray(slugs) || slugs.length === 0) {
       return NextResponse.json(
