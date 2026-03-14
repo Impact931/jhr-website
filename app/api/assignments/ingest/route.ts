@@ -13,7 +13,7 @@ import {
   extractFormula,
 } from '@/lib/notion';
 import { validateAssignmentData } from '@/lib/assignments-quality';
-import { sendEmail } from '@/lib/ses';
+import { sendEmail } from '@/lib/email';
 import { assignmentNotificationEmail } from '@/lib/email-templates/assignment-notification';
 import type { Assignment } from '@/lib/assignments-types';
 

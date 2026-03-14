@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAssignment, updateAssignmentStatus } from '@/lib/assignments-db';
 import { updateNotionPage } from '@/lib/notion';
-import { sendEmail } from '@/lib/ses';
+import { sendEmail } from '@/lib/email';
 import { sendSlackNotification } from '@/lib/slack';
 import { assignmentConfirmationEmail } from '@/lib/email-templates/assignment-confirmation';
 import { opsManagerAlertEmail } from '@/lib/email-templates/ops-manager-alert';
