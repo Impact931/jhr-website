@@ -5,25 +5,27 @@ const GMAIL_API_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/messages/s
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 function getServiceAccountCredentials(): { client_email: string; private_key: string } | null {
-  const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON;
+  // Try base64-encoded key first (preferred — avoids Amplify env var truncation)
+  const keyB64 = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_B64;
+  const keyJson = keyB64
+    ? Buffer.from(keyB64, 'base64').toString('utf-8')
+    : process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON;
+
   if (!keyJson) {
-    console.error('GOOGLE_SERVICE_ACCOUNT_KEY_JSON env var is not set');
+    console.error('Neither GOOGLE_SERVICE_ACCOUNT_KEY_B64 nor GOOGLE_SERVICE_ACCOUNT_KEY_JSON is set');
     return null;
   }
   try {
     // Env vars may contain literal \n sequences that break JSON.parse.
-    // Replace actual newlines/carriage-returns inside the string with \\n
-    // so JSON.parse can succeed, then fix up private_key afterward.
     const sanitized = keyJson.replace(/\r?\n/g, '\\n');
     const parsed = JSON.parse(sanitized);
-    // After parsing, the private_key may contain literal two-char "\\n"
-    // sequences instead of real newlines. PEM keys require real newlines.
+    // PEM keys require real newlines
     if (parsed.private_key) {
       parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
     }
     return parsed;
   } catch (err) {
-    console.error('Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY_JSON:', err);
+    console.error('Failed to parse service account key JSON:', err);
     return null;
   }
 }

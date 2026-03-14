@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
 import { sendSlackNotification } from '@/lib/slack';
-import { getNotionPage, updateNotionPage } from '@/lib/notion';
 
 export async function GET(request: NextRequest) {
   const secret = request.headers.get('x-jhr-secret');
@@ -12,27 +11,33 @@ export async function GET(request: NextRequest) {
   const results: Record<string, unknown> = {};
 
   // Test 1: Check env vars
+  const keyB64 = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_B64;
+  const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON;
   results.envVars = {
-    GOOGLE_SERVICE_ACCOUNT_KEY_JSON: process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON ? `set (${process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON.length} chars)` : 'NOT SET',
+    GOOGLE_SERVICE_ACCOUNT_KEY_B64: keyB64 ? `set (${keyB64.length} chars)` : 'NOT SET',
+    GOOGLE_SERVICE_ACCOUNT_KEY_JSON: keyJson ? `set (${keyJson.length} chars)` : 'NOT SET',
     SES_FROM_EMAIL: process.env.SES_FROM_EMAIL || 'NOT SET',
     SLACK_OPS_WEBHOOK_URL: process.env.SLACK_OPS_WEBHOOK_URL ? 'set' : 'NOT SET',
-    NOTION_API_KEY: process.env.NOTION_API_KEY ? 'set' : 'NOT SET',
+    NOTION_TOKEN: process.env.NOTION_TOKEN ? 'set' : 'NOT SET',
     ASSIGNMENTS_TABLE_NAME: process.env.ASSIGNMENTS_TABLE_NAME || 'NOT SET',
   };
 
-  // Test 2: Parse service account JSON
+  // Test 2: Parse service account JSON (via base64 or raw)
   try {
-    const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON || '';
-    const sanitized = keyJson.replace(/\r?\n/g, '\\n');
+    const raw = keyB64
+      ? Buffer.from(keyB64, 'base64').toString('utf-8')
+      : keyJson || '';
+    const sanitized = raw.replace(/\r?\n/g, '\\n');
     const parsed = JSON.parse(sanitized);
     if (parsed.private_key) {
       parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
     }
     results.serviceAccount = {
+      source: keyB64 ? 'base64' : 'raw_json',
       parsed: true,
       client_email: parsed.client_email,
-      private_key_start: parsed.private_key?.substring(0, 40),
-      private_key_has_newlines: parsed.private_key?.includes('\n'),
+      private_key_length: parsed.private_key?.length,
+      private_key_starts_with_pem: parsed.private_key?.startsWith('-----BEGIN'),
     };
   } catch (err) {
     results.serviceAccount = { parsed: false, error: String(err) };
@@ -59,18 +64,6 @@ export async function GET(request: NextRequest) {
     results.slack = { sent: slackResult };
   } catch (err) {
     results.slack = { sent: false, error: String(err) };
-  }
-
-  // Test 5: Notion API test (read a known page)
-  try {
-    const testPageId = '2e1c2a32df0d80eca2a4d09e343f94a6';
-    const page = await getNotionPage(testPageId);
-    results.notion = {
-      connected: !!page,
-      pageType: page ? 'database' : null,
-    };
-  } catch (err) {
-    results.notion = { connected: false, error: String(err) };
   }
 
   return NextResponse.json(results, { status: 200 });
