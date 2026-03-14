@@ -14,6 +14,7 @@ import {
 } from '@/lib/notion';
 import { validateAssignmentData } from '@/lib/assignments-quality';
 import { sendEmail } from '@/lib/email';
+import { sendSlackNotification } from '@/lib/slack';
 import { assignmentNotificationEmail } from '@/lib/email-templates/assignment-notification';
 import type { Assignment } from '@/lib/assignments-types';
 
@@ -193,22 +194,23 @@ export async function POST(request: NextRequest) {
     // Save to DynamoDB
     await putAssignment(assignment);
 
-    // Write assignment URL back to Notion (non-blocking)
+    // Write assignment URL back to Notion + set status to "Sent"
     try {
       await updateNotionPage(notionPageId, {
         'Gig Sheet Sent': { checkbox: true },
         'Assignment Sheet Link': { url: assignmentUrl },
+        'Status': { status: { name: 'Sent' } },
       });
     } catch (error) {
       console.error('Failed to update Notion assignment with Gig Sheet Sent:', error);
     }
 
-    // Send notification emails (operator + ops managers)
-    const emailPromises: Promise<unknown>[] = [];
+    // Send notification emails (operator + ops managers) + Slack
+    const asyncPromises: Promise<unknown>[] = [];
     const emailData = assignmentNotificationEmail(assignment);
 
     if (operatorEmail) {
-      emailPromises.push(
+      asyncPromises.push(
         sendEmail({ to: operatorEmail, ...emailData }).catch((e) =>
           console.error('Failed to send operator notification email:', e)
         )
@@ -221,14 +223,21 @@ export async function POST(request: NextRequest) {
       .map((e) => e.trim())
       .filter(Boolean);
     for (const opsEmail of opsEmails) {
-      emailPromises.push(
+      asyncPromises.push(
         sendEmail({ to: opsEmail, ...emailData }).catch((e) =>
           console.error(`Failed to send ops manager notification to ${opsEmail}:`, e)
         )
       );
     }
 
-    await Promise.allSettled(emailPromises);
+    // Slack notification to ops channel
+    asyncPromises.push(
+      sendSlackNotification({
+        text: `@angus - Assignment has been sent.\n:page_facing_up: *${assignment.dealName}* sent to *${assignment.operatorName}*\n:round_pushpin: ${assignment.venue} | :calendar_spiral: ${assignment.showTime ? new Date(assignment.showTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Chicago' }) : 'TBD'}\n:link: ${assignmentUrl}`,
+      }).catch((e) => console.error('Failed to send Slack notification:', e))
+    );
+
+    await Promise.allSettled(asyncPromises);
 
     return NextResponse.json({
       assignmentId: id,

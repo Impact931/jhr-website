@@ -80,6 +80,16 @@ async function getAccessToken(): Promise<string | null> {
   return tokenData.access_token;
 }
 
+function encodeSubject(subject: string): string {
+  // RFC 2047: encode subject as UTF-8 base64 if it contains non-ASCII
+  // eslint-disable-next-line no-control-regex
+  if (/[^\x00-\x7F]/.test(subject)) {
+    const encoded = Buffer.from(subject, 'utf-8').toString('base64');
+    return `=?UTF-8?B?${encoded}?=`;
+  }
+  return subject;
+}
+
 function buildMimeMessage({
   to,
   subject,
@@ -96,21 +106,21 @@ function buildMimeMessage({
   return [
     `From: JHR Photography <${FROM_EMAIL}>`,
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodeSubject(subject)}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
     '',
     `--${boundary}`,
     'Content-Type: text/plain; charset="UTF-8"',
-    'Content-Transfer-Encoding: 7bit',
+    'Content-Transfer-Encoding: base64',
     '',
-    textBody,
+    Buffer.from(textBody, 'utf-8').toString('base64'),
     '',
     `--${boundary}`,
     'Content-Type: text/html; charset="UTF-8"',
-    'Content-Transfer-Encoding: 7bit',
+    'Content-Transfer-Encoding: base64',
     '',
-    htmlBody,
+    Buffer.from(htmlBody, 'utf-8').toString('base64'),
     '',
     `--${boundary}--`,
   ].join('\r\n');

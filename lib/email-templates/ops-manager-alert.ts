@@ -24,64 +24,123 @@ export function opsManagerAlertEmail(
   textBody: string;
 } {
   const isAccepted = action === 'accept';
-  const statusColor = isAccepted ? '#4ade80' : '#f87171';
   const statusLabel = isAccepted ? 'ACCEPTED' : 'DECLINED';
+  const accentColor = isAccepted ? '#16a34a' : '#dc2626';
+  const bgTint = isAccepted ? '#f0fdf4' : '#fef2f2';
+  const borderTint = isAccepted ? '#bbf7d0' : '#fecaca';
 
-  const subject = `[${statusLabel}] ${assignment.operatorName} — ${assignment.dealName}`;
+  const subject = `[${statusLabel}] ${assignment.operatorName} - ${assignment.dealName}`;
 
   const htmlBody = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
-<body style="margin:0;padding:0;background:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-<div style="max-width:600px;margin:0 auto;background:#1a1a1a;border:1px solid #333;">
-  <div style="padding:24px;text-align:center;border-bottom:2px solid ${statusColor};">
-    <h1 style="color:#c8a45e;margin:0;font-size:24px;">JHR Photography</h1>
-    <p style="color:${statusColor};margin:8px 0 0;font-size:18px;font-weight:600;">Operator ${statusLabel}</p>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+
+<div style="width:100%;background-color:#f4f4f5;padding:32px 16px;">
+<div style="max-width:560px;margin:0 auto;">
+
+  <!-- Logo -->
+  <div style="text-align:center;padding:0 0 24px;">
+    <span style="font-size:22px;font-weight:700;color:#1a1a1a;letter-spacing:0.5px;">JHR Photography</span>
   </div>
-  <div style="padding:24px;">
-    <div style="background:#222;border:1px solid #333;border-radius:8px;padding:20px;margin:0 0 20px;">
+
+  <!-- Main card -->
+  <div style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+
+    <!-- Status accent -->
+    <div style="height:4px;background:${accentColor};"></div>
+
+    <!-- Status badge -->
+    <div style="padding:24px 32px 0;text-align:center;">
+      <div style="display:inline-block;background:${bgTint};border:1px solid ${borderTint};border-radius:24px;padding:6px 20px;">
+        <span style="font-size:14px;font-weight:700;color:${accentColor};letter-spacing:0.5px;">${statusLabel}</span>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div style="padding:20px 32px;">
       <table style="width:100%;border-collapse:collapse;">
-        <tr><td style="color:#999;padding:6px 12px 6px 0;font-size:14px;">Operator</td><td style="color:#e0e0e0;padding:6px 0;font-size:14px;">${assignment.operatorName} (${assignment.operatorEmail})</td></tr>
-        <tr><td style="color:#999;padding:6px 12px 6px 0;font-size:14px;">Deal</td><td style="color:#e0e0e0;padding:6px 0;font-size:14px;">${assignment.dealName}</td></tr>
-        <tr><td style="color:#999;padding:6px 12px 6px 0;font-size:14px;">Client</td><td style="color:#e0e0e0;padding:6px 0;font-size:14px;">${assignment.clientName}</td></tr>
-        <tr><td style="color:#999;padding:6px 12px 6px 0;font-size:14px;">Venue</td><td style="color:#e0e0e0;padding:6px 0;font-size:14px;">${assignment.venue}</td></tr>
-        <tr><td style="color:#999;padding:6px 12px 6px 0;font-size:14px;">Date</td><td style="color:#e0e0e0;padding:6px 0;font-size:14px;">${formatDateTime(assignment.startTime)} — ${formatDateTime(assignment.endTime)}</td></tr>
-        <tr><td style="color:#999;padding:6px 12px 6px 0;font-size:14px;">Pay</td><td style="color:#e0e0e0;padding:6px 0;font-size:14px;">${assignment.totalPay}</td></tr>
-        <tr><td style="color:#999;padding:6px 12px 6px 0;font-size:14px;">Responded</td><td style="color:#e0e0e0;padding:6px 0;font-size:14px;">${assignment.respondedAt ? formatDateTime(assignment.respondedAt) : 'Just now'}</td></tr>
+        <tr>
+          <td style="padding:8px 12px 8px 0;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;width:100px;">Operator</td>
+          <td style="padding:8px 0;font-size:15px;color:#27272a;font-weight:500;">${assignment.operatorName} <span style="color:#71717a;font-weight:400;">(${assignment.operatorEmail})</span></td>
+        </tr>
+        <tr><td colspan="2" style="border-bottom:1px solid #f0f0f0;"></td></tr>
+        <tr>
+          <td style="padding:8px 12px 8px 0;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;">Deal</td>
+          <td style="padding:8px 0;font-size:15px;color:#27272a;font-weight:500;">${assignment.dealName}</td>
+        </tr>
+        <tr><td colspan="2" style="border-bottom:1px solid #f0f0f0;"></td></tr>
+        <tr>
+          <td style="padding:8px 12px 8px 0;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;">Client</td>
+          <td style="padding:8px 0;font-size:15px;color:#27272a;">${assignment.clientName}</td>
+        </tr>
+        <tr><td colspan="2" style="border-bottom:1px solid #f0f0f0;"></td></tr>
+        <tr>
+          <td style="padding:8px 12px 8px 0;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;">Venue</td>
+          <td style="padding:8px 0;font-size:15px;color:#27272a;">${assignment.venue}</td>
+        </tr>
+        <tr><td colspan="2" style="border-bottom:1px solid #f0f0f0;"></td></tr>
+        <tr>
+          <td style="padding:8px 12px 8px 0;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;">Date</td>
+          <td style="padding:8px 0;font-size:15px;color:#27272a;">${formatDateTime(assignment.startTime)} - ${formatDateTime(assignment.endTime)}</td>
+        </tr>
+        <tr><td colspan="2" style="border-bottom:1px solid #f0f0f0;"></td></tr>
+        <tr>
+          <td style="padding:8px 12px 8px 0;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;">Pay</td>
+          <td style="padding:8px 0;font-size:15px;color:#27272a;font-weight:600;">${assignment.totalPay}</td>
+        </tr>
+        <tr><td colspan="2" style="border-bottom:1px solid #f0f0f0;"></td></tr>
+        <tr>
+          <td style="padding:8px 12px 8px 0;font-size:13px;color:#a1a1aa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;">Responded</td>
+          <td style="padding:8px 0;font-size:15px;color:#27272a;">${assignment.respondedAt ? formatDateTime(assignment.respondedAt) : 'Just now'}</td>
+        </tr>
       </table>
     </div>
 
-    ${!isAccepted && assignment.declineReason ? `<div style="background:#2a1a1a;border:1px solid #4a2020;border-radius:8px;padding:16px;margin:0 0 20px;">
-      <h3 style="color:#f87171;margin:0 0 8px;font-size:14px;">Decline Reason</h3>
-      <p style="color:#e0e0e0;margin:0;font-size:14px;">${assignment.declineReason}</p>
+    ${!isAccepted && assignment.declineReason ? `
+    <!-- Decline reason -->
+    <div style="margin:0 32px 20px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px 20px;">
+      <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#dc2626;font-weight:600;">Decline Reason</span>
+      <p style="margin:6px 0 0;font-size:15px;color:#450a0a;line-height:1.5;">${assignment.declineReason}</p>
     </div>` : ''}
 
-    ${!isAccepted ? `<p style="color:#f87171;font-size:14px;font-weight:600;">Action required: Reassign this gig to another operator.</p>` : ''}
+    ${!isAccepted ? `
+    <div style="padding:0 32px 24px;">
+      <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;">
+        <span style="font-size:14px;color:#92400e;font-weight:600;">Action needed: Reassign this gig to another operator.</span>
+      </div>
+    </div>` : ''}
 
-    ${assignment.qualityWarnings && assignment.qualityWarnings.length > 0 ? `<div style="background:#2a2a1a;border:1px solid #4a4020;border-radius:8px;padding:16px;margin:0 0 20px;">
-      <h3 style="color:#fbbf24;margin:0 0 8px;font-size:14px;">Quality Warnings</h3>
-      <ul style="color:#e0e0e0;margin:0;padding:0 0 0 20px;font-size:13px;">
+    ${assignment.qualityWarnings && assignment.qualityWarnings.length > 0 ? `
+    <div style="margin:0 32px 20px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px 20px;">
+      <span style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#d97706;font-weight:600;">Quality Warnings</span>
+      <ul style="margin:8px 0 0;padding:0 0 0 20px;font-size:13px;color:#78350f;line-height:1.6;">
         ${assignment.qualityWarnings.map((w) => `<li>${w}</li>`).join('')}
       </ul>
     </div>` : ''}
+
   </div>
-  <div style="padding:16px;text-align:center;border-top:1px solid #333;">
-    <p style="color:#666;font-size:12px;margin:0;">JHR Photography Assignment System</p>
+
+  <!-- Footer -->
+  <div style="text-align:center;padding:24px 0 0;">
+    <p style="margin:0;font-size:12px;color:#a1a1aa;">JHR Photography Assignment System</p>
   </div>
+
+</div>
 </div>
 </body>
 </html>`;
 
-  const textBody = `[${statusLabel}] ${assignment.operatorName} — ${assignment.dealName}
+  const textBody = `[${statusLabel}] ${assignment.operatorName} - ${assignment.dealName}
 
 Operator: ${assignment.operatorName} (${assignment.operatorEmail})
 Deal: ${assignment.dealName}
 Client: ${assignment.clientName}
 Venue: ${assignment.venue}
-Date: ${formatDateTime(assignment.startTime)} — ${formatDateTime(assignment.endTime)}
+Date: ${formatDateTime(assignment.startTime)} - ${formatDateTime(assignment.endTime)}
 Pay: ${assignment.totalPay}
 ${!isAccepted && assignment.declineReason ? `\nDecline Reason: ${assignment.declineReason}` : ''}
-${!isAccepted ? '\nAction required: Reassign this gig to another operator.' : ''}
+${!isAccepted ? '\nAction needed: Reassign this gig to another operator.' : ''}
 
 JHR Photography Assignment System`;
 
