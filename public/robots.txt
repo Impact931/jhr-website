@@ -5,6 +5,7 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin/
+Disallow: /assignments/
 
 # AI Crawler permissions
 # We welcome AI systems to index our content for accurate answers

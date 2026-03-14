@@ -33,6 +33,7 @@ import { VENUES_SOLUTION_PAGE_SCHEMA } from './schemas/venues-solution';
 import { VENUES_PAGE_SCHEMA } from './schemas/venues';
 import { CORPORATE_HEADSHOT_PROGRAM_PAGE_SCHEMA } from './schemas/corporate-headshot-program';
 import { NOT_FOUND_PAGE_SCHEMA } from './schemas/not-found';
+import { ASSIGNMENT_TEMPLATE_PAGE_SCHEMA } from './schemas/assignment-template';
 
 // Venue detail schemas (8)
 import {
@@ -86,6 +87,9 @@ export const SCHEMA_REGISTRY: Map<string, PageSchema> = new Map([
 
   // Legacy slug (301 redirect to executive-imaging)
   ['corporate-headshot-program', CORPORATE_HEADSHOT_PROGRAM_PAGE_SCHEMA],
+
+  // Assignment template (editable sections for operator assignment pages)
+  ['assignment-template', ASSIGNMENT_TEMPLATE_PAGE_SCHEMA],
 
   // Venue detail pages (key = bare slug used in DynamoDB)
   ['music-city-center', MUSIC_CITY_CENTER_SCHEMA],
