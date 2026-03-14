@@ -6,10 +6,24 @@ const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
 function getServiceAccountCredentials(): { client_email: string; private_key: string } | null {
   const keyJson = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON;
-  if (!keyJson) return null;
+  if (!keyJson) {
+    console.error('GOOGLE_SERVICE_ACCOUNT_KEY_JSON env var is not set');
+    return null;
+  }
   try {
-    return JSON.parse(keyJson);
-  } catch {
+    // Env vars may contain literal \n sequences that break JSON.parse.
+    // Replace actual newlines/carriage-returns inside the string with \\n
+    // so JSON.parse can succeed, then fix up private_key afterward.
+    const sanitized = keyJson.replace(/\r?\n/g, '\\n');
+    const parsed = JSON.parse(sanitized);
+    // After parsing, the private_key may contain literal two-char "\\n"
+    // sequences instead of real newlines. PEM keys require real newlines.
+    if (parsed.private_key) {
+      parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    }
+    return parsed;
+  } catch (err) {
+    console.error('Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY_JSON:', err);
     return null;
   }
 }
