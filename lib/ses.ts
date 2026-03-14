@@ -14,7 +14,7 @@ const customCredentials =
 
 const sesClient = new SESClient({ region, ...customCredentials });
 
-const fromEmail = process.env.SES_FROM_EMAIL || 'assignments@jhr-photography.com';
+const fromEmail = process.env.SES_FROM_EMAIL || 'jayson@impactstudio931.com';
 
 export async function sendEmail({
   to,

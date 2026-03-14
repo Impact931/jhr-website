@@ -197,20 +197,38 @@ export async function POST(request: NextRequest) {
     try {
       await updateNotionPage(notionPageId, {
         'Gig Sheet Sent': { checkbox: true },
+        'Assignment Sheet Link': { url: assignmentUrl },
       });
     } catch (error) {
       console.error('Failed to update Notion assignment with Gig Sheet Sent:', error);
     }
 
-    // Send operator notification email
+    // Send notification emails (operator + ops managers)
+    const emailPromises: Promise<unknown>[] = [];
+    const emailData = assignmentNotificationEmail(assignment);
+
     if (operatorEmail) {
-      try {
-        const email = assignmentNotificationEmail(assignment);
-        await sendEmail({ to: operatorEmail, ...email });
-      } catch (error) {
-        console.error('Failed to send operator notification email:', error);
-      }
+      emailPromises.push(
+        sendEmail({ to: operatorEmail, ...emailData }).catch((e) =>
+          console.error('Failed to send operator notification email:', e)
+        )
+      );
     }
+
+    // Also notify ops managers
+    const opsEmails = (process.env.OPS_MANAGER_EMAIL || '')
+      .split(/[;,]/)
+      .map((e) => e.trim())
+      .filter(Boolean);
+    for (const opsEmail of opsEmails) {
+      emailPromises.push(
+        sendEmail({ to: opsEmail, ...emailData }).catch((e) =>
+          console.error(`Failed to send ops manager notification to ${opsEmail}:`, e)
+        )
+      );
+    }
+
+    await Promise.allSettled(emailPromises);
 
     return NextResponse.json({
       assignmentId: id,
