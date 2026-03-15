@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Wand2,
   Search,
@@ -21,12 +21,72 @@ import {
   Link as LinkIcon,
   BarChart3,
   BookOpen,
+  Target,
+  RefreshCw,
+  TrendingUp,
+  ArrowRight,
+  Zap,
 } from 'lucide-react';
 import Link from 'next/link';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'generate' | 'batch' | 'articles';
+type TabId = 'generate' | 'batch' | 'articles' | 'queue';
+
+interface QueueRecommendation {
+  id: string;
+  keyword: string;
+  searchVolume: number;
+  currentPosition: number | null;
+  currentUrl: string | null;
+  recommendedAction: 'optimize' | 'create' | 'refresh';
+  suggestedTopic: string;
+  suggestedIcp: string;
+  suggestedArticleType: string;
+  priorityScore: number;
+  dataJustification: string;
+}
+
+interface QueuePageScore {
+  url: string;
+  tier: 'S' | 'A' | 'B' | 'C' | 'D';
+  compositeScore: number;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  avgPosition: number;
+}
+
+interface SerpPosition {
+  keyword: string;
+  position: number | null;
+  url: string | null;
+  searchVolume: number;
+}
+
+interface QueueData {
+  generatedAt: string;
+  cachedUntil: string;
+  gscConnected: boolean;
+  dataforseoConnected: boolean;
+  summary: {
+    totalPages: number;
+    totalOpportunities: number;
+    strikeDistanceKeywords: number;
+    contentGaps: number;
+    tierDistribution: Record<string, number>;
+  };
+  pages: QueuePageScore[];
+  recommendations: QueueRecommendation[];
+  serpPositions: SerpPosition[];
+}
+
+interface Prefill {
+  topic: string;
+  keyword: string;
+  icp: string;
+  articleType: string;
+}
 
 interface ResearchResult {
   stats: Array<{ text: string; source: string; year: number }>;
@@ -115,6 +175,7 @@ const LOCATIONS = [
 ];
 
 const TABS: { id: TabId; label: string; icon: typeof Wand2 }[] = [
+  { id: 'queue', label: 'Content Queue', icon: Target },
   { id: 'generate', label: 'Generate Article', icon: Wand2 },
   { id: 'batch', label: 'Batch Generator', icon: Layers },
   { id: 'articles', label: 'Generated Articles', icon: FileText },
@@ -175,14 +236,25 @@ function nextRowId() {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function ArticlesDashboard() {
-  const [activeTab, setActiveTab] = useState<TabId>('generate');
+  const [activeTab, setActiveTab] = useState<TabId>('queue');
+  const [prefill, setPrefill] = useState<Prefill | null>(null);
+
+  const handleGenerateFromQueue = useCallback((rec: QueueRecommendation) => {
+    setPrefill({
+      topic: rec.suggestedTopic,
+      keyword: rec.keyword,
+      icp: rec.suggestedIcp,
+      articleType: rec.suggestedArticleType,
+    });
+    setActiveTab('generate');
+  }, []);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-jhr-white">ContentOps</h1>
-        <p className="text-jhr-white-dim mt-1">AI-powered article generation and management</p>
+        <p className="text-jhr-white-dim mt-1">SEO-driven content generation and management</p>
       </div>
 
       {/* Tab Bar */}
@@ -208,7 +280,8 @@ export default function ArticlesDashboard() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'generate' && <GenerateTab />}
+      {activeTab === 'queue' && <ContentQueueTab onGenerateClick={handleGenerateFromQueue} />}
+      {activeTab === 'generate' && <GenerateTab prefill={prefill} onPrefillConsumed={() => setPrefill(null)} />}
       {activeTab === 'batch' && <BatchTab />}
       {activeTab === 'articles' && <ArticlesTab />}
     </div>
@@ -217,13 +290,24 @@ export default function ArticlesDashboard() {
 
 // ─── Generate Tab ────────────────────────────────────────────────────────────
 
-function GenerateTab() {
+function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null; onPrefillConsumed?: () => void }) {
   const [topic, setTopic] = useState('');
   const [keyword, setKeyword] = useState('');
   const [icp, setIcp] = useState('ICP-1');
   const [articleType, setArticleType] = useState('standard');
   const [wordCount, setWordCount] = useState(1200);
   const [ctaPath, setCtaPath] = useState('/schedule');
+
+  // Apply prefill values from Content Queue
+  useEffect(() => {
+    if (prefill) {
+      setTopic(prefill.topic);
+      setKeyword(prefill.keyword);
+      setIcp(prefill.icp);
+      setArticleType(prefill.articleType);
+      onPrefillConsumed?.();
+    }
+  }, [prefill, onPrefillConsumed]);
 
   const [researchLoading, setResearchLoading] = useState(false);
   const [researchResult, setResearchResult] = useState<ResearchResult | null>(null);
@@ -1163,6 +1247,321 @@ function ArticlesTab() {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Content Queue Tab ──────────────────────────────────────────────────────
+
+const TIER_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  S: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/30' },
+  A: { bg: 'bg-blue-500/20', text: 'text-blue-400', border: 'border-blue-500/30' },
+  B: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/30' },
+  C: { bg: 'bg-orange-500/20', text: 'text-orange-400', border: 'border-orange-500/30' },
+  D: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/30' },
+};
+
+const ACTION_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  optimize: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Optimize' },
+  create: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Create' },
+  refresh: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Refresh' },
+};
+
+function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueRecommendation) => void }) {
+  const [data, setData] = useState<QueueData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchQueue = useCallback(async (refresh = false) => {
+    if (refresh) setRefreshing(true);
+    else setLoading(true);
+    setError(null);
+    try {
+      const url = refresh ? '/api/admin/contentops/queue?refresh=true' : '/api/admin/contentops/queue';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(await res.text() || 'Failed to load content queue');
+      const json = await res.json();
+      setData(json);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load content queue');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchQueue();
+  }, [fetchQueue]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <Loader2 className="w-8 h-8 text-jhr-gold animate-spin" />
+        <p className="text-jhr-white-dim">Analyzing content opportunities...</p>
+        <p className="text-jhr-white-dim/60 text-sm">Pulling GSC + DataForSEO data</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6 text-center">
+        <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-3" />
+        <p className="text-red-400 font-medium mb-2">Failed to load content queue</p>
+        <p className="text-red-400/60 text-sm mb-4">{error}</p>
+        <button
+          onClick={() => fetchQueue()}
+          className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const tierEntries = Object.entries(data.summary.tierDistribution)
+    .filter(([, count]) => count > 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Connection Status */}
+      {(!data.gscConnected || !data.dataforseoConnected) && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+          <div className="text-sm text-yellow-400">
+            {!data.gscConnected && <span>GSC not connected — connect in SEO dashboard for full analysis. </span>}
+            {!data.dataforseoConnected && <span>DataForSEO not configured — add DATAFORSEO_LOGIN to .env for SERP tracking.</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-5">
+          <div className="flex items-center gap-2 text-jhr-white-dim text-sm mb-2">
+            <Target className="w-4 h-4" />
+            Opportunities
+          </div>
+          <p className="text-3xl font-bold text-jhr-white">{data.summary.totalOpportunities}</p>
+        </div>
+        <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-5">
+          <div className="flex items-center gap-2 text-jhr-white-dim text-sm mb-2">
+            <TrendingUp className="w-4 h-4" />
+            Strike Distance
+          </div>
+          <p className="text-3xl font-bold text-yellow-400">{data.summary.strikeDistanceKeywords}</p>
+          <p className="text-xs text-jhr-white-dim mt-1">Position 8–30</p>
+        </div>
+        <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-5">
+          <div className="flex items-center gap-2 text-jhr-white-dim text-sm mb-2">
+            <Zap className="w-4 h-4" />
+            Content Gaps
+          </div>
+          <p className="text-3xl font-bold text-red-400">{data.summary.contentGaps}</p>
+          <p className="text-xs text-jhr-white-dim mt-1">Not ranking</p>
+        </div>
+        <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-5">
+          <div className="flex items-center gap-2 text-jhr-white-dim text-sm mb-2">
+            <BarChart3 className="w-4 h-4" />
+            Pages Tracked
+          </div>
+          <p className="text-3xl font-bold text-jhr-white">{data.summary.totalPages}</p>
+        </div>
+      </div>
+
+      {/* Tier Distribution */}
+      {tierEntries.length > 0 && (
+        <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-5">
+          <h3 className="text-sm font-medium text-jhr-white-dim mb-4">Page Tier Distribution</h3>
+          <div className="flex gap-3">
+            {['S', 'A', 'B', 'C', 'D'].map((tier) => {
+              const count = data.summary.tierDistribution[tier] || 0;
+              const colors = TIER_COLORS[tier];
+              return (
+                <div
+                  key={tier}
+                  className={`flex-1 rounded-lg border ${colors.border} ${colors.bg} p-3 text-center`}
+                >
+                  <p className={`text-lg font-bold ${colors.text}`}>{tier}</p>
+                  <p className={`text-2xl font-bold ${colors.text}`}>{count}</p>
+                  <p className="text-xs text-jhr-white-dim mt-0.5">
+                    {count === 1 ? 'page' : 'pages'}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* SERP Positions */}
+      {data.serpPositions.length > 0 && (
+        <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter overflow-hidden">
+          <div className="px-5 py-4 border-b border-jhr-black-lighter">
+            <h3 className="text-sm font-medium text-jhr-white">
+              SERP Positions — Target Keywords
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-jhr-white-dim border-b border-jhr-black-lighter/50">
+                  <th className="px-5 py-3 font-medium">Keyword</th>
+                  <th className="px-5 py-3 font-medium text-right">Position</th>
+                  <th className="px-5 py-3 font-medium">Ranking URL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.serpPositions.map((sp) => (
+                  <tr
+                    key={sp.keyword}
+                    className="border-b border-jhr-black-lighter/30 last:border-0 hover:bg-jhr-black-lighter/20"
+                  >
+                    <td className="px-5 py-3 text-jhr-white">{sp.keyword}</td>
+                    <td className="px-5 py-3 text-right">
+                      {sp.position ? (
+                        <span
+                          className={`font-mono font-bold ${
+                            sp.position <= 3
+                              ? 'text-green-400'
+                              : sp.position <= 10
+                              ? 'text-blue-400'
+                              : sp.position <= 20
+                              ? 'text-yellow-400'
+                              : 'text-red-400'
+                          }`}
+                        >
+                          #{sp.position}
+                        </span>
+                      ) : (
+                        <span className="text-red-400/60">Not ranking</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3 text-jhr-white-dim text-xs truncate max-w-[200px]">
+                      {sp.url ? new URL(sp.url).pathname : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations */}
+      <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter overflow-hidden">
+        <div className="px-5 py-4 border-b border-jhr-black-lighter flex items-center justify-between">
+          <h3 className="text-sm font-medium text-jhr-white">
+            Prioritized Recommendations ({data.recommendations.length})
+          </h3>
+          <button
+            onClick={() => fetchQueue(true)}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-3 py-1.5 bg-jhr-black-lighter hover:bg-jhr-gold/20 text-jhr-white-dim hover:text-jhr-gold rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh Analysis'}
+          </button>
+        </div>
+
+        {data.recommendations.length === 0 ? (
+          <div className="px-5 py-12 text-center text-jhr-white-dim">
+            No recommendations available. Connect GSC and DataForSEO for content intelligence.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-jhr-white-dim border-b border-jhr-black-lighter/50">
+                  <th className="px-5 py-3 font-medium w-16">Priority</th>
+                  <th className="px-5 py-3 font-medium">Keyword</th>
+                  <th className="px-5 py-3 font-medium text-right">Volume</th>
+                  <th className="px-5 py-3 font-medium text-right">Position</th>
+                  <th className="px-5 py-3 font-medium">Action</th>
+                  <th className="px-5 py-3 font-medium">ICP</th>
+                  <th className="px-5 py-3 font-medium">Type</th>
+                  <th className="px-5 py-3 font-medium w-24"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recommendations.map((rec) => {
+                  const action = ACTION_COLORS[rec.recommendedAction] || ACTION_COLORS.create;
+                  const icpLabel = ICP_OPTIONS.find((o) => o.value === rec.suggestedIcp)?.label || rec.suggestedIcp;
+                  const typeLabel = ARTICLE_TYPE_OPTIONS.find((o) => o.value === rec.suggestedArticleType)?.label || rec.suggestedArticleType;
+
+                  return (
+                    <tr
+                      key={rec.id}
+                      className="border-b border-jhr-black-lighter/30 last:border-0 hover:bg-jhr-black-lighter/20 group"
+                    >
+                      <td className="px-5 py-3">
+                        <div
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${
+                            rec.priorityScore >= 70
+                              ? 'bg-green-500/20 text-green-400'
+                              : rec.priorityScore >= 40
+                              ? 'bg-yellow-500/20 text-yellow-400'
+                              : 'bg-gray-500/20 text-gray-400'
+                          }`}
+                        >
+                          {rec.priorityScore}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <p className="text-jhr-white font-medium">{rec.keyword}</p>
+                        <p className="text-jhr-white-dim/60 text-xs mt-0.5 max-w-[300px] truncate">
+                          {rec.dataJustification}
+                        </p>
+                      </td>
+                      <td className="px-5 py-3 text-right text-jhr-white-dim font-mono">
+                        {rec.searchVolume > 0 ? rec.searchVolume.toLocaleString() : '—'}
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        {rec.currentPosition ? (
+                          <span className="text-yellow-400 font-mono">#{rec.currentPosition}</span>
+                        ) : (
+                          <span className="text-red-400/60">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${action.bg} ${action.text}`}>
+                          {action.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="text-xs text-jhr-white-dim">{icpLabel.replace(/^ICP-\d /, '')}</span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className="text-xs text-jhr-white-dim">{typeLabel}</span>
+                      </td>
+                      <td className="px-5 py-3">
+                        {rec.recommendedAction === 'create' && (
+                          <button
+                            onClick={() => onGenerateClick(rec)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-jhr-gold/20 hover:bg-jhr-gold/30 text-jhr-gold rounded-lg text-xs font-medium transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <ArrowRight className="w-3.5 h-3.5" />
+                            Generate
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Cache Info */}
+      <p className="text-xs text-jhr-white-dim/40 text-center">
+        Generated {new Date(data.generatedAt).toLocaleString()} — cached until {new Date(data.cachedUntil).toLocaleString()}
+      </p>
     </div>
   );
 }

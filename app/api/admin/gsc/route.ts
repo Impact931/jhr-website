@@ -1,124 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { getItem, putItem } from '@/lib/dynamodb';
-
-/** Pre-configured keywords to track for JHR Photography */
-const TRACKED_KEYWORDS = [
-  'Nashville corporate event photographer',
-  'Nashville conference photographer',
-  'Gaylord Opryland event photographer',
-  'Music City Center photographer',
-  'Nashville headshot activation',
-  'Conference headshot lounge Nashville',
-  'Nashville trade show photographer',
-  'Executive headshots Nashville',
-  'Nashville convention photographer',
-  'corporate event photography Nashville',
-];
-
-interface GSCToken {
-  pk: string;
-  sk: string;
-  refreshToken: string;
-  accessToken: string;
-  expiresAt: number;
-  connectedAt: string;
-  connectedBy: string;
-}
-
-interface GSCSearchRow {
-  keys: string[];
-  clicks: number;
-  impressions: number;
-  ctr: number;
-  position: number;
-}
-
-/**
- * Refreshes the access token using the stored refresh token.
- * Updates DynamoDB with the new access token.
- */
-async function getValidAccessToken(token: GSCToken): Promise<string> {
-  // If current token is still valid (with 5 min buffer), use it
-  if (token.accessToken && token.expiresAt > Date.now() + 5 * 60 * 1000) {
-    return token.accessToken;
-  }
-
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new Error('Google OAuth credentials not configured');
-  }
-
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      refresh_token: token.refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error('Token refresh failed:', errText);
-    throw new Error('Failed to refresh access token');
-  }
-
-  const data = await response.json();
-
-  // Update stored token
-  await putItem({
-    ...token,
-    accessToken: data.access_token,
-    expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
-  });
-
-  return data.access_token;
-}
-
-/**
- * Fetches search analytics data from Google Search Console API.
- */
-async function fetchSearchAnalytics(
-  accessToken: string,
-  siteUrl: string,
-  startDate: string,
-  endDate: string,
-  dimensions: string[] = ['query', 'page'],
-  rowLimit = 100
-): Promise<GSCSearchRow[]> {
-  const encodedSiteUrl = encodeURIComponent(siteUrl);
-  const response = await fetch(
-    `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodedSiteUrl}/searchAnalytics/query`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        startDate,
-        endDate,
-        dimensions,
-        rowLimit,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    const errText = await response.text();
-    console.error('GSC API error:', errText);
-    throw new Error(`GSC API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.rows || [];
-}
+import {
+  TRACKED_KEYWORDS,
+  getStoredToken,
+  getValidAccessToken,
+  fetchSearchAnalytics,
+} from '@/lib/gsc';
 
 /**
  * GET /api/admin/gsc
@@ -137,9 +25,9 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type') || 'searchAnalytics';
 
   // Check for stored OAuth token
-  const token = await getItem<GSCToken>('SETTINGS#gsc', 'oauth-token');
+  const token = await getStoredToken();
 
-  if (!token || !token.refreshToken) {
+  if (!token) {
     return NextResponse.json({ connected: false });
   }
 
