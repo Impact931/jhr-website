@@ -79,6 +79,7 @@ const schemas = [
       "Booth Documentation",
       "Trade Show Videography",
     ],
+    startingPrice: 2500,
   }),
   generateBreadcrumbListSchema([
     { name: "Home", url: "/" },

@@ -306,6 +306,8 @@ export interface ServiceSchemaInput {
   image?: string;
   /** Service types/categories (maps to schema.org serviceType). */
   serviceTypes?: string[];
+  /** Starting price for the service (used in offers). */
+  startingPrice?: number;
 }
 
 /**
@@ -341,6 +343,16 @@ export function generateServiceSchema(
 
   if (input.serviceTypes && input.serviceTypes.length > 0) {
     service.serviceType = input.serviceTypes;
+  }
+
+  if (input.startingPrice) {
+    service.offers = {
+      '@type': 'AggregateOffer',
+      priceCurrency: 'USD',
+      lowPrice: input.startingPrice.toString(),
+      offerCount: 1,
+      availability: 'https://schema.org/InStock',
+    };
   }
 
   return {
@@ -412,6 +424,8 @@ export interface ProductSchemaInput {
   category?: string;
   /** Brand name (defaults to JHR Photography). */
   brand?: string;
+  /** Starting price for the product/service. */
+  startingPrice?: number;
 }
 
 /**
@@ -443,9 +457,11 @@ export function generateProductSchema(
       ...(input.image && { image: resolveUrl(input.image) }),
       ...(input.category && { category: input.category }),
       offers: {
-        '@type': 'Offer',
-        availability: 'https://schema.org/InStock',
+        '@type': 'AggregateOffer',
         priceCurrency: 'USD',
+        lowPrice: (input.startingPrice || 1500).toString(),
+        offerCount: 1,
+        availability: 'https://schema.org/InStock',
         seller: {
           '@id': `${SITE_URL}/#organization`,
         },

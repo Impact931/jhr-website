@@ -79,6 +79,7 @@ const schemas = [
       "Leadership Team Photography",
       "Brand-Aligned Headshots",
     ],
+    startingPrice: 1500,
   }),
   generateBreadcrumbListSchema([
     { name: "Home", url: "/" },

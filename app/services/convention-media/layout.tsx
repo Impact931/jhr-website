@@ -28,6 +28,7 @@ const schemas = [
       "Multi-Day Event Photography",
       "Convention Videography",
     ],
+    startingPrice: 3500,
   }),
   generateBreadcrumbListSchema([
     { name: "Home", url: "/" },

@@ -28,6 +28,7 @@ const schemas = [
       "Multi-Camera Video Production",
       "Highlight Reel Production",
     ],
+    startingPrice: 3000,
   }),
   generateBreadcrumbListSchema([
     { name: "Home", url: "/" },
