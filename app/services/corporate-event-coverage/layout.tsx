@@ -79,7 +79,7 @@ const schemas = [
       "Gala Photography",
       "Award Ceremony Photography",
     ],
-    startingPrice: 2500,
+    startingPrice: 3500,
   }),
   generateBreadcrumbListSchema([
     { name: "Home", url: "/" },

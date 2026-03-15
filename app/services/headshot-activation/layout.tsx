@@ -80,7 +80,7 @@ const schemas = [
       "Event Headshot Activation",
       "Corporate Headshots",
     ],
-    startingPrice: 2500,
+    startingPrice: 4800,
   }),
   generateProductSchema({
     name: "Headshot Activation",
@@ -89,7 +89,7 @@ const schemas = [
     url: "/services/headshot-activation",
     image: "/images/generated/service-headshot-activation.jpg",
     category: "Event Photography Services",
-    startingPrice: 2500,
+    startingPrice: 4800,
   }),
   generateBreadcrumbListSchema([
     { name: "Home", url: "/" },

@@ -28,7 +28,7 @@ const schemas = [
       "Cocktail Reception Photography",
       "Community Event Photography",
     ],
-    startingPrice: 1500,
+    startingPrice: 1000,
   }),
   generateBreadcrumbListSchema([
     { name: "Home", url: "/" },
