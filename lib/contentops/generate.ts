@@ -162,10 +162,7 @@ Word count target: ${config.wordCountTarget} words (acceptable range: 1000-3000 
 1. **Quick Answer block**: Start with a 50-75 word direct answer to the core question. This block should be self-contained and quotable by AI systems.
 2. **Minimum 4 H2 headings**: Create a logical, scannable structure with descriptive H2s that include keyword variations.
 3. **Minimum 3 statistics**: Weave in real statistics with source attributions naturally throughout the article.
-4. **FAQ block**: End with a minimum of 5 Q&A pairs formatted as:
-   ### Frequently Asked Questions
-   **Q: [question]**
-   A: [answer]
+4. **FAQ block**: Do NOT include FAQ in the body field. FAQs go ONLY in the separate "faqBlock" JSON array (minimum 5 Q&A pairs). The FAQ section is rendered separately on the page.
 5. **Meta fields**: Generate SEO-optimized title, meta description (140-160 characters), and excerpt.
 
 ### GEO Optimization
@@ -228,7 +225,7 @@ Return ONLY a valid JSON object (no markdown fences, no explanation) matching th
   "metaDescription": "Meta description, 140-160 characters",
   "excerpt": "2-3 sentence excerpt for listings",
   "quickAnswer": "50-75 word direct answer block",
-  "body": "Full article in HTML with proper H2s, links, stats, and FAQ block",
+  "body": "Full article in HTML with proper H2s, links, and stats. Do NOT include FAQ in body — FAQs go only in faqBlock array below",
   "wordCount": 0,
   "readTime": 0,
   "icpTag": "${config.icpTag}",
