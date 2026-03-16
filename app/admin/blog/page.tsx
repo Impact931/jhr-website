@@ -41,6 +41,12 @@ interface BlogPost {
   categories: string[];
   status: 'draft' | 'published' | 'scheduled';
   scheduledPublishAt?: string;
+  seo?: {
+    pageTitle?: string;
+    metaDescription?: string;
+    ogTitle?: string;
+    ogDescription?: string;
+  };
   seoMetadata?: {
     metaTitle?: string;
     metaDescription?: string;
@@ -58,14 +64,17 @@ type SEOQuality = 'good' | 'partial' | 'missing';
 
 function getSEOQuality(post: BlogPost): SEOQuality {
   const seo = post.seoMetadata;
-  if (!seo) return 'missing';
+  const pageSeo = post.seo;
+
+  // Check both seoMetadata and seo fields
+  if (!seo && !pageSeo) return 'missing';
 
   const fields = [
-    seo.metaTitle,
-    seo.metaDescription,
-    seo.keywords?.length,
-    seo.ogTitle,
-    seo.ogDescription,
+    seo?.metaTitle || pageSeo?.pageTitle,
+    seo?.metaDescription || pageSeo?.metaDescription,
+    seo?.keywords?.length,
+    seo?.ogTitle || pageSeo?.ogTitle,
+    seo?.ogDescription || pageSeo?.ogDescription,
   ];
   const filled = fields.filter(Boolean).length;
 
@@ -198,7 +207,7 @@ export default function AdminBlogPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-display-sm font-display font-bold text-jhr-white">
-            Blog Posts
+            Articles
           </h1>
           <p className="mt-1 text-body-md text-jhr-white-dim">
             {posts.length} post{posts.length !== 1 ? 's' : ''} &middot;{' '}

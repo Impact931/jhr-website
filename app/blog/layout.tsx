@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import { generateBreadcrumbListSchema, serializeSchemas } from '@/lib/structured-data';
 
 export const metadata: Metadata = {
-  title: 'Nashville Event Photography Insider | Tips & Guides',
+  title: 'Nashville Insider | Event Photography Articles & Guides',
   description:
     'Expert insights from a Nashville event photographer on corporate event coverage, headshot activations, conference photography tips, and venue guides for Nashville\'s premier event spaces.',
   openGraph: {
-    title: 'Nashville Event Photography Insider | JHR Photography Blog',
+    title: 'Nashville Insider | JHR Photography Articles',
     description:
       'Expert insights on corporate event photography, headshot activations, conference tips, and Nashville venue guides.',
     type: 'website',
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const schemas = [
   generateBreadcrumbListSchema([
     { name: 'Home', url: '/' },
-    { name: 'Blog', url: '/blog' },
+    { name: 'Articles', url: '/blog' },
   ]),
 ];
 

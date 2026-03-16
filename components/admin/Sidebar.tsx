@@ -17,7 +17,6 @@ import {
   ChevronRight,
   PenLine,
   CheckCircle,
-  Wand2,
   Search,
   Gauge,
   Globe,
@@ -43,8 +42,7 @@ const navGroups: NavGroup[] = [
       { label: 'Dashboard', href: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
       { label: 'Pages', href: '/admin/pages', icon: <FileText className="w-5 h-5" /> },
       { label: 'Media', href: '/admin/media', icon: <Image className="w-5 h-5" /> },
-      { label: 'Blog', href: '/admin/blog', icon: <PenLine className="w-5 h-5" /> },
-      { label: 'Articles', href: '/admin/articles', icon: <Wand2 className="w-5 h-5" /> },
+      { label: 'Articles', href: '/admin/articles', icon: <PenLine className="w-5 h-5" /> },
     ],
   },
   {

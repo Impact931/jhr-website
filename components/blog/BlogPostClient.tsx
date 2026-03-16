@@ -220,7 +220,7 @@ function SectionBasedContent({
                 className="inline-flex items-center gap-1.5 text-jhr-gold hover:text-jhr-gold-light text-body-sm transition-colors mb-6"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Blog
+                Back to Articles
               </Link>
 
               {post.categories[0] && (
@@ -264,7 +264,7 @@ function SectionBasedContent({
                 className="inline-flex items-center gap-1.5 text-jhr-gold hover:text-jhr-gold-light text-body-sm transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Blog
+                Back to Articles
               </Link>
               <div className="flex flex-wrap items-center gap-4 text-jhr-white-dim text-body-sm">
                 {post.categories[0] && (
@@ -480,7 +480,7 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
       <section className="py-16 border-t border-jhr-black-lighter">
         <div className="section-container text-center">
           <h2 className="text-heading-lg font-display font-bold text-jhr-white mb-4">
-            Ready to Elevate Your Next Event?
+            Ready to Make Your Next Event Stand Out?
           </h2>
           <p className="text-body-lg text-jhr-white-dim max-w-xl mx-auto mb-8">
             Let&apos;s discuss how professional photography can transform your

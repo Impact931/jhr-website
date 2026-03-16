@@ -136,17 +136,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!post) {
     return {
-      title: 'Post Not Found | JHR Photography Blog',
-      description: 'The requested blog post could not be found.',
+      title: 'Article Not Found | JHR Photography',
+      description: 'The requested article could not be found.',
     };
   }
 
   // Use AI-generated SEO metadata if available, otherwise fall back to basic fields
-  const title = post.seoMetadata?.metaTitle || `${post.title} | JHR Photography Blog`;
-  const description = post.seoMetadata?.metaDescription || post.excerpt || post.title;
+  const title = post.seoMetadata?.metaTitle || post.seo?.pageTitle || `${post.title} | JHR Photography`;
+  const description = post.seoMetadata?.metaDescription || post.seo?.metaDescription || post.excerpt || post.title;
   const keywords = post.seoMetadata?.keywords || post.tags;
-  const ogTitle = post.seoMetadata?.ogTitle || post.title;
-  const ogDescription = post.seoMetadata?.ogDescription || description;
+  const ogTitle = post.seoMetadata?.ogTitle || post.seo?.ogTitle || post.title;
+  const ogDescription = post.seoMetadata?.ogDescription || post.seo?.ogDescription || description;
   const ogImage = post.seoMetadata?.ogImage || post.featuredImage;
 
   const baseUrl = 'https://jhr-photography.com';

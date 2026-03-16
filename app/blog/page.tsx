@@ -266,7 +266,7 @@ export default function BlogPage() {
               Insights & Resources
             </p>
             <h1 className="text-display-sm sm:text-display-md lg:text-display-lg font-display font-bold text-jhr-white mb-4">
-              The JHR Blog
+              Nashville Insider
             </h1>
             <p className="text-body-lg text-jhr-white-dim max-w-2xl mx-auto">
               Expert insights on corporate event photography, headshot activations, and making the
@@ -370,7 +370,7 @@ export default function BlogPage() {
             transition={{ duration: 0.5 }}
           >
             <h2 className="text-heading-lg font-display font-bold text-jhr-white mb-4">
-              Ready to Elevate Your Next Event?
+              Ready to Make Your Next Event Stand Out?
             </h2>
             <p className="text-body-lg text-jhr-white-dim max-w-xl mx-auto mb-8">
               Let&apos;s discuss how professional photography and media coverage can transform your

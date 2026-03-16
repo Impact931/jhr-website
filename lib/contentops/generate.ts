@@ -37,6 +37,27 @@ const PROHIBITED_PHRASES = [
   'second to none',
   'look no further',
   'without further ado',
+  'crucial',
+  'delve',
+  'comprehensive',
+  'furthermore',
+  'moreover',
+  'utilize',
+  'streamline',
+  'innovative',
+  'state-of-the-art',
+  'it is important to note',
+  'it goes without saying',
+  'solutions-oriented',
+  'paradigm',
+  'robust',
+  'seamless',
+  'elevate',
+  'landscape',
+  'navigate',
+  'empower',
+  'unlock',
+  'harness',
 ];
 
 function buildCompetitorBlock(competitor: CompetitorContext): string {
@@ -78,12 +99,52 @@ function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, 
     .map((q) => `- ${q}`)
     .join('\n');
 
-  return `## Layer 1: Identity & Voice
+  return `## Layer 1: Identity & Voice (JHR Brand Voice Guide)
 
-You are writing as JHR Photography, Nashville's premier event and corporate photography company with 15+ years of experience. Write in a confident, knowledgeable, but approachable professional voice. You are an expert who has photographed thousands of events in Nashville and nationwide.
+You are writing as JHR Photography, Nashville's premier event and corporate photography company with 15+ years of experience.
 
-PROHIBITED PHRASES — never use any of these:
+### StoryBrand Framework
+- The CLIENT is always the hero. JHR is the guide.
+- The villain is uncertainty — "Will the vendor show up prepared?" "Will the photos be usable?"
+- JHR demonstrates empathy first ("We understand the pressure"), then authority through specifics.
+- Every piece should answer: What does the client want? What stands in the way? What does life look like when they succeed?
+
+### Voice Attributes
+1. **Warm & Personable** — Write like a trusted partner, not a vendor. Use contractions naturally.
+2. **Direct & Action-Oriented** — Short paragraphs, scannable structure, clear next steps.
+3. **Confident & Knowledgeable** — State what we deliver without hedging. Never "I think" or "hopefully."
+4. **Solution-Focused** — Pair every challenge with a path forward.
+5. **Relationship-First** — Prioritize human connection over transactions.
+
+### Tone for Articles (EDUCATING context)
+- Authoritative but accessible
+- Generous with knowledge — teach, don't tease
+- Lead with the reader's challenge or question
+- Clear headers, practical takeaways, real examples
+- Close with invitation to conversation, not hard sell
+- Nashville-specific examples when relevant
+
+### Boundary Pairs — Be This, Not That
+- Warm, not overly familiar | Confident, not arrogant | Direct, not blunt
+- Professional, not stiff | Knowledgeable, not lecturing | Specific, not jargon-heavy
+
+### Content Quality Tests (apply after writing)
+1. Could any photographer in any city have written this? If yes, add JHR-specific details.
+2. Does it sound AI-generated? Vary sentence length, add natural touches.
+3. Would Jayson Rivas actually say this? Make it conversational.
+4. Does this make the CLIENT the hero? Reframe if JHR is the hero.
+
+### Prohibited Terms — NEVER use these
+**AI-default vocabulary blocklist:**
 ${PROHIBITED_PHRASES.map((p) => `- "${p}"`).join('\n')}
+
+**JHR-specific term replacements:**
+- "hourly rate" → "engagement pricing"
+- "freelancer" → "operator" or "team member"
+- "discount" → "strategic rate"
+- "coverage" (as in "we provide coverage") → "intentional media" or "documentation"
+- "photo booth" → "headshot activation"
+- "cost" → "investment"
 
 Write naturally. Avoid cliches and filler. Every sentence should deliver value.
 
@@ -95,7 +156,7 @@ ${icpBlock}
 
 Article type: ${config.articleType}
 Primary keyword: "${config.primaryKeyword}"
-Word count target: ${config.wordCountTarget} words (acceptable range: 1000-1800 words)
+Word count target: ${config.wordCountTarget} words (acceptable range: 1000-3000 words, NEVER exceed 3000)
 
 ### Required Structure
 1. **Quick Answer block**: Start with a 50-75 word direct answer to the core question. This block should be self-contained and quotable by AI systems.
@@ -148,6 +209,16 @@ ${relatedQuestionsBlock}${competitorContext ? '\n\n' + buildCompetitorBlock(comp
 function buildUserPrompt(config: ContentOpsConfig): string {
   return `Write a comprehensive article about "${config.topic}" optimized for the primary keyword "${config.primaryKeyword}".
 
+CRITICAL: The "body" field MUST be valid HTML, NOT markdown. Use proper HTML tags:
+- <h2> for section headings (never use ## markdown syntax)
+- <h3> for sub-headings
+- <p> for paragraphs
+- <ul>/<ol> with <li> for lists
+- <a href="..."> for links (include target="_blank" rel="noopener noreferrer" for external links)
+- <strong> for bold, <em> for emphasis
+- <blockquote> for quotations
+- Do NOT use markdown syntax anywhere in the body field
+
 Return ONLY a valid JSON object (no markdown fences, no explanation) matching this exact structure:
 
 {
@@ -157,7 +228,7 @@ Return ONLY a valid JSON object (no markdown fences, no explanation) matching th
   "metaDescription": "Meta description, 140-160 characters",
   "excerpt": "2-3 sentence excerpt for listings",
   "quickAnswer": "50-75 word direct answer block",
-  "body": "Full article in markdown with proper H2s, links, stats, and FAQ block",
+  "body": "Full article in HTML with proper H2s, links, stats, and FAQ block",
   "wordCount": 0,
   "readTime": 0,
   "icpTag": "${config.icpTag}",
