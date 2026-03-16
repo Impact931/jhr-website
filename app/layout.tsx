@@ -3,6 +3,7 @@ import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import TrackingScripts from "@/components/analytics/TrackingScripts";
+import { AutoTracking } from "@/components/analytics/AutoTracking";
 import {
   generateOrganizationSchema,
   generateWebSiteSchema,
@@ -111,6 +112,7 @@ export default function RootLayout({
       >
         <LayoutShell>{children}</LayoutShell>
         <TrackingScripts />
+        <AutoTracking />
       </body>
     </html>
   );
