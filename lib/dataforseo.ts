@@ -247,6 +247,63 @@ export async function getCompetitorKeywords(
   return results;
 }
 
+// ─── Competitor Ranked Keywords ──────────────────────────────────────────────
+
+export interface RankedKeywordResult {
+  keyword: string;
+  position: number;
+  url: string;
+  searchVolume: number;
+  cpc: number | null;
+  competition: number | null;
+  trafficCost: number;
+}
+
+/**
+ * Get the top keywords a specific domain ranks for.
+ * Uses DataForSEO Labs ranked_keywords endpoint.
+ *
+ * Cost: ~$0.075 per call
+ */
+export async function getCompetitorRankedKeywords(
+  competitorDomain: string,
+  limit = 30
+): Promise<RankedKeywordResult[]> {
+  const data = await dataforseoFetch('dataforseo_labs/google/ranked_keywords/live', [
+    {
+      target: competitorDomain,
+      location_code: LOCATION_CODE,
+      language_code: LANGUAGE_CODE,
+      limit,
+      order_by: ['keyword_data.keyword_info.search_volume,desc'],
+      filters: [
+        ['ranked_serp_element.serp_item.rank_group', '<=', 30],
+      ],
+    },
+  ]);
+
+  const items = data.tasks?.[0]?.result?.[0]?.items || [];
+  const results: RankedKeywordResult[] = [];
+
+  for (const item of items) {
+    const keyword = item.keyword_data?.keyword || '';
+    const kwInfo = item.keyword_data?.keyword_info || {};
+    const serpItem = item.ranked_serp_element?.serp_item || {};
+
+    results.push({
+      keyword,
+      position: serpItem.rank_group ?? 99,
+      url: serpItem.url || '',
+      searchVolume: kwInfo.search_volume || 0,
+      cpc: kwInfo.cpc ?? null,
+      competition: kwInfo.competition_index ?? null,
+      trafficCost: kwInfo.estimated_paid_traffic_cost ?? 0,
+    });
+  }
+
+  return results;
+}
+
 // ─── Domain Intersection (Competitor Gap Analysis) ──────────────────────────
 
 export interface DomainIntersectionResult {
