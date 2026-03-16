@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Phone, MapPin, Send, Loader2 } from "lucide-react";
+import { Mail, Phone, MapPin, Send, Loader2, CheckCircle } from "lucide-react";
 import { EditableImage } from "@/components/inline-editor/EditableImage";
 import { trackContactFormSubmit, trackPhoneClick } from "@/lib/gtag";
 

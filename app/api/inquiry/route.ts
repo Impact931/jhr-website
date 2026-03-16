@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
       status: "new",
       submittedAt: timestamp,
       source: "inquiry-form",
+      formType: "Inquiry",
     }).catch((err) => console.error("Notion sync failed:", err));
 
     console.log("Inquiry form submission stored:", {

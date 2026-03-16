@@ -23,6 +23,10 @@ interface LeadData {
   referral?: string[];
   multiDay?: boolean;
   eventDateEnd?: string;
+  // Schedule form fields
+  preferredDate?: string;
+  preferredTime?: string;
+  callType?: string;
   // Common fields
   email: string;
   phone?: string;
@@ -34,6 +38,7 @@ interface LeadData {
   status: string;
   submittedAt: string;
   source: string;
+  formType?: string;
 }
 
 function getNotionClient(): Client | null {
@@ -64,10 +69,11 @@ export async function syncLeadToNotion(lead: LeadData): Promise<boolean> {
     Name: { title: [{ text: { content: leadName } }] },
     // Email (email type)
     Email: { email: lead.email },
-    // Status & Source
+    // Status & Source & Form Type
     Status: { select: { name: lead.status === 'new' ? 'New' : lead.status } },
     Source: { select: { name: lead.source || 'contact-form' } },
     'Submitted At': { date: { start: lead.submittedAt } },
+    ...(lead.formType ? { 'Form Type': { select: { name: lead.formType } } } : {}),
   };
 
   // Phone
@@ -156,6 +162,16 @@ export async function syncLeadToNotion(lead: LeadData): Promise<boolean> {
   // Message (contact form)
   if (lead.message) {
     properties['Message'] = { rich_text: [{ text: { content: lead.message.slice(0, 2000) } }] };
+  }
+  // Schedule form fields
+  if (lead.preferredDate) {
+    properties['Preferred Date'] = { date: { start: lead.preferredDate } };
+  }
+  if (lead.preferredTime) {
+    properties['Preferred Time'] = { select: { name: lead.preferredTime } };
+  }
+  if (lead.callType) {
+    properties['Call Type'] = { select: { name: lead.callType } };
   }
 
   try {
