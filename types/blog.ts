@@ -56,6 +56,10 @@ export interface BlogPostGEOMetadata {
   };
   /** Content summary optimized for AI crawlers. */
   contentSummary: string;
+  /** GEO score from ContentOps validation (0-100). */
+  geoScore?: number;
+  /** Notes from GEO scoring. */
+  geoScoreNotes?: string;
 }
 
 /** Blog post status. */

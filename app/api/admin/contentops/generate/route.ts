@@ -153,6 +153,13 @@ export async function POST(request: NextRequest) {
           ogTitle: article.title || topic,
           ogDescription: article.metaDescription || '',
         },
+        geoMetadata: {
+          topicClassification: [config.articleType, config.icpTag],
+          entities: { people: [], places: ['Nashville'], organizations: ['JHR Photography'] },
+          contentSummary: article.quickAnswer || article.excerpt || '',
+          geoScore: article.geoScore ?? geoResult?.totalScore ?? 0,
+          geoScoreNotes: article.geoScoreNotes || geoResult?.notes || '',
+        },
       },
       'draft',
       session.user?.email || undefined

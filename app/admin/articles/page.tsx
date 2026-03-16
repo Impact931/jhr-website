@@ -173,6 +173,8 @@ interface GenerationResult {
   internalLinks: number;
   externalLinks: number;
   proofing?: ProofingResult;
+  quickAnswer?: string;
+  metaDescription?: string;
 }
 
 interface BatchRow {
@@ -379,6 +381,7 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
   const [researchResult, setResearchResult] = useState<ResearchResult | null>(null);
   const [researchError, setResearchError] = useState<string | null>(null);
   const [researchOpen, setResearchOpen] = useState(true);
+  const [researchSavedId, setResearchSavedId] = useState<string | null>(null);
 
   const [generateLoading, setGenerateLoading] = useState(false);
   const [generateResult, setGenerateResult] = useState<GenerationResult | null>(null);
@@ -401,6 +404,7 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
     setResearchLoading(true);
     setResearchError(null);
     setResearchResult(null);
+    setResearchSavedId(null);
     try {
       const res = await fetch('/api/admin/contentops/research', {
         method: 'POST',
@@ -438,6 +442,9 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
         topicClusterKeywords: research.topicClusterKeywords || [],
       });
       setResearchOpen(true);
+      if (data.knowledgeId) {
+        setResearchSavedId(data.knowledgeId);
+      }
     } catch (err: unknown) {
       setResearchError(err instanceof Error ? err.message : 'Research failed');
     } finally {
@@ -459,7 +466,31 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
       });
       if (!res.ok) throw new Error(await res.text() || 'Generation failed');
       const data = await res.json();
-      setGenerateResult(data);
+      // Map API response shape to UI's GenerationResult interface
+      const article = data.article || {};
+      const validation = data.validation || {};
+      setGenerateResult({
+        title: article.title || topic,
+        slug: data.slug || article.slug || '',
+        geoScore: article.geoScore ?? data.geoScoring?.totalScore ?? 0,
+        wordCount: article.wordCount || 0,
+        readingTime: article.readTime || article.readingTime || 0,
+        internalLinks: article.internalLinkCount || 0,
+        externalLinks: article.externalLinkCount || 0,
+        quickAnswer: article.quickAnswer || '',
+        metaDescription: article.metaDescription || '',
+        validation: {
+          passes: [
+            ...(validation.passed ? [{ label: 'All checks passed' }] : []),
+            ...((validation.geoScore?.totalScore ?? 0) >= 70 ? [{ label: `GEO score: ${validation.geoScore?.totalScore}/100` }] : []),
+          ],
+          fails: [
+            ...(validation.hardFails || []).map((f: string) => ({ label: f })),
+            ...(validation.softFails || []).map((f: string) => ({ label: f, detail: 'soft fail' })),
+          ],
+        },
+        proofing: data.proofing || undefined,
+      });
     } catch (err: unknown) {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed');
     } finally {
@@ -630,6 +661,12 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
             <div className="flex items-center gap-2">
               <Search className="w-5 h-5 text-jhr-gold" />
               <h3 className="text-lg font-semibold text-jhr-white">Research Preview</h3>
+              {researchSavedId && (
+                <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" />
+                  Saved to Knowledge Base
+                </span>
+              )}
             </div>
             {researchOpen ? (
               <ChevronDown className="w-5 h-5 text-jhr-white-dim" />
@@ -800,9 +837,13 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
 
       {/* Generate Loading */}
       {generateLoading && (
-        <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-8 flex flex-col items-center justify-center gap-3">
+        <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-8 flex flex-col items-center justify-center gap-4">
           <Loader2 className="w-8 h-8 text-jhr-gold animate-spin" />
-          <p className="text-jhr-white-dim">Generating article...</p>
+          <div className="text-center">
+            <p className="text-jhr-white font-medium">Generating article...</p>
+            <p className="text-jhr-white-dim text-sm mt-1">Research → Write → Brand Voice Proof → Save Draft</p>
+            <p className="text-jhr-white-dim text-xs mt-2">This takes 60-90 seconds</p>
+          </div>
         </div>
       )}
 
