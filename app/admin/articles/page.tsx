@@ -1464,7 +1464,8 @@ function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueReco
               </thead>
               <tbody>
                 {data.serpPositions.map((sp) => {
-                  const trendMax = sp.monthlyTrend.length > 0 ? Math.max(...sp.monthlyTrend, 1) : 1;
+                  const trend = sp.monthlyTrend || [];
+                  const trendMax = trend.length > 0 ? Math.max(...trend, 1) : 1;
                   return (
                     <tr
                       key={sp.keyword}
@@ -1526,9 +1527,9 @@ function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueReco
                         {!sp.trend && <span className="text-jhr-white-dim/40">—</span>}
                       </td>
                       <td className="px-5 py-3">
-                        {sp.monthlyTrend.length > 0 ? (
+                        {trend.length > 0 ? (
                           <div className="flex items-end gap-px h-5 w-24">
-                            {sp.monthlyTrend.map((vol, i) => (
+                            {trend.map((vol, i) => (
                               <div
                                 key={i}
                                 className={`flex-1 rounded-sm ${
@@ -1694,8 +1695,9 @@ function CompetitorRow({ comp, onGenerateClick }: { comp: CompetitorDomain; onGe
     overtake: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Overtake' },
   };
 
-  const easyCount = comp.topKeywords.filter(k => k.difficulty === 'easy').length;
-  const gapCount = comp.topKeywords.filter(k => k.ourPosition === null).length;
+  const keywords = comp.topKeywords || [];
+  const easyCount = keywords.filter(k => k.difficulty === 'easy').length;
+  const gapCount = keywords.filter(k => k.ourPosition === null).length;
 
   return (
     <>
@@ -1714,7 +1716,7 @@ function CompetitorRow({ comp, onGenerateClick }: { comp: CompetitorDomain; onGe
         <td className="text-right py-3 px-3 text-jhr-white-dim">{comp.avgPosition.toFixed(1)}</td>
         <td className="text-right py-3 px-3 text-jhr-white-dim">{comp.estimatedTraffic.toLocaleString()}</td>
         <td className="text-right py-3 px-3">
-          <span className="text-jhr-white">{comp.topKeywords.length}</span>
+          <span className="text-jhr-white">{keywords.length}</span>
           <span className="text-jhr-white-dim/50 ml-1">kw</span>
         </td>
         <td className="text-right py-3 px-3">
@@ -1734,7 +1736,7 @@ function CompetitorRow({ comp, onGenerateClick }: { comp: CompetitorDomain; onGe
       </tr>
 
       {/* Expanded Keyword Details */}
-      {expanded && comp.topKeywords.length > 0 && (
+      {expanded && keywords.length > 0 && (
         <tr>
           <td colSpan={7} className="p-0">
             <div className="bg-jhr-black/50 border-y border-jhr-black-lighter/20">
@@ -1753,7 +1755,7 @@ function CompetitorRow({ comp, onGenerateClick }: { comp: CompetitorDomain; onGe
                   </tr>
                 </thead>
                 <tbody>
-                  {comp.topKeywords.map((kw, ki) => {
+                  {keywords.map((kw, ki) => {
                     const diffStyle = DIFFICULTY_COLORS[kw.difficulty] || DIFFICULTY_COLORS.medium;
                     const actionStyle = ACTION_MAP[kw.suggestedAction] || ACTION_MAP.create;
                     return (
@@ -1834,7 +1836,7 @@ function CompetitorRow({ comp, onGenerateClick }: { comp: CompetitorDomain; onGe
         </tr>
       )}
 
-      {expanded && comp.topKeywords.length === 0 && (
+      {expanded && keywords.length === 0 && (
         <tr>
           <td colSpan={7} className="py-4 text-center text-jhr-white-dim/50 text-xs bg-jhr-black/50">
             No keyword data available for this competitor
