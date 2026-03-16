@@ -487,7 +487,7 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
             corporate events.
           </p>
           <Link
-            href="/schedule"
+            href="/inquiry"
             className="btn-primary inline-flex items-center gap-2"
           >
             Schedule a Strategy Call

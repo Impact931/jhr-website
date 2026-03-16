@@ -978,7 +978,7 @@ export function EditableTeamGrid({
       showRecruitmentCTA: !showRecruitmentCTA,
       recruitmentHeading: recruitmentHeading || 'Join Our Team',
       recruitmentDescription: recruitmentDescription || 'We\'re always looking for talented media professionals to join our certified operator network.',
-      recruitmentButton: recruitmentButton || { text: 'Apply Now', href: '/contact', variant: 'primary' as const },
+      recruitmentButton: recruitmentButton || { text: 'Apply Now', href: '/inquiry', variant: 'primary' as const },
     } as Partial<TeamGridSectionContent>);
   }, [sectionId, updateSection, showRecruitmentCTA, recruitmentHeading, recruitmentDescription, recruitmentButton]);
 

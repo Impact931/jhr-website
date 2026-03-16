@@ -245,7 +245,7 @@ export default function TermsOfServicePage() {
               <p className="text-body text-jhr-white-dim">
                 If you have any questions about these Terms of Service, please{" "}
                 <Link
-                  href="/contact"
+                  href="/inquiry"
                   className="text-jhr-gold hover:text-jhr-gold-light transition-colors"
                 >
                   contact us

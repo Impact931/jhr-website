@@ -376,7 +376,7 @@ export default function BlogPage() {
               Let&apos;s discuss how professional photography and media coverage can transform your
               corporate events.
             </p>
-            <Link href="/schedule" className="btn-primary inline-flex items-center gap-2">
+            <Link href="/inquiry" className="btn-primary inline-flex items-center gap-2">
               Schedule a Strategy Call
               <ChevronRight className="w-4 h-4" />
             </Link>

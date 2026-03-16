@@ -111,7 +111,7 @@ export function Header() {
 
           {/* CTA Button */}
           <div className="hidden lg:block">
-            <Link href="/schedule" className="btn-primary" onClick={() => trackScheduleCallClick('header_desktop')}>
+            <Link href="/inquiry" className="btn-primary" onClick={() => trackScheduleCallClick('header_desktop')}>
               Schedule a Strategy Call
             </Link>
           </div>
@@ -191,7 +191,7 @@ export function Header() {
             </div>
             <div className="mt-4 px-4">
               <Link
-                href="/schedule"
+                href="/inquiry"
                 className="btn-primary w-full text-center"
                 onClick={() => { trackScheduleCallClick('header_mobile'); setMobileMenuOpen(false); }}
               >

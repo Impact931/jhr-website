@@ -709,7 +709,7 @@ export function createDefaultSection(
         subtext: 'Contact us today for a free consultation.',
         backgroundType: 'solid',
         backgroundValue: '#0A0A0A',
-        primaryButton: { text: 'Contact Us', href: '/contact', variant: 'primary' },
+        primaryButton: { text: 'Contact Us', href: '/inquiry', variant: 'primary' },
       };
     case 'testimonials':
       return {

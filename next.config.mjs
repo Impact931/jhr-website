@@ -219,15 +219,25 @@ const nextConfig = {
         permanent: true,
       },
 
-      // Contact & about
+      // Contact & about — all contact/schedule routes → /inquiry
+      {
+        source: '/contact',
+        destination: '/inquiry',
+        permanent: true,
+      },
       {
         source: '/contact-us',
-        destination: '/contact',
+        destination: '/inquiry',
         permanent: true,
       },
       {
         source: '/contact-us/:path*',
-        destination: '/contact',
+        destination: '/inquiry',
+        permanent: true,
+      },
+      {
+        source: '/schedule',
+        destination: '/inquiry',
         permanent: true,
       },
       {

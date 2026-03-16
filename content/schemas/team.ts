@@ -102,7 +102,7 @@ export const TEAM_GRID: TeamGridSectionContent = {
   showRecruitmentCTA: true,
   recruitmentHeading: 'Join Our Team',
   recruitmentDescription: 'We\'re always looking for disciplined, talented media professionals to join our certified operator network.',
-  recruitmentButton: { text: 'Apply Now', href: '/contact', variant: 'primary' },
+  recruitmentButton: { text: 'Apply Now', href: '/inquiry', variant: 'primary' },
   members: [
     {
       id: 'member-jayson',

@@ -106,7 +106,7 @@ export const NOT_FOUND_NAV: FeatureGridSectionContent = {
       icon: 'Mail',
       title: 'Contact Us',
       description: 'Get in touch to discuss your event photography needs.',
-      link: { text: 'Contact', href: '/contact' },
+      link: { text: 'Contact', href: '/inquiry' },
     },
   ],
 };

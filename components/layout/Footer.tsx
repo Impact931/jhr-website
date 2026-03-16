@@ -21,8 +21,8 @@ const footerLinks = {
     { name: "About", href: "/about" },
     { name: "Nashville Insider", href: "/blog" },
     { name: "FAQs", href: "/faqs" },
-    { name: "Contact", href: "/contact" },
-    { name: "Talk With Our Team", href: "/schedule" },
+    { name: "Contact", href: "/inquiry" },
+    { name: "Talk With Our Team", href: "/inquiry" },
   ],
 };
 
