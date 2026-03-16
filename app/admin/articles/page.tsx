@@ -1556,7 +1556,6 @@ function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueReco
                 {data.recommendations.map((rec) => {
                   const action = ACTION_COLORS[rec.recommendedAction] || ACTION_COLORS.create;
                   const icpLabel = ICP_OPTIONS.find((o) => o.value === rec.suggestedIcp)?.label || rec.suggestedIcp;
-                  const typeLabel = ARTICLE_TYPE_OPTIONS.find((o) => o.value === rec.suggestedArticleType)?.label || rec.suggestedArticleType;
 
                   return (
                     <tr

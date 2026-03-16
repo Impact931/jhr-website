@@ -233,7 +233,7 @@ export async function GET(request: NextRequest) {
 
     // DataForSEO data (if configured)
     let serpResults: SerpResult[] = [];
-    let volumeData: Map<string, { volume: number; cpc: number | null; competition: number | null; monthlySearches: Array<{ month: number; year: number; volume: number }> }> = new Map();
+    const volumeData: Map<string, { volume: number; cpc: number | null; competition: number | null; monthlySearches: Array<{ month: number; year: number; volume: number }> }> = new Map();
     let suggestions: Array<{ keyword: string; searchVolume: number; cpc: number | null; competition: number | null }> = [];
 
     const promises: Promise<void>[] = [];
