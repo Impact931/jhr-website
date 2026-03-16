@@ -10,8 +10,15 @@ export default async function TrackingScripts() {
     ga4Id = settings.integrations.ga4MeasurementId;
     metaPixelId = settings.integrations.metaPixelId;
   } catch {
-    // Settings not available — skip tracking scripts
-    return null;
+    // Settings not available — fall through to env var fallback
+  }
+
+  // Env var fallback — ensures GA4 stays connected even if DynamoDB settings are reset
+  if (!ga4Id) {
+    ga4Id = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || process.env.GA4_MEASUREMENT_ID;
+  }
+  if (!metaPixelId) {
+    metaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
   }
 
   if (!ga4Id && !metaPixelId) return null;
