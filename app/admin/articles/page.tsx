@@ -28,6 +28,7 @@ import {
   Zap,
   Shield,
   Globe,
+  Pencil,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -1116,9 +1117,9 @@ function ArticlesTab() {
     }
   }, []);
 
-  useState(() => {
+  useEffect(() => {
     fetchArticles();
-  });
+  }, [fetchArticles]);
 
   const handlePublish = async (slug: string) => {
     setActionLoading(slug);
@@ -1253,12 +1254,21 @@ function ArticlesTab() {
                   </td>
                   <td className="p-3">
                     <div className="flex items-center justify-end gap-1">
+                      <a
+                        href={`/blog/${article.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 text-jhr-white-dim hover:text-jhr-white transition-colors"
+                        title="View live"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </a>
                       <Link
                         href={`/blog/${article.slug}?editMode=true`}
                         className="p-1.5 text-jhr-white-dim hover:text-jhr-gold transition-colors"
-                        title="View"
+                        title="Edit article & SEO"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Pencil className="w-4 h-4" />
                       </Link>
                       {article.status === 'draft' && (
                         <button

@@ -22,13 +22,23 @@ export async function GET(req: NextRequest) {
   if (days > 90) days = 90;
 
   // Support both a key file path (local dev) and inline JSON (Amplify/production)
-  const clientOptions = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON
-    ? { credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON) }
-    : {
-        keyFilename:
-          process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE ||
-          './google-service-account.json',
-      };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let clientOptions: any;
+  try {
+    clientOptions = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON
+      ? { credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY_JSON) }
+      : {
+          keyFilename:
+            process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE ||
+            './google-service-account.json',
+        };
+  } catch (parseErr) {
+    console.error('GA4: Failed to parse service account JSON:', parseErr);
+    return NextResponse.json(
+      { connected: false, error: 'Invalid service account credentials' },
+      { status: 502 }
+    );
+  }
   const client = new BetaAnalyticsDataClient(clientOptions);
 
   const property = `properties/${propertyId}`;

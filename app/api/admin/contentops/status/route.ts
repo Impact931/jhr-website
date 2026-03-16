@@ -19,26 +19,27 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // List all blog posts and filter for ContentOps-generated ones
+    // List all blog posts — show everything in the Articles tab
     const allPosts = await listBlogs();
-    const contentopsPosts = allPosts.filter(
-      (post) => post.tags && post.tags.includes('contentops-generated')
-    );
 
     // Count by status
-    const drafts = contentopsPosts.filter((p) => p.status === 'draft');
-    const published = contentopsPosts.filter((p) => p.status === 'published');
+    const drafts = allPosts.filter((p) => p.status === 'draft');
+    const published = allPosts.filter((p) => p.status === 'published');
 
     return NextResponse.json({
-      total: contentopsPosts.length,
+      total: allPosts.length,
       drafts: drafts.length,
       published: published.length,
-      recent: contentopsPosts.slice(0, 20).map((post) => ({
+      // Return as "articles" — matches what the Articles tab UI expects
+      articles: allPosts.map((post) => ({
         slug: post.slug,
         title: post.title,
         status: post.status,
-        updatedAt: post.updatedAt,
+        geoScore: 0,
+        createdAt: post.updatedAt,
         tags: post.tags,
+        excerpt: post.excerpt,
+        featuredImage: post.featuredImage,
       })),
     });
   } catch (error) {
