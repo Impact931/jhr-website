@@ -34,6 +34,10 @@ interface Recommendation {
   id: string;
   keyword: string;
   searchVolume: number;
+  cpc: number | null;
+  competition: number | null;
+  trend: 'rising' | 'falling' | 'stable' | null;
+  monthlyTrend: number[];
   currentPosition: number | null;
   currentUrl: string | null;
   recommendedAction: 'optimize' | 'create' | 'refresh';
@@ -42,6 +46,17 @@ interface Recommendation {
   suggestedArticleType: string;
   priorityScore: number;
   dataJustification: string;
+}
+
+interface EnrichedSerpPosition {
+  keyword: string;
+  position: number | null;
+  url: string | null;
+  searchVolume: number;
+  cpc: number | null;
+  competition: number | null;
+  trend: 'rising' | 'falling' | 'stable' | null;
+  monthlyTrend: number[];
 }
 
 interface QueueResponse {
@@ -58,7 +73,7 @@ interface QueueResponse {
   };
   pages: PageScore[];
   recommendations: Recommendation[];
-  serpPositions: SerpResult[];
+  serpPositions: EnrichedSerpPosition[];
 }
 
 // ─── Cache ──────────────────────────────────────────────────────────────────
@@ -218,7 +233,8 @@ export async function GET(request: NextRequest) {
 
     // DataForSEO data (if configured)
     let serpResults: SerpResult[] = [];
-    let suggestions: Array<{ keyword: string; searchVolume: number }> = [];
+    let volumeData: Map<string, { volume: number; cpc: number | null; competition: number | null; monthlySearches: Array<{ month: number; year: number; volume: number }> }> = new Map();
+    let suggestions: Array<{ keyword: string; searchVolume: number; cpc: number | null; competition: number | null }> = [];
 
     const promises: Promise<void>[] = [];
 
@@ -257,18 +273,65 @@ export async function GET(request: NextRequest) {
         })()
       );
 
+      // Fetch search volume + CPC + competition + monthly trends for target keywords
+      promises.push(
+        (async () => {
+          const svData = await getSearchVolume(TARGET_KEYWORDS);
+          for (const sv of svData) {
+            volumeData.set(sv.keyword.toLowerCase(), {
+              volume: sv.searchVolume,
+              cpc: sv.cpc,
+              competition: sv.competition,
+              monthlySearches: sv.monthlySearches,
+            });
+          }
+        })()
+      );
+
       promises.push(
         (async () => {
           const raw = await getKeywordSuggestions('nashville event photographer', 30);
           suggestions = raw.map((s) => ({
             keyword: s.keyword,
             searchVolume: s.searchVolume,
+            cpc: s.cpc,
+            competition: s.competition,
           }));
         })()
       );
     }
 
     await Promise.allSettled(promises);
+
+    // ── Compute trends from monthly data ───────────────────────────────
+
+    function computeTrend(monthly: Array<{ volume: number }>): 'rising' | 'falling' | 'stable' | null {
+      if (!monthly || monthly.length < 6) return null;
+      const recent3 = monthly.slice(-3).reduce((s, m) => s + m.volume, 0) / 3;
+      const older3 = monthly.slice(-6, -3).reduce((s, m) => s + m.volume, 0) / 3;
+      if (older3 === 0) return recent3 > 0 ? 'rising' : 'stable';
+      const change = (recent3 - older3) / older3;
+      if (change > 0.15) return 'rising';
+      if (change < -0.15) return 'falling';
+      return 'stable';
+    }
+
+    // ── Enrich SERP positions with volume/CPC/trend data ───────────────
+
+    const enrichedSerpPositions: EnrichedSerpPosition[] = serpResults.map((sp) => {
+      const vol = volumeData.get(sp.keyword.toLowerCase());
+      const monthly = vol?.monthlySearches || [];
+      return {
+        keyword: sp.keyword,
+        position: sp.position,
+        url: sp.url,
+        searchVolume: vol?.volume ?? sp.searchVolume,
+        cpc: vol?.cpc ?? null,
+        competition: vol?.competition ?? null,
+        trend: computeTrend(monthly),
+        monthlyTrend: monthly.map((m) => m.volume),
+      };
+    });
 
     // ── Score pages ────────────────────────────────────────────────────
 
@@ -314,14 +377,19 @@ export async function GET(request: NextRequest) {
 
     for (const sd of strikeDistance.slice(0, 10)) {
       const matchingPage = gscPages.find((p) => {
-        // Find if there's a GSC page ranking for this query
         return p.clicks > 0 || p.impressions > 0;
       });
+      const vol = volumeData.get(sd.query.toLowerCase());
+      const monthly = vol?.monthlySearches || [];
 
       recommendations.push({
         id: `rec-${++recId}`,
         keyword: sd.query,
-        searchVolume: sd.impressions * 4, // rough monthly estimate from 7-day impressions
+        searchVolume: vol?.volume ?? sd.impressions * 4,
+        cpc: vol?.cpc ?? null,
+        competition: vol?.competition ?? null,
+        trend: computeTrend(monthly),
+        monthlyTrend: monthly.map((m) => m.volume),
         currentPosition: Math.round(sd.position * 10) / 10,
         currentUrl: matchingPage?.url || null,
         recommendedAction: sd.position <= 15 ? 'optimize' : 'create',
@@ -332,28 +400,33 @@ export async function GET(request: NextRequest) {
           (sd.impressions / (strikeDistance[0]?.impressions || 1)) * 80 +
           (30 - sd.position) * 0.7
         ),
-        dataJustification: `Position ${Math.round(sd.position)}, ${sd.impressions} impressions (28d). Strike distance — optimizable to page 1.`,
+        dataJustification: `Position ${Math.round(sd.position)}, ${sd.impressions} impressions (28d)${vol?.cpc ? `, $${vol.cpc.toFixed(2)} CPC` : ''}. Strike distance — optimizable to page 1.`,
       });
     }
 
     // 2. DataForSEO: keywords where JHR doesn't rank in top 30
     const contentGaps = serpResults.filter((s) => s.position === null);
     for (const gap of contentGaps) {
-      // Check if we already have a rec for this keyword
       if (recommendations.some((r) => r.keyword.toLowerCase() === gap.keyword.toLowerCase())) continue;
+      const vol = volumeData.get(gap.keyword.toLowerCase());
+      const monthly = vol?.monthlySearches || [];
 
       recommendations.push({
         id: `rec-${++recId}`,
         keyword: gap.keyword,
-        searchVolume: gap.searchVolume,
+        searchVolume: vol?.volume ?? gap.searchVolume,
+        cpc: vol?.cpc ?? null,
+        competition: vol?.competition ?? null,
+        trend: computeTrend(monthly),
+        monthlyTrend: monthly.map((m) => m.volume),
         currentPosition: null,
         currentUrl: null,
         recommendedAction: 'create',
         suggestedTopic: generateTopic(gap.keyword),
         suggestedIcp: inferIcp(gap.keyword),
         suggestedArticleType: inferArticleType(gap.keyword, null),
-        priorityScore: 60, // Medium priority — target keyword with no ranking
-        dataJustification: `Not ranking in top 30 for target keyword. Content gap.`,
+        priorityScore: 60,
+        dataJustification: `Not ranking in top 30${vol?.cpc ? `. CPC $${vol.cpc.toFixed(2)} (high buyer intent)` : ''}. Content gap.`,
       });
     }
 
@@ -372,6 +445,10 @@ export async function GET(request: NextRequest) {
         id: `rec-${++recId}`,
         keyword: sug.keyword,
         searchVolume: sug.searchVolume,
+        cpc: sug.cpc,
+        competition: sug.competition,
+        trend: null,
+        monthlyTrend: [],
         currentPosition: null,
         currentUrl: null,
         recommendedAction: 'create',
@@ -379,7 +456,7 @@ export async function GET(request: NextRequest) {
         suggestedIcp: inferIcp(sug.keyword),
         suggestedArticleType: inferArticleType(sug.keyword, null),
         priorityScore: Math.min(50, Math.round(sug.searchVolume / 5)),
-        dataJustification: `Keyword suggestion: ${sug.searchVolume} monthly searches. New content opportunity.`,
+        dataJustification: `${sug.searchVolume} monthly searches${sug.cpc ? `, $${sug.cpc.toFixed(2)} CPC` : ''}. New content opportunity.`,
       });
     }
 
@@ -393,13 +470,17 @@ export async function GET(request: NextRequest) {
         id: `rec-${++recId}`,
         keyword: `[page: ${urlPath}]`,
         searchVolume: page.impressions,
+        cpc: null,
+        competition: null,
+        trend: null,
+        monthlyTrend: [],
         currentPosition: Math.round(page.position * 10) / 10,
         currentUrl: page.url,
         recommendedAction: 'refresh',
         suggestedTopic: `Meta title/description refresh for ${urlPath}`,
         suggestedIcp: inferIcp(urlPath),
         suggestedArticleType: 'standard',
-        priorityScore: 70, // High priority — existing page underperforming
+        priorityScore: 70,
         dataJustification: `${page.impressions} impressions but only ${Math.round(page.ctr * 10000) / 100}% CTR at position ${Math.round(page.position)}. Meta refresh needed.`,
       });
     }
@@ -426,7 +507,7 @@ export async function GET(request: NextRequest) {
       },
       pages: pageScores,
       recommendations,
-      serpPositions: serpResults,
+      serpPositions: enrichedSerpPositions,
     };
 
     // Cache result

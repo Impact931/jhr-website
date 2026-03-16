@@ -37,6 +37,10 @@ interface QueueRecommendation {
   id: string;
   keyword: string;
   searchVolume: number;
+  cpc: number | null;
+  competition: number | null;
+  trend: 'rising' | 'falling' | 'stable' | null;
+  monthlyTrend: number[];
   currentPosition: number | null;
   currentUrl: string | null;
   recommendedAction: 'optimize' | 'create' | 'refresh';
@@ -62,6 +66,10 @@ interface SerpPosition {
   position: number | null;
   url: string | null;
   searchVolume: number;
+  cpc: number | null;
+  competition: number | null;
+  trend: 'rising' | 'falling' | 'stable' | null;
+  monthlyTrend: number[];
 }
 
 interface QueueData {
@@ -1412,40 +1420,96 @@ function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueReco
                 <tr className="text-left text-jhr-white-dim border-b border-jhr-black-lighter/50">
                   <th className="px-5 py-3 font-medium">Keyword</th>
                   <th className="px-5 py-3 font-medium text-right">Position</th>
-                  <th className="px-5 py-3 font-medium">Ranking URL</th>
+                  <th className="px-5 py-3 font-medium text-right">Volume</th>
+                  <th className="px-5 py-3 font-medium text-right">CPC</th>
+                  <th className="px-5 py-3 font-medium text-right">Competition</th>
+                  <th className="px-5 py-3 font-medium text-center">Trend</th>
+                  <th className="px-5 py-3 font-medium">12-Month Trend</th>
                 </tr>
               </thead>
               <tbody>
-                {data.serpPositions.map((sp) => (
-                  <tr
-                    key={sp.keyword}
-                    className="border-b border-jhr-black-lighter/30 last:border-0 hover:bg-jhr-black-lighter/20"
-                  >
-                    <td className="px-5 py-3 text-jhr-white">{sp.keyword}</td>
-                    <td className="px-5 py-3 text-right">
-                      {sp.position ? (
-                        <span
-                          className={`font-mono font-bold ${
-                            sp.position <= 3
-                              ? 'text-green-400'
-                              : sp.position <= 10
-                              ? 'text-blue-400'
-                              : sp.position <= 20
-                              ? 'text-yellow-400'
-                              : 'text-red-400'
-                          }`}
-                        >
-                          #{sp.position}
-                        </span>
-                      ) : (
-                        <span className="text-red-400/60">Not ranking</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-jhr-white-dim text-xs truncate max-w-[200px]">
-                      {sp.url ? new URL(sp.url).pathname : '—'}
-                    </td>
-                  </tr>
-                ))}
+                {data.serpPositions.map((sp) => {
+                  const trendMax = sp.monthlyTrend.length > 0 ? Math.max(...sp.monthlyTrend, 1) : 1;
+                  return (
+                    <tr
+                      key={sp.keyword}
+                      className="border-b border-jhr-black-lighter/30 last:border-0 hover:bg-jhr-black-lighter/20"
+                    >
+                      <td className="px-5 py-3 text-jhr-white">{sp.keyword}</td>
+                      <td className="px-5 py-3 text-right">
+                        {sp.position ? (
+                          <span
+                            className={`font-mono font-bold ${
+                              sp.position <= 3
+                                ? 'text-green-400'
+                                : sp.position <= 10
+                                ? 'text-blue-400'
+                                : sp.position <= 20
+                                ? 'text-yellow-400'
+                                : 'text-red-400'
+                            }`}
+                          >
+                            #{sp.position}
+                          </span>
+                        ) : (
+                          <span className="text-red-400/60">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-right text-jhr-white-dim font-mono">
+                        {sp.searchVolume > 0 ? sp.searchVolume.toLocaleString() : '—'}
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        {sp.cpc ? (
+                          <span className={`font-mono ${sp.cpc >= 10 ? 'text-green-400' : sp.cpc >= 5 ? 'text-yellow-400' : 'text-jhr-white-dim'}`}>
+                            ${sp.cpc.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-jhr-white-dim/40">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        {sp.competition !== null ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="w-12 h-1.5 bg-jhr-black-lighter rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${
+                                  sp.competition >= 70 ? 'bg-red-400' : sp.competition >= 40 ? 'bg-yellow-400' : 'bg-green-400'
+                                }`}
+                                style={{ width: `${sp.competition}%` }}
+                              />
+                            </div>
+                            <span className="text-jhr-white-dim font-mono text-xs w-6">{sp.competition}</span>
+                          </div>
+                        ) : (
+                          <span className="text-jhr-white-dim/40">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        {sp.trend === 'rising' && <span className="text-green-400 text-xs font-medium">Rising</span>}
+                        {sp.trend === 'falling' && <span className="text-red-400 text-xs font-medium">Falling</span>}
+                        {sp.trend === 'stable' && <span className="text-jhr-white-dim text-xs">Stable</span>}
+                        {!sp.trend && <span className="text-jhr-white-dim/40">—</span>}
+                      </td>
+                      <td className="px-5 py-3">
+                        {sp.monthlyTrend.length > 0 ? (
+                          <div className="flex items-end gap-px h-5 w-24">
+                            {sp.monthlyTrend.map((vol, i) => (
+                              <div
+                                key={i}
+                                className={`flex-1 rounded-sm ${
+                                  sp.trend === 'rising' ? 'bg-green-400/70' : sp.trend === 'falling' ? 'bg-red-400/70' : 'bg-jhr-white-dim/30'
+                                }`}
+                                style={{ height: `${Math.max(2, (vol / trendMax) * 20)}px` }}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-jhr-white-dim/40 text-xs">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -1480,10 +1544,11 @@ function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueReco
                   <th className="px-5 py-3 font-medium w-16">Priority</th>
                   <th className="px-5 py-3 font-medium">Keyword</th>
                   <th className="px-5 py-3 font-medium text-right">Volume</th>
+                  <th className="px-5 py-3 font-medium text-right">CPC</th>
                   <th className="px-5 py-3 font-medium text-right">Position</th>
+                  <th className="px-5 py-3 font-medium text-center">Trend</th>
                   <th className="px-5 py-3 font-medium">Action</th>
                   <th className="px-5 py-3 font-medium">ICP</th>
-                  <th className="px-5 py-3 font-medium">Type</th>
                   <th className="px-5 py-3 font-medium w-24"></th>
                 </tr>
               </thead>
@@ -1521,11 +1586,26 @@ function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueReco
                         {rec.searchVolume > 0 ? rec.searchVolume.toLocaleString() : '—'}
                       </td>
                       <td className="px-5 py-3 text-right">
+                        {rec.cpc ? (
+                          <span className={`font-mono ${rec.cpc >= 10 ? 'text-green-400' : rec.cpc >= 5 ? 'text-yellow-400' : 'text-jhr-white-dim'}`}>
+                            ${rec.cpc.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-jhr-white-dim/40">—</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-right">
                         {rec.currentPosition ? (
                           <span className="text-yellow-400 font-mono">#{rec.currentPosition}</span>
                         ) : (
                           <span className="text-red-400/60">—</span>
                         )}
+                      </td>
+                      <td className="px-5 py-3 text-center">
+                        {rec.trend === 'rising' && <span className="text-green-400 text-xs">Rising</span>}
+                        {rec.trend === 'falling' && <span className="text-red-400 text-xs">Falling</span>}
+                        {rec.trend === 'stable' && <span className="text-jhr-white-dim text-xs">Stable</span>}
+                        {!rec.trend && <span className="text-jhr-white-dim/40">—</span>}
                       </td>
                       <td className="px-5 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${action.bg} ${action.text}`}>
@@ -1534,9 +1614,6 @@ function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueReco
                       </td>
                       <td className="px-5 py-3">
                         <span className="text-xs text-jhr-white-dim">{icpLabel.replace(/^ICP-\d /, '')}</span>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="text-xs text-jhr-white-dim">{typeLabel}</span>
                       </td>
                       <td className="px-5 py-3">
                         {rec.recommendedAction === 'create' && (
