@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Client } from "@notionhq/client";
 import { putItem } from "@/lib/dynamodb";
+import { syncLeadToNotion } from "@/lib/notion";
 
 interface InquiryFormData {
   name: string;
@@ -47,98 +47,7 @@ function sanitize(value: string): string {
   return value.trim().slice(0, 2000);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildNotionProperties(data: InquiryFormData): Record<string, any> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const props: Record<string, any> = {
-    // Title field — "Lead Name"
-    "Lead Name": {
-      title: [{ text: { content: data.name } }],
-    },
-    // Rich text fields
-    Account: {
-      rich_text: [{ text: { content: data.company } }],
-    },
-    "Client/Event Name": {
-      rich_text: [{ text: { content: data.clientEventName } }],
-    },
-    "Event Description": {
-      rich_text: [{ text: { content: data.eventDescription.slice(0, 2000) } }],
-    },
-    "Location/Venue": {
-      rich_text: [{ text: { content: data.locationVenue } }],
-    },
-    // Email & phone
-    Email: { email: data.email },
-    "Phone (Cell)": { phone_number: data.phone },
-    // URL
-    Website: { url: data.website },
-    // Checkbox
-    "Multi-Day Event": { checkbox: data.multiDay },
-    // Date — supports range for multi-day
-    "Event Dates": {
-      date: {
-        start: data.eventDate,
-        ...(data.multiDay && data.eventDateEnd
-          ? { end: data.eventDateEnd }
-          : {}),
-      },
-    },
-    // Number
-    "Number of Attendees": { number: parseInt(data.attendees, 10) || 0 },
-    // Multi-select fields
-    "Services Requsted": {
-      multi_select: data.services.map((s) => ({ name: s })),
-    },
-    Referral: {
-      multi_select: data.referral.map((r) => ({ name: r })),
-    },
-  };
-
-  // Optional fields
-  if (data.positionTitle) {
-    props["Position/Title"] = {
-      rich_text: [{ text: { content: data.positionTitle } }],
-    };
-  }
-  if (data.mediaUse && data.mediaUse.length > 0) {
-    props["Media Use"] = {
-      multi_select: data.mediaUse.map((m) => ({ name: m })),
-    };
-  }
-  if (data.industry) {
-    props["Industry"] = { select: { name: data.industry } };
-  }
-  if (data.industryOther) {
-    props["If other - What industry?"] = {
-      rich_text: [{ text: { content: data.industryOther } }],
-    };
-  }
-  if (data.goals) {
-    props["Goals"] = {
-      rich_text: [{ text: { content: data.goals.slice(0, 2000) } }],
-    };
-  }
-  if (data.budget && data.budget.length > 0) {
-    props["Budget"] = {
-      multi_select: data.budget.map((b) => ({ name: b })),
-    };
-  }
-  if (data.videoServices && data.videoServices.length > 0) {
-    props["Video Services"] = {
-      multi_select: data.videoServices.map((v) => ({ name: v })),
-    };
-  }
-  if (data.additionalInfo) {
-    props["Is there any additional information..."] = {
-      rich_text: [
-        { text: { content: data.additionalInfo.slice(0, 2000) } },
-      ],
-    };
-  }
-
-  return props;
-}
+// Notion sync is now handled by syncLeadToNotion() in lib/notion.ts
 
 export async function POST(request: NextRequest) {
   try {
@@ -207,18 +116,12 @@ export async function POST(request: NextRequest) {
     await putItem(dynamoRecord);
 
     // Sync to Notion (fire-and-forget)
-    const notionToken = process.env.NOTION_TOKEN;
-    const notionDbId = process.env.NOTION_LEADS_DB_ID || process.env.NOTION_LEAD_DB_ID;
-
-    if (notionToken && notionDbId) {
-      const notion = new Client({ auth: notionToken });
-      notion.pages
-        .create({
-          parent: { database_id: notionDbId },
-          properties: buildNotionProperties(body),
-        })
-        .catch((err) => console.error("Notion sync failed:", err));
-    }
+    syncLeadToNotion({
+      ...body,
+      status: "new",
+      submittedAt: timestamp,
+      source: "inquiry-form",
+    }).catch((err) => console.error("Notion sync failed:", err));
 
     console.log("Inquiry form submission stored:", {
       pk: dynamoRecord.pk,

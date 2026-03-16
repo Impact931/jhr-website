@@ -15,6 +15,7 @@ interface LeadData {
   attendees?: string;
   mediaUse?: string[];
   industry?: string;
+  industryOther?: string;
   goals?: string;
   budget?: string[];
   videoServices?: string[];
@@ -36,54 +37,131 @@ interface LeadData {
 }
 
 function getNotionClient(): Client | null {
-  const token = process.env.NOTION_TOKEN;
+  // Prefer the forms-specific token, fall back to general NOTION_TOKEN
+  const token = process.env.NOTION_FORMS_TOKEN || process.env.NOTION_TOKEN;
   if (!token) return null;
   return new Client({ auth: token });
 }
 
 function getLeadDbId(): string | null {
-  return process.env.NOTION_LEADS_DB_ID || process.env.NOTION_LEAD_DB_ID || null;
+  return process.env.NOTION_FORMS_DB_ID || process.env.NOTION_LEADS_DB_ID || process.env.NOTION_LEAD_DB_ID || null;
 }
 
 export async function syncLeadToNotion(lead: LeadData): Promise<boolean> {
   const notion = getNotionClient();
   const dbId = getLeadDbId();
-  if (!notion || !dbId) return false;
+  if (!notion || !dbId) {
+    console.warn('[Notion] Missing token or DB ID — skipping sync');
+    return false;
+  }
 
   // Derive name from whichever form type submitted
   const leadName = lead.name || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || lead.email;
-  const venue = lead.venue || lead.locationVenue || '';
-  const messageText = lead.message || lead.eventDescription || '';
-  const serviceLabel = Array.isArray(lead.services) ? lead.services.join(', ') : (lead.eventType || '');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const properties: Record<string, any> = {
+    // Title field
+    Name: { title: [{ text: { content: leadName } }] },
+    // Email (email type)
+    Email: { email: lead.email },
+    // Status & Source
+    Status: { select: { name: lead.status === 'new' ? 'New' : lead.status } },
+    Source: { select: { name: lead.source || 'contact-form' } },
+    'Submitted At': { date: { start: lead.submittedAt } },
+  };
+
+  // Phone
+  if (lead.phone) {
+    properties['Phone'] = { phone_number: lead.phone };
+  }
+  // Company
+  if (lead.company) {
+    properties['Company'] = { rich_text: [{ text: { content: lead.company } }] };
+  }
+  // Position/Title
+  if (lead.positionTitle) {
+    properties['Position/Title'] = { rich_text: [{ text: { content: lead.positionTitle } }] };
+  }
+  // Website (url type)
+  if (lead.website) {
+    const url = lead.website.startsWith('http') ? lead.website : `https://${lead.website}`;
+    properties['Website'] = { url };
+  }
+  // Client/Event Name
+  if (lead.clientEventName) {
+    properties['Client/Event Name'] = { rich_text: [{ text: { content: lead.clientEventName } }] };
+  }
+  // Event Description
+  if (lead.eventDescription) {
+    properties['Event Description'] = { rich_text: [{ text: { content: lead.eventDescription.slice(0, 2000) } }] };
+  }
+  // Multi-Day Event (checkbox)
+  if (lead.multiDay !== undefined) {
+    properties['Multi-Day Event'] = { checkbox: lead.multiDay };
+  }
+  // Event Dates (date with optional end)
+  if (lead.eventDate) {
+    properties['Event Dates'] = {
+      date: { start: lead.eventDate, ...(lead.eventDateEnd ? { end: lead.eventDateEnd } : {}) },
+    };
+  }
+  // Location/Venue
+  const venue = lead.locationVenue || lead.venue || '';
+  if (venue) {
+    properties['Location/Venue'] = { rich_text: [{ text: { content: venue } }] };
+  }
+  // Services Requested (multi_select)
+  if (Array.isArray(lead.services) && lead.services.length > 0) {
+    properties['Services Requested'] = { multi_select: lead.services.map((s) => ({ name: s })) };
+  }
+  // Number of Attendees
+  if (lead.attendees) {
+    const num = parseInt(lead.attendees, 10);
+    if (!isNaN(num)) {
+      properties['Number of Attendees'] = { number: num };
+    }
+  }
+  // Media Use (multi_select)
+  if (Array.isArray(lead.mediaUse) && lead.mediaUse.length > 0) {
+    properties['Media Use'] = { multi_select: lead.mediaUse.map((m) => ({ name: m })) };
+  }
+  // Industry (select)
+  if (lead.industry) {
+    properties['Industry'] = { select: { name: lead.industry } };
+  }
+  // Industry (Other)
+  if (lead.industryOther) {
+    properties['Industry (Other)'] = { rich_text: [{ text: { content: lead.industryOther } }] };
+  }
+  // Goals
+  if (lead.goals) {
+    properties['Goals'] = { rich_text: [{ text: { content: lead.goals.slice(0, 2000) } }] };
+  }
+  // Budget (multi_select)
+  if (Array.isArray(lead.budget) && lead.budget.length > 0) {
+    properties['Budget'] = { multi_select: lead.budget.map((b) => ({ name: b })) };
+  }
+  // Video Services (multi_select)
+  if (Array.isArray(lead.videoServices) && lead.videoServices.length > 0) {
+    properties['Video Services'] = { multi_select: lead.videoServices.map((v) => ({ name: v })) };
+  }
+  // Additional Info
+  if (lead.additionalInfo) {
+    properties['Additional Info'] = { rich_text: [{ text: { content: lead.additionalInfo.slice(0, 2000) } }] };
+  }
+  // Referral (multi_select)
+  if (Array.isArray(lead.referral) && lead.referral.length > 0) {
+    properties['Referral'] = { multi_select: lead.referral.map((r) => ({ name: r })) };
+  }
+  // Message (contact form)
+  if (lead.message) {
+    properties['Message'] = { rich_text: [{ text: { content: lead.message.slice(0, 2000) } }] };
+  }
 
   try {
     await notion.pages.create({
       parent: { database_id: dbId },
-      properties: {
-        Name: {
-          title: [{ text: { content: leadName } }],
-        },
-        Email: { email: lead.email },
-        ...(lead.phone ? { Phone: { phone_number: lead.phone } } : {}),
-        ...(lead.company
-          ? { Company: { rich_text: [{ text: { content: lead.company } }] } }
-          : {}),
-        ...(serviceLabel
-          ? { 'Event Type': { select: { name: serviceLabel.slice(0, 100) } } }
-          : {}),
-        ...(venue
-          ? { Venue: { rich_text: [{ text: { content: venue } }] } }
-          : {}),
-        ...(lead.eventDate
-          ? { 'Event Date': { date: { start: lead.eventDate, ...(lead.eventDateEnd ? { end: lead.eventDateEnd } : {}) } } }
-          : {}),
-        ...(messageText
-          ? { Message: { rich_text: [{ text: { content: messageText.slice(0, 2000) } }] } }
-          : {}),
-        Status: { select: { name: lead.status === 'new' ? 'New' : lead.status } },
-        Source: { select: { name: lead.source || 'contact-form' } },
-        'Submitted At': { date: { start: lead.submittedAt } },
-      },
+      properties,
     });
     return true;
   } catch (error) {
