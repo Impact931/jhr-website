@@ -164,6 +164,7 @@ export async function POST(request: NextRequest) {
       slug,
       competitorContext,
       geoScoring: geoResult,
+      proofing: articleResult.proofing || null,
     });
   } catch (error) {
     console.error('ContentOps generate error:', error);

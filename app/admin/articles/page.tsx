@@ -146,6 +146,23 @@ interface ValidationResult {
   fails: Array<{ label: string; detail?: string }>;
 }
 
+interface ProofingIssue {
+  severity: 'critical' | 'warning' | 'suggestion';
+  category: 'brand-voice' | 'ai-slop' | 'geo' | 'seo' | 'nashville' | 'structure';
+  description: string;
+  location?: string;
+  fix?: string;
+}
+
+interface ProofingResult {
+  passed: boolean;
+  overallScore: number;
+  brandVoiceScore: number;
+  geoReadiness: number;
+  seoScore: number;
+  issues: ProofingIssue[];
+}
+
 interface GenerationResult {
   title: string;
   slug: string;
@@ -155,6 +172,7 @@ interface GenerationResult {
   readingTime: number;
   internalLinks: number;
   externalLinks: number;
+  proofing?: ProofingResult;
 }
 
 interface BatchRow {
@@ -881,6 +899,114 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
               ))}
             </div>
           </div>
+
+          {/* Proofing Results */}
+          {generateResult.proofing && (
+            <div className="border-t border-jhr-black-lighter pt-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium text-jhr-white-dim flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Brand Voice & GEO Proofing
+                </h4>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  generateResult.proofing.passed
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-red-500/20 text-red-400'
+                }`}>
+                  {generateResult.proofing.passed ? 'PASSED' : 'NEEDS REVISION'}
+                </span>
+              </div>
+
+              {/* Proofing Score Bars */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Overall', score: generateResult.proofing.overallScore },
+                  { label: 'Brand Voice', score: generateResult.proofing.brandVoiceScore },
+                  { label: 'GEO Ready', score: generateResult.proofing.geoReadiness },
+                  { label: 'SEO', score: generateResult.proofing.seoScore },
+                ].map((item) => (
+                  <div key={item.label} className="bg-jhr-black rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs text-jhr-white-dim">{item.label}</span>
+                      <span className={`text-xs font-bold ${geoScoreTextColor(item.score)}`}>
+                        {item.score}
+                      </span>
+                    </div>
+                    <div className="w-full bg-jhr-black-lighter rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${geoScoreColor(item.score)}`}
+                        style={{ width: `${item.score}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Proofing Issues */}
+              {generateResult.proofing.issues.length > 0 && (
+                <div className="space-y-2">
+                  {generateResult.proofing.issues
+                    .sort((a, b) => {
+                      const order = { critical: 0, warning: 1, suggestion: 2 };
+                      return order[a.severity] - order[b.severity];
+                    })
+                    .map((issue, i) => (
+                    <div
+                      key={i}
+                      className={`rounded-lg p-3 border text-sm ${
+                        issue.severity === 'critical'
+                          ? 'bg-red-500/10 border-red-500/30'
+                          : issue.severity === 'warning'
+                          ? 'bg-yellow-500/10 border-yellow-500/30'
+                          : 'bg-blue-500/10 border-blue-500/30'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        {issue.severity === 'critical' ? (
+                          <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                        ) : issue.severity === 'warning' ? (
+                          <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                              issue.category === 'brand-voice' ? 'bg-purple-500/20 text-purple-400' :
+                              issue.category === 'ai-slop' ? 'bg-red-500/20 text-red-400' :
+                              issue.category === 'geo' ? 'bg-blue-500/20 text-blue-400' :
+                              issue.category === 'seo' ? 'bg-green-500/20 text-green-400' :
+                              issue.category === 'nashville' ? 'bg-yellow-500/20 text-yellow-400' :
+                              'bg-gray-500/20 text-gray-400'
+                            }`}>
+                              {issue.category}
+                            </span>
+                          </div>
+                          <p className={`${
+                            issue.severity === 'critical' ? 'text-red-300' :
+                            issue.severity === 'warning' ? 'text-yellow-300' :
+                            'text-blue-300'
+                          }`}>
+                            {issue.description}
+                          </p>
+                          {issue.location && (
+                            <p className="text-xs text-jhr-white-dim mt-1 italic truncate">
+                              &ldquo;{issue.location}&rdquo;
+                            </p>
+                          )}
+                          {issue.fix && (
+                            <p className="text-xs text-jhr-white-dim mt-1">
+                              <span className="text-jhr-gold">Fix:</span> {issue.fix}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

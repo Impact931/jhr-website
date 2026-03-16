@@ -1,6 +1,9 @@
 // ContentOps Engine — Phase 2: Article Generation via Anthropic Claude
+// Loads full brand voice + ICP docs, includes Claude proofing loop
 
 import Anthropic from '@anthropic-ai/sdk';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import type { ContentOpsConfig, ResearchPayload, ArticlePayload, CompetitorContext } from './types';
 import { getICPPromptBlock } from './icp-templates';
 
@@ -19,46 +22,47 @@ const INTERNAL_LINK_MAP: Record<string, string> = {
   '/schedule': 'schedule a strategy call',
 };
 
-const PROHIBITED_PHRASES = [
-  'in today\'s fast-paced world',
-  'in the ever-evolving landscape',
-  'it\'s no secret that',
-  'at the end of the day',
-  'game-changer',
-  'synergy',
-  'leverage',
-  'move the needle',
-  'deep dive',
-  'circle back',
-  'low-hanging fruit',
-  'best-in-class',
-  'cutting-edge',
-  'world-class',
-  'second to none',
-  'look no further',
-  'without further ado',
-  'crucial',
-  'delve',
-  'comprehensive',
-  'furthermore',
-  'moreover',
-  'utilize',
-  'streamline',
-  'innovative',
-  'state-of-the-art',
-  'it is important to note',
-  'it goes without saying',
-  'solutions-oriented',
-  'paradigm',
-  'robust',
-  'seamless',
-  'elevate',
-  'landscape',
-  'navigate',
-  'empower',
-  'unlock',
-  'harness',
-];
+// ─── Load brand voice documents from disk ────────────────────────────────────
+
+function loadBrandVoice(): string {
+  try {
+    return readFileSync(
+      join(process.cwd(), '.claude/skills/foundation/jhr-brand-voice.md'),
+      'utf-8'
+    );
+  } catch {
+    console.warn('[ContentOps] Brand voice file not found, using inline fallback');
+    return '';
+  }
+}
+
+function loadICPProfiles(): string {
+  try {
+    return readFileSync(
+      join(process.cwd(), '.claude/skills/foundation/jhr-icp-profiles.md'),
+      'utf-8'
+    );
+  } catch {
+    console.warn('[ContentOps] ICP profiles file not found, using inline fallback');
+    return '';
+  }
+}
+
+// Cache loaded docs in memory for the process lifetime
+let _brandVoiceCache: string | null = null;
+let _icpProfilesCache: string | null = null;
+
+function getBrandVoice(): string {
+  if (_brandVoiceCache === null) _brandVoiceCache = loadBrandVoice();
+  return _brandVoiceCache;
+}
+
+function getICPProfiles(): string {
+  if (_icpProfilesCache === null) _icpProfilesCache = loadICPProfiles();
+  return _icpProfilesCache;
+}
+
+// ─── Competitor analysis block ───────────────────────────────────────────────
 
 function buildCompetitorBlock(competitor: CompetitorContext): string {
   const pageDetails = competitor.pages
@@ -73,10 +77,14 @@ ${pageDetails}
 
 **Averages:** ${competitor.avgWordCount} words, ${competitor.avgH2Count} H2 sections, ${competitor.avgExternalLinks} external links.
 
-Competitor analysis shows the top ${competitor.pages.length} ranking articles average ${competitor.avgWordCount} words with ${competitor.avgH2Count} H2 sections. Your article must exceed this depth — aim for at least ${Math.round(competitor.avgWordCount * 1.2)} words and ${competitor.avgH2Count + 1}+ H2 sections to outperform competitors.`;
+Your article must exceed this depth — aim for at least ${Math.round(competitor.avgWordCount * 1.2)} words and ${competitor.avgH2Count + 1}+ H2 sections to outperform competitors.`;
 }
 
+// ─── System prompt builder ───────────────────────────────────────────────────
+
 function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, competitorContext?: CompetitorContext | null): string {
+  const brandVoice = getBrandVoice();
+  const icpProfiles = getICPProfiles();
   const icpBlock = getICPPromptBlock(config.icpTag);
 
   const internalLinkLines = Object.entries(INTERNAL_LINK_MAP)
@@ -115,7 +123,12 @@ function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, 
     .map((k) => `"${k}"`)
     .join(', ');
 
-  return `## Layer 1: Identity & Voice (JHR Brand Voice Guide)
+  // Use the full brand voice doc if available, otherwise fall back to inline
+  const voiceSection = brandVoice
+    ? `## Layer 1: JHR Brand Voice (Full Document)
+
+${brandVoice}`
+    : `## Layer 1: Identity & Voice (JHR Brand Voice Guide)
 
 You are writing as JHR Photography, Nashville's premier event and corporate photography company with 15+ years of experience.
 
@@ -140,33 +153,24 @@ You are writing as JHR Photography, Nashville's premier event and corporate phot
 - Close with invitation to conversation, not hard sell
 - Nashville-specific examples when relevant
 
-### Boundary Pairs — Be This, Not That
-- Warm, not overly familiar | Confident, not arrogant | Direct, not blunt
-- Professional, not stiff | Knowledgeable, not lecturing | Specific, not jargon-heavy
+Write naturally. Avoid cliches and filler. Every sentence should deliver value.`;
 
-### Content Quality Tests (apply after writing)
-1. Could any photographer in any city have written this? If yes, add JHR-specific details.
-2. Does it sound AI-generated? Vary sentence length, add natural touches.
-3. Would Jayson Rivas actually say this? Make it conversational.
-4. Does this make the CLIENT the hero? Reframe if JHR is the hero.
+  // Use full ICP profiles if available, combined with the specific ICP block
+  const icpSection = icpProfiles
+    ? `## Layer 2: ICP Context
 
-### Prohibited Terms — NEVER use these
-**AI-default vocabulary blocklist:**
-${PROHIBITED_PHRASES.map((p) => `- "${p}"`).join('\n')}
-
-**JHR-specific term replacements:**
-- "hourly rate" → "engagement pricing"
-- "freelancer" → "operator" or "team member"
-- "discount" → "strategic rate"
-- "coverage" (as in "we provide coverage") → "intentional media" or "documentation"
-- "photo booth" → "headshot activation"
-- "cost" → "investment"
-
-Write naturally. Avoid cliches and filler. Every sentence should deliver value.
-
-## Layer 2: ICP Context
-
+### Target ICP for This Article
 ${icpBlock}
+
+### Full ICP Reference (use for depth and authenticity)
+${icpProfiles}`
+    : `## Layer 2: ICP Context
+
+${icpBlock}`;
+
+  return `${voiceSection}
+
+${icpSection}
 
 ## Layer 3: SEO + GEO Directives
 
@@ -175,17 +179,21 @@ Primary keyword: "${config.primaryKeyword}"
 Word count target: ${config.wordCountTarget} words (acceptable range: 1000-3000 words, NEVER exceed 3000)
 
 ### Required Structure
-1. **Quick Answer block**: Start with a 50-75 word direct answer to the core question. This block should be self-contained and quotable by AI systems.
+1. **Quick Answer block**: Start with a 50-75 word direct answer to the core question. This block should be self-contained and quotable by AI systems. Include at least one specific number or named entity.
 2. **Minimum 4 H2 headings**: Create a logical, scannable structure with descriptive H2s that include keyword variations.
 3. **Minimum 3 statistics**: Weave in real statistics with source attributions naturally throughout the article.
 4. **FAQ block**: Do NOT include FAQ in the body field. FAQs go ONLY in the separate "faqBlock" JSON array (minimum 5 Q&A pairs). The FAQ section is rendered separately on the page.
 5. **Meta fields**: Generate SEO-optimized title, meta description (140-160 characters), and excerpt.
 
-### GEO Optimization
+### GEO Optimization (Critical for AI Search Citation)
+- The first 200 words must directly answer the primary query — AI retrieval systems evaluate relevance from opening content
+- Keep paragraphs to 2-3 sentences max — AI engines extract individual passages, not walls of text
+- Each section should be self-contained and make sense without surrounding context
 - Include a quotable definition or key concept that AI systems can extract
-- Use named entities (specific organizations, places, people, tools) frequently
+- Use named entities (specific organizations, places, people, tools) frequently — minimum 10 throughout
 - Cite external sources inline with links
 - Structure headings as question-based where natural
+- Include Nashville-specific data that no generic article would have
 
 ## Layer 4: Link Rules
 
@@ -291,6 +299,182 @@ Ensure:
 - All JSON is valid and parseable`;
 }
 
+// ─── Claude Proofing Loop ────────────────────────────────────────────────────
+
+export interface ProofingResult {
+  passed: boolean;
+  overallScore: number;
+  brandVoiceScore: number;
+  geoReadiness: number;
+  seoScore: number;
+  issues: ProofingIssue[];
+  revisedArticle?: ArticlePayload;
+}
+
+interface ProofingIssue {
+  severity: 'critical' | 'warning' | 'suggestion';
+  category: 'brand-voice' | 'ai-slop' | 'geo' | 'seo' | 'nashville' | 'structure';
+  description: string;
+  location?: string;
+  fix?: string;
+}
+
+function buildProofingPrompt(article: ArticlePayload, config: ContentOpsConfig): string {
+  const brandVoice = getBrandVoice();
+
+  return `You are the JHR Photography content quality editor. Your job is to proof this article against the brand voice guide, GEO best practices, and SEO requirements. Be rigorous — this article must rank in the top 3 on Google AND get cited by AI search engines.
+
+## BRAND VOICE REFERENCE
+${brandVoice || 'Brand voice document not available — check for: AI-sounding language, generic phrasing, and client-as-hero framing.'}
+
+## ARTICLE TO PROOF
+
+Title: ${article.title}
+Primary Keyword: ${article.primaryKeyword}
+ICP: ${config.icpTag}
+Word Count: ${article.wordCount}
+Quick Answer: ${article.quickAnswer}
+
+Body:
+${article.body}
+
+FAQ Block:
+${article.faqBlock.map((f) => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n')}
+
+## PROOFING CHECKLIST
+
+Score each category 0-100 and identify specific issues:
+
+### 1. Brand Voice (0-100)
+- Does it follow the StoryBrand framework? (Client = hero, JHR = guide)
+- Does it match the EDUCATING tone context?
+- Are the voice attributes present? (Warm, Direct, Confident, Solution-Focused, Relationship-First)
+- Does it pass the 5 Content Quality Tests? (Vendor Test, Robot Test, Jayson Test, Hero Test, Warmth Test)
+- Are prohibited terms/phrases used? Check EVERY word against the blocklist.
+- Are JHR-specific term replacements followed? (hourly rate→engagement pricing, etc.)
+
+### 2. AI Slop Detection (deducted from Brand Voice score)
+- Flag ANY instance of: crucial, delve, comprehensive, furthermore, moreover, utilize, streamline, innovative, cutting-edge, state-of-the-art, robust, seamless, elevate, landscape (business metaphor), navigate (business metaphor), empower, unlock, harness, paradigm, synergy, game-changer, leverage
+- Flag generic sentences that could apply to any photographer in any city
+- Flag sentences that don't deliver specific value
+- Flag excessive exclamation points or forced enthusiasm
+
+### 3. GEO Readiness (0-100)
+- Does the first 200 words directly answer the primary query?
+- Are paragraphs 2-3 sentences max? (AI engines extract passages, not walls)
+- Are sections self-contained? (Each should make sense without context)
+- Is there a quotable definition or key concept AI can extract?
+- Are there 10+ named entities throughout? (Organizations, places, people, specific tools)
+- Are statistics cited with sources inline?
+- Are headings question-based where natural?
+- Quick answer: is it 50-75 words, self-contained, with a specific number?
+
+### 4. SEO Score (0-100)
+- Primary keyword in title, H1, first 100 words, and meta description?
+- Minimum 4 H2 headings with keyword variations?
+- Meta description 140-160 characters?
+- Minimum 4 external links (no competitor links)?
+- Minimum 2 internal links?
+- At least 1 preferred partner link (Nashville Adventures, Visit Music City, Nashville Chamber)?
+- Minimum 5 FAQ items with substantive answers?
+- Nashville-specific content that shows genuine local knowledge?
+
+### 5. Nashville Authenticity
+- Does it reference specific Nashville venues, neighborhoods, or landmarks?
+- Does it include Nashville-specific data points (not generic + "Nashville" appended)?
+- Would a Nashville event professional recognize this as written by someone who knows the market?
+
+Return ONLY valid JSON (no markdown fences):
+
+{
+  "passed": true/false,
+  "overallScore": 0-100,
+  "brandVoiceScore": 0-100,
+  "geoReadiness": 0-100,
+  "seoScore": 0-100,
+  "issues": [
+    {
+      "severity": "critical|warning|suggestion",
+      "category": "brand-voice|ai-slop|geo|seo|nashville|structure",
+      "description": "What's wrong",
+      "location": "Where in the article (optional — quote the problematic text)",
+      "fix": "Specific suggested fix (optional)"
+    }
+  ],
+  "revisedBody": "If there are critical issues, provide a revised version of the full HTML body with all issues fixed. If no critical issues, set to null."
+}
+
+SCORING:
+- overallScore = weighted average: brandVoice (30%) + geoReadiness (30%) + seoScore (25%) + nashvilleAuthenticity (15%)
+- passed = true if overallScore >= 75 AND zero critical issues
+- Be specific about locations — quote the problematic text so the issue can be found`;
+}
+
+async function runProofingLoop(
+  article: ArticlePayload,
+  config: ContentOpsConfig,
+  apiKey: string
+): Promise<ProofingResult> {
+  const client = new Anthropic({ apiKey });
+  const proofingPrompt = buildProofingPrompt(article, config);
+
+  const response = await client.messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 8192,
+    system: 'You are a rigorous content quality editor for JHR Photography. Return only valid JSON. Be specific and actionable in your feedback.',
+    messages: [{ role: 'user', content: proofingPrompt }],
+    temperature: 0.2,
+  });
+
+  const textBlock = response.content.find((block) => block.type === 'text');
+  if (!textBlock || textBlock.type !== 'text') {
+    return {
+      passed: false,
+      overallScore: 0,
+      brandVoiceScore: 0,
+      geoReadiness: 0,
+      seoScore: 0,
+      issues: [{ severity: 'critical', category: 'structure', description: 'Proofing API returned no content' }],
+    };
+  }
+
+  let cleaned = textBlock.text.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?\s*```\s*$/, '');
+  }
+
+  const result = JSON.parse(cleaned);
+
+  // If proofing returned a revised body, apply it to the article
+  let revisedArticle: ArticlePayload | undefined;
+  if (result.revisedBody && typeof result.revisedBody === 'string') {
+    revisedArticle = {
+      ...article,
+      body: result.revisedBody,
+      wordCount: result.revisedBody.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length,
+    };
+    revisedArticle.readTime = Math.ceil(revisedArticle.wordCount / 250);
+  }
+
+  return {
+    passed: result.passed ?? false,
+    overallScore: result.overallScore ?? 0,
+    brandVoiceScore: result.brandVoiceScore ?? 0,
+    geoReadiness: result.geoReadiness ?? 0,
+    seoScore: result.seoScore ?? 0,
+    issues: (result.issues || []).map((i: ProofingIssue) => ({
+      severity: i.severity || 'warning',
+      category: i.category || 'structure',
+      description: i.description || '',
+      location: i.location,
+      fix: i.fix,
+    })),
+    revisedArticle,
+  };
+}
+
+// ─── Parse & validate ────────────────────────────────────────────────────────
+
 function parseArticleResponse(content: string): ArticlePayload {
   let cleaned = content.trim();
   if (cleaned.startsWith('```')) {
@@ -299,7 +483,6 @@ function parseArticleResponse(content: string): ArticlePayload {
 
   const parsed = JSON.parse(cleaned);
 
-  // Validate required fields exist
   const requiredFields = [
     'title', 'slug', 'metaTitle', 'metaDescription', 'excerpt',
     'quickAnswer', 'body', 'wordCount', 'readTime', 'icpTag',
@@ -316,11 +499,13 @@ function parseArticleResponse(content: string): ArticlePayload {
   return parsed as ArticlePayload;
 }
 
+// ─── Main generation function ────────────────────────────────────────────────
+
 export async function generateArticle(
   config: ContentOpsConfig,
   research: ResearchPayload,
   competitorContext?: CompetitorContext | null
-): Promise<{ data?: ArticlePayload; error?: string }> {
+): Promise<{ data?: ArticlePayload; proofing?: ProofingResult; error?: string }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return { error: 'ANTHROPIC_API_KEY environment variable is not set' };
@@ -332,16 +517,12 @@ export async function generateArticle(
   try {
     const client = new Anthropic({ apiKey });
 
+    // Phase 2a: Generate the article
     const response = await client.messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 8192,
       system: systemPrompt,
-      messages: [
-        {
-          role: 'user',
-          content: userPrompt,
-        },
-      ],
+      messages: [{ role: 'user', content: userPrompt }],
       temperature: 0.7,
     });
 
@@ -350,8 +531,34 @@ export async function generateArticle(
       return { error: 'Anthropic API returned no text content' };
     }
 
-    const data = parseArticleResponse(textBlock.text);
-    return { data };
+    let article = parseArticleResponse(textBlock.text);
+
+    // Phase 2b: Run the proofing loop
+    let proofing: ProofingResult;
+    try {
+      proofing = await runProofingLoop(article, config, apiKey);
+
+      // If proofing returned a revised article with fixes, use it
+      if (proofing.revisedArticle && !proofing.passed) {
+        article = proofing.revisedArticle;
+      }
+    } catch (proofErr) {
+      console.error('[ContentOps] Proofing loop failed:', proofErr);
+      proofing = {
+        passed: false,
+        overallScore: 0,
+        brandVoiceScore: 0,
+        geoReadiness: 0,
+        seoScore: 0,
+        issues: [{
+          severity: 'warning',
+          category: 'structure',
+          description: `Proofing loop failed: ${proofErr instanceof Error ? proofErr.message : 'Unknown error'}`,
+        }],
+      };
+    }
+
+    return { data: article, proofing };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error during generation';
     return { error: `Article generation failed: ${message}` };
