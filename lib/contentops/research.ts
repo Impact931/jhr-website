@@ -116,6 +116,7 @@ export async function runResearch(
         ],
         temperature: 0.1,
       }),
+      signal: AbortSignal.timeout(30_000), // 30s timeout
     });
 
     if (!response.ok) {

@@ -4,8 +4,11 @@ import { authOptions } from '@/lib/auth';
 import { runResearch } from '@/lib/contentops/research';
 import { scrapeCompetitors } from '@/lib/contentops/competitor-scrape';
 
+// Allow up to 60s for Perplexity research
+export const maxDuration = 60;
+
 /**
- * POST /api/admin/contentops/research — Run Phase 1 research + competitor scraping
+ * POST /api/admin/contentops/research — Run Phase 1 research + optional competitor scraping
  *
  * Body: { topic: string, icpTag: string, primaryKeyword: string }
  * Response: { research: ResearchPayload, competitorContext?: CompetitorContext } or { error: string }
@@ -33,10 +36,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    // Scrape competitor URLs from research results (graceful fallback on failure)
+    // Attempt competitor scraping with a tight timeout — skip if it takes too long
+    // This prevents the whole request from timing out on Amplify Lambda
     let competitorContext = null;
     if (result.data?.competitorUrls && result.data.competitorUrls.length > 0) {
-      competitorContext = await scrapeCompetitors(result.data.competitorUrls);
+      try {
+        const scrapePromise = scrapeCompetitors(result.data.competitorUrls);
+        const timeoutPromise = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 15_000)
+        );
+        competitorContext = await Promise.race([scrapePromise, timeoutPromise]);
+      } catch {
+        // Competitor scraping is optional — proceed without it
+        console.warn('[ContentOps] Competitor scraping skipped (timeout or error)');
+      }
     }
 
     return NextResponse.json({

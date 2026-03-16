@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 
+// GA4 Data API runs 4 parallel reports
+export const maxDuration = 30;
+
 export async function GET(req: NextRequest) {
   // Auth check
   const session = await getServerSession(authOptions);

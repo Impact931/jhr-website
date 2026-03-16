@@ -10,6 +10,9 @@ import { saveBlogPost } from '@/lib/blog-content';
 import { generateSlug } from '@/types/blog';
 import type { PageSectionContent } from '@/types/inline-editor';
 
+// Full pipeline can take a while: research + generation + validation
+export const maxDuration = 120;
+
 /**
  * POST /api/admin/contentops/generate — Full pipeline: research -> generate -> validate -> save draft
  */

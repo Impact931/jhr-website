@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+// Batch processes multiple articles sequentially
+export const maxDuration = 300;
+
 interface BatchTopic {
   topic: string;
   primaryKeyword: string;
