@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
-  Search, Users, Mail, Calendar, Phone, Building2, MapPin, FileText,
+  Search, Users, Mail, Calendar, Phone, Building2, MapPin, FileText, Globe,
   Inbox, Loader2, AlertCircle, ChevronDown, ChevronUp, RefreshCw,
   CheckCircle, DollarSign, TrendingUp, Clock, ExternalLink,
   Zap, Database, Link2, ArrowRight, BarChart3,
@@ -26,9 +26,25 @@ interface Lead {
   company?: string;
   eventType?: string;
   service?: string;
+  services?: string[];
   venue?: string;
+  locationVenue?: string;
   eventDate?: string;
+  eventDateEnd?: string;
   message?: string;
+  eventDescription?: string;
+  clientEventName?: string;
+  positionTitle?: string;
+  website?: string;
+  attendees?: string;
+  multiDay?: boolean;
+  mediaUse?: string[];
+  industry?: string;
+  goals?: string;
+  budget?: string[];
+  videoServices?: string[];
+  additionalInfo?: string;
+  referral?: string[];
   status?: string;
   submittedAt?: string;
   inquiryDate?: string;
@@ -839,7 +855,7 @@ function LeadRow({
 }) {
   const status = (lead.status || 'new').toLowerCase();
   const dateStr = lead.inquiryDate || lead.submittedAt;
-  const service = lead.service || lead.eventType || '';
+  const service = lead.service || (Array.isArray(lead.services) ? lead.services.join(', ') : '') || lead.eventType || '';
 
   return (
     <>
@@ -916,18 +932,20 @@ function LeadRow({
                   <span className="text-body-sm text-jhr-white">{lead.phone}</span>
                 </div>
               )}
-              {lead.venue && (
+              {(lead.venue || lead.locationVenue) && (
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-jhr-white-dim" />
                   <span className="text-body-sm text-jhr-white-dim">Venue:</span>
-                  <span className="text-body-sm text-jhr-white">{lead.venue}</span>
+                  <span className="text-body-sm text-jhr-white">{lead.venue || lead.locationVenue}</span>
                 </div>
               )}
               {lead.eventDate && (
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-jhr-white-dim" />
                   <span className="text-body-sm text-jhr-white-dim">Event Date:</span>
-                  <span className="text-body-sm text-jhr-white">{lead.eventDate}</span>
+                  <span className="text-body-sm text-jhr-white">
+                    {lead.eventDate}{lead.eventDateEnd ? ` — ${lead.eventDateEnd}` : ''}
+                  </span>
                 </div>
               )}
               {lead.company && (
@@ -937,13 +955,70 @@ function LeadRow({
                   <span className="text-body-sm text-jhr-white">{lead.company}</span>
                 </div>
               )}
-              {lead.message && (
+              {lead.clientEventName && (
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-jhr-white-dim" />
+                  <span className="text-body-sm text-jhr-white-dim">Event:</span>
+                  <span className="text-body-sm text-jhr-white">{lead.clientEventName}</span>
+                </div>
+              )}
+              {lead.attendees && (
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-jhr-white-dim" />
+                  <span className="text-body-sm text-jhr-white-dim">Attendees:</span>
+                  <span className="text-body-sm text-jhr-white">{lead.attendees}</span>
+                </div>
+              )}
+              {lead.website && (
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-jhr-white-dim" />
+                  <span className="text-body-sm text-jhr-white-dim">Website:</span>
+                  <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer" className="text-body-sm text-jhr-gold hover:underline">{lead.website}</a>
+                </div>
+              )}
+              {service && (
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-jhr-white-dim" />
+                  <span className="text-body-sm text-jhr-white-dim">Service:</span>
+                  <span className="text-body-sm text-jhr-white">{service}</span>
+                </div>
+              )}
+              {Array.isArray(lead.referral) && lead.referral.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-jhr-white-dim" />
+                  <span className="text-body-sm text-jhr-white-dim">Referral:</span>
+                  <span className="text-body-sm text-jhr-white">{lead.referral.join(', ')}</span>
+                </div>
+              )}
+              {(lead.message || lead.eventDescription) && (
                 <div className="md:col-span-2">
                   <div className="flex items-start gap-2">
                     <FileText className="w-4 h-4 text-jhr-white-dim mt-0.5" />
                     <div>
-                      <span className="text-body-sm text-jhr-white-dim">Message:</span>
-                      <p className="text-body-sm text-jhr-white mt-1">{lead.message}</p>
+                      <span className="text-body-sm text-jhr-white-dim">{lead.eventDescription ? 'Event Description:' : 'Message:'}</span>
+                      <p className="text-body-sm text-jhr-white mt-1">{lead.message || lead.eventDescription}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {lead.goals && (
+                <div className="md:col-span-2">
+                  <div className="flex items-start gap-2">
+                    <FileText className="w-4 h-4 text-jhr-white-dim mt-0.5" />
+                    <div>
+                      <span className="text-body-sm text-jhr-white-dim">Goals:</span>
+                      <p className="text-body-sm text-jhr-white mt-1">{lead.goals}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {lead.additionalInfo && (
+                <div className="md:col-span-2">
+                  <div className="flex items-start gap-2">
+                    <FileText className="w-4 h-4 text-jhr-white-dim mt-0.5" />
+                    <div>
+                      <span className="text-body-sm text-jhr-white-dim">Additional Info:</span>
+                      <p className="text-body-sm text-jhr-white mt-1">{lead.additionalInfo}</p>
                     </div>
                   </div>
                 </div>

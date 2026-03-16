@@ -5,15 +5,35 @@ import { fetchNotionLeads, bulkSyncLeadsToNotion } from '@/lib/notion';
 interface LeadRecord {
   pk: string;
   sk: string;
-  firstName: string;
-  lastName: string;
+  // Contact form fields
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone?: string;
   company?: string;
   eventType?: string;
   venue?: string;
   eventDate?: string;
-  message: string;
+  message?: string;
+  // Inquiry form fields
+  name?: string;
+  clientEventName?: string;
+  positionTitle?: string;
+  website?: string;
+  eventDescription?: string;
+  multiDay?: boolean;
+  eventDateEnd?: string;
+  locationVenue?: string;
+  services?: string[];
+  attendees?: string;
+  mediaUse?: string[];
+  industry?: string;
+  goals?: string;
+  budget?: string[];
+  videoServices?: string[];
+  additionalInfo?: string;
+  referral?: string[];
+  // Common
   status: string;
   submittedAt: string;
   source: string;

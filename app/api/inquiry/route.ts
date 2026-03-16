@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
 
     // Sync to Notion (fire-and-forget)
     const notionToken = process.env.NOTION_TOKEN;
-    const notionDbId = process.env.NOTION_LEAD_DB_ID;
+    const notionDbId = process.env.NOTION_LEADS_DB_ID || process.env.NOTION_LEAD_DB_ID;
 
     if (notionToken && notionDbId) {
       const notion = new Client({ auth: notionToken });
