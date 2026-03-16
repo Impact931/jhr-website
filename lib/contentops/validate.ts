@@ -61,6 +61,42 @@ function checkSoftFails(article: ArticlePayload): string[] {
     fails.push(`Found ${statsMatches.length} statistics in body, recommended minimum is 3`);
   }
 
+  // Check for competitor links in linkAudit
+  if (article.linkAudit) {
+    for (const link of article.linkAudit) {
+      if (link.type === 'external' && link.url) {
+        const urlLower = link.url.toLowerCase();
+        if (
+          (urlLower.includes('photographer') || urlLower.includes('photography')) &&
+          urlLower.includes('nashville')
+        ) {
+          fails.push(`External link to potential competitor detected: ${link.url}`);
+        }
+      }
+    }
+  }
+
+  // Check for preferred partner links in Nashville-focused articles
+  const topicIsNashville =
+    article.primaryKeyword?.toLowerCase().includes('nashville') ||
+    article.title?.toLowerCase().includes('nashville');
+  if (topicIsNashville && article.linkAudit) {
+    const preferredDomains = [
+      'nashvilleadventures.com',
+      'visitmusiccity.com',
+      'nashvillechamber.com',
+    ];
+    const hasPreferredPartner = article.linkAudit.some(
+      (link) =>
+        link.type === 'external' &&
+        link.url &&
+        preferredDomains.some((domain) => link.url.toLowerCase().includes(domain))
+    );
+    if (!hasPreferredPartner) {
+      fails.push('No preferred partner link found in Nashville-focused article');
+    }
+  }
+
   return fails;
 }
 

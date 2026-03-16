@@ -26,12 +26,14 @@ import {
   TrendingUp,
   ArrowRight,
   Zap,
+  Shield,
+  Globe,
 } from 'lucide-react';
 import Link from 'next/link';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type TabId = 'generate' | 'batch' | 'articles' | 'queue';
+type TabId = 'generate' | 'batch' | 'articles' | 'queue' | 'competitors';
 
 interface QueueRecommendation {
   id: string;
@@ -70,6 +72,42 @@ interface SerpPosition {
   competition: number | null;
   trend: 'rising' | 'falling' | 'stable' | null;
   monthlyTrend: number[];
+}
+
+interface CompetitorDomain {
+  domain: string;
+  organicCount: number;
+  avgPosition: number;
+  estimatedTraffic: number;
+  overlapKeywords: number;
+}
+
+interface CompetitorOpportunity {
+  keyword: string;
+  competitorDomain: string;
+  competitorPosition: number;
+  ourPosition: number | null;
+  searchVolume: number;
+  cpc: number | null;
+  competition: number | null;
+  difficulty: 'easy' | 'medium' | 'hard';
+  suggestedAction: 'create' | 'optimize' | 'overtake';
+}
+
+interface CompetitorContentGap {
+  keyword: string;
+  searchVolume: number;
+  cpc: number | null;
+  topCompetitor: string;
+  competitorPosition: number;
+}
+
+interface CompetitorData {
+  generatedAt: string;
+  cachedUntil: string;
+  competitors: CompetitorDomain[];
+  opportunities: CompetitorOpportunity[];
+  contentGaps: CompetitorContentGap[];
 }
 
 interface QueueData {
@@ -184,6 +222,7 @@ const LOCATIONS = [
 
 const TABS: { id: TabId; label: string; icon: typeof Wand2 }[] = [
   { id: 'queue', label: 'Content Queue', icon: Target },
+  { id: 'competitors', label: 'Competitors', icon: Shield },
   { id: 'generate', label: 'Generate Article', icon: Wand2 },
   { id: 'batch', label: 'Batch Generator', icon: Layers },
   { id: 'articles', label: 'Generated Articles', icon: FileText },
@@ -289,6 +328,7 @@ export default function ArticlesDashboard() {
 
       {/* Tab Content */}
       {activeTab === 'queue' && <ContentQueueTab onGenerateClick={handleGenerateFromQueue} />}
+      {activeTab === 'competitors' && <CompetitorTab onGenerateClick={handleGenerateFromQueue} />}
       {activeTab === 'generate' && <GenerateTab prefill={prefill} onPrefillConsumed={() => setPrefill(null)} />}
       {activeTab === 'batch' && <BatchTab />}
       {activeTab === 'articles' && <ArticlesTab />}
@@ -1638,6 +1678,330 @@ function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueReco
       <p className="text-xs text-jhr-white-dim/40 text-center">
         Generated {new Date(data.generatedAt).toLocaleString()} — cached until {new Date(data.cachedUntil).toLocaleString()}
       </p>
+    </div>
+  );
+}
+
+// ─── Competitor Intelligence Tab ──────────────────────────────────────────────
+
+function CompetitorTab({ onGenerateClick }: { onGenerateClick: (rec: QueueRecommendation) => void }) {
+  const [data, setData] = useState<CompetitorData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async (refresh = false) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const url = `/api/admin/contentops/competitors${refresh ? '?refresh=true' : ''}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      const json = await res.json();
+      if (json.error) throw new Error(json.error);
+      setData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load competitor data');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const DIFFICULTY_COLORS: Record<string, { bg: string; text: string }> = {
+    easy: { bg: 'bg-green-500/20', text: 'text-green-400' },
+    medium: { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
+    hard: { bg: 'bg-red-500/20', text: 'text-red-400' },
+  };
+
+  const ACTION_MAP: Record<string, { bg: string; text: string; label: string }> = {
+    create: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Create New' },
+    optimize: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Optimize' },
+    overtake: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Overtake' },
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-8 h-8 text-jhr-gold animate-spin mx-auto" />
+          <p className="text-jhr-white-dim text-sm">Analyzing competitor landscape...</p>
+          <p className="text-jhr-white-dim/50 text-xs">This may take 30-60 seconds on first load</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 text-center">
+        <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+        <p className="text-red-400 font-medium">{error}</p>
+        <button onClick={() => fetchData(true)} className="mt-3 px-4 py-2 bg-jhr-gold/20 text-jhr-gold rounded-lg text-sm hover:bg-jhr-gold/30 transition-colors">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const easyWins = data.opportunities.filter(o => o.difficulty === 'easy');
+  const totalGaps = data.contentGaps.length;
+  const totalOpps = data.opportunities.length;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-jhr-white">Competitor Intelligence</h2>
+          <p className="text-sm text-jhr-white-dim">Discover what competitors rank for and where you can overtake them</p>
+        </div>
+        <button
+          onClick={() => fetchData(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-jhr-black-lighter hover:bg-jhr-black-lighter/80 text-jhr-white-dim rounded-lg text-sm transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-4">
+          <p className="text-xs text-jhr-white-dim uppercase tracking-wide">Competitors Found</p>
+          <p className="text-2xl font-bold text-jhr-white mt-1">{data.competitors.length}</p>
+        </div>
+        <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-4">
+          <p className="text-xs text-jhr-white-dim uppercase tracking-wide">Opportunities</p>
+          <p className="text-2xl font-bold text-jhr-gold mt-1">{totalOpps}</p>
+        </div>
+        <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-4">
+          <p className="text-xs text-jhr-white-dim uppercase tracking-wide">Easy Wins</p>
+          <p className="text-2xl font-bold text-green-400 mt-1">{easyWins.length}</p>
+        </div>
+        <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-4">
+          <p className="text-xs text-jhr-white-dim uppercase tracking-wide">Content Gaps</p>
+          <p className="text-2xl font-bold text-blue-400 mt-1">{totalGaps}</p>
+        </div>
+      </div>
+
+      {/* Competitor Domains */}
+      {data.competitors.length > 0 && (
+        <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-5">
+          <h3 className="text-sm font-semibold text-jhr-white mb-3 flex items-center gap-2">
+            <Globe className="w-4 h-4 text-jhr-gold" />
+            Competing Domains
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-jhr-white-dim text-xs uppercase tracking-wide border-b border-jhr-black-lighter">
+                  <th className="text-left py-2 pr-4">Domain</th>
+                  <th className="text-right py-2 px-3">Organic Keywords</th>
+                  <th className="text-right py-2 px-3">Avg Position</th>
+                  <th className="text-right py-2 px-3">Est. Traffic</th>
+                  <th className="text-right py-2 px-3">Keyword Overlap</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.competitors.map((c) => (
+                  <tr key={c.domain} className="border-b border-jhr-black-lighter/30 last:border-0 hover:bg-jhr-black-lighter/20">
+                    <td className="py-2.5 pr-4">
+                      <span className="text-jhr-white font-medium">{c.domain}</span>
+                    </td>
+                    <td className="text-right py-2.5 px-3 text-jhr-white-dim">{c.organicCount.toLocaleString()}</td>
+                    <td className="text-right py-2.5 px-3 text-jhr-white-dim">{c.avgPosition.toFixed(1)}</td>
+                    <td className="text-right py-2.5 px-3 text-jhr-white-dim">{c.estimatedTraffic.toLocaleString()}</td>
+                    <td className="text-right py-2.5 px-3">
+                      <span className={`${c.overlapKeywords > 0 ? 'text-yellow-400' : 'text-jhr-white-dim/50'}`}>
+                        {c.overlapKeywords}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Opportunities — keywords we can target */}
+      {data.opportunities.length > 0 && (
+        <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-5">
+          <h3 className="text-sm font-semibold text-jhr-white mb-3 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-jhr-gold" />
+            Keyword Opportunities
+            <span className="text-xs font-normal text-jhr-white-dim ml-auto">
+              Sorted by difficulty (easiest first)
+            </span>
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-jhr-white-dim text-xs uppercase tracking-wide border-b border-jhr-black-lighter">
+                  <th className="text-left py-2 pr-4">Keyword</th>
+                  <th className="text-right py-2 px-3">Volume</th>
+                  <th className="text-right py-2 px-3">CPC</th>
+                  <th className="text-center py-2 px-3">Difficulty</th>
+                  <th className="text-right py-2 px-3">Their Pos.</th>
+                  <th className="text-right py-2 px-3">Our Pos.</th>
+                  <th className="text-center py-2 px-3">Action</th>
+                  <th className="text-right py-2 px-3">Competitor</th>
+                  <th className="text-right py-2 px-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.opportunities
+                  .sort((a, b) => {
+                    const diff = { easy: 0, medium: 1, hard: 2 };
+                    return (diff[a.difficulty] - diff[b.difficulty]) || (b.searchVolume - a.searchVolume);
+                  })
+                  .map((opp, i) => {
+                    const diffStyle = DIFFICULTY_COLORS[opp.difficulty] || DIFFICULTY_COLORS.medium;
+                    const actionStyle = ACTION_MAP[opp.suggestedAction] || ACTION_MAP.create;
+                    return (
+                      <tr key={`${opp.keyword}-${i}`} className="border-b border-jhr-black-lighter/30 last:border-0 hover:bg-jhr-black-lighter/20 group">
+                        <td className="py-2.5 pr-4">
+                          <span className="text-jhr-white font-medium">{opp.keyword}</span>
+                        </td>
+                        <td className="text-right py-2.5 px-3 text-jhr-white-dim">{opp.searchVolume.toLocaleString()}</td>
+                        <td className="text-right py-2.5 px-3 text-jhr-white-dim">
+                          {opp.cpc != null ? `$${opp.cpc.toFixed(2)}` : '—'}
+                        </td>
+                        <td className="text-center py-2.5 px-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${diffStyle.bg} ${diffStyle.text}`}>
+                            {opp.difficulty}
+                          </span>
+                        </td>
+                        <td className="text-right py-2.5 px-3 text-red-400 font-mono text-xs">
+                          #{opp.competitorPosition}
+                        </td>
+                        <td className="text-right py-2.5 px-3 font-mono text-xs">
+                          {opp.ourPosition ? (
+                            <span className="text-yellow-400">#{opp.ourPosition}</span>
+                          ) : (
+                            <span className="text-jhr-white-dim/40">—</span>
+                          )}
+                        </td>
+                        <td className="text-center py-2.5 px-3">
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${actionStyle.bg} ${actionStyle.text}`}>
+                            {actionStyle.label}
+                          </span>
+                        </td>
+                        <td className="text-right py-2.5 px-3 text-jhr-white-dim/60 text-xs truncate max-w-[120px]">
+                          {opp.competitorDomain}
+                        </td>
+                        <td className="text-right py-2.5 px-3">
+                          <button
+                            onClick={() => onGenerateClick({
+                              id: `comp-${i}`,
+                              keyword: opp.keyword,
+                              searchVolume: opp.searchVolume,
+                              cpc: opp.cpc,
+                              competition: opp.competition,
+                              trend: null,
+                              monthlyTrend: [],
+                              currentPosition: opp.ourPosition,
+                              currentUrl: null,
+                              recommendedAction: opp.suggestedAction === 'overtake' ? 'optimize' : 'create',
+                              suggestedTopic: `${opp.keyword} — Comprehensive Guide`,
+                              suggestedIcp: 'ICP-1',
+                              suggestedArticleType: 'ultimate-guide',
+                              priorityScore: opp.difficulty === 'easy' ? 90 : opp.difficulty === 'medium' ? 70 : 50,
+                              dataJustification: `Competitor ${opp.competitorDomain} ranks #${opp.competitorPosition}. ${opp.ourPosition ? `We rank #${opp.ourPosition}.` : 'We don\'t rank.'} Volume: ${opp.searchVolume}`,
+                            })}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-jhr-gold/20 hover:bg-jhr-gold/30 text-jhr-gold rounded-lg text-xs font-medium transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <ArrowRight className="w-3.5 h-3.5" />
+                            Create Better
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Content Gaps — keywords they rank for that we don't */}
+      {data.contentGaps.length > 0 && (
+        <div className="bg-jhr-black-light border border-jhr-black-lighter rounded-lg p-5">
+          <h3 className="text-sm font-semibold text-jhr-white mb-3 flex items-center gap-2">
+            <Target className="w-4 h-4 text-blue-400" />
+            Content Gaps
+            <span className="text-xs font-normal text-jhr-white-dim ml-auto">
+              Keywords competitors rank for that you don&apos;t
+            </span>
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-jhr-white-dim text-xs uppercase tracking-wide border-b border-jhr-black-lighter">
+                  <th className="text-left py-2 pr-4">Keyword</th>
+                  <th className="text-right py-2 px-3">Volume</th>
+                  <th className="text-right py-2 px-3">CPC</th>
+                  <th className="text-left py-2 px-3">Top Competitor</th>
+                  <th className="text-right py-2 px-3">Their Position</th>
+                  <th className="text-right py-2 px-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.contentGaps
+                  .sort((a, b) => b.searchVolume - a.searchVolume)
+                  .map((gap, i) => (
+                    <tr key={`gap-${i}`} className="border-b border-jhr-black-lighter/30 last:border-0 hover:bg-jhr-black-lighter/20 group">
+                      <td className="py-2.5 pr-4">
+                        <span className="text-jhr-white font-medium">{gap.keyword}</span>
+                      </td>
+                      <td className="text-right py-2.5 px-3 text-jhr-white-dim">{gap.searchVolume.toLocaleString()}</td>
+                      <td className="text-right py-2.5 px-3 text-jhr-white-dim">
+                        {gap.cpc != null ? `$${gap.cpc.toFixed(2)}` : '—'}
+                      </td>
+                      <td className="py-2.5 px-3 text-jhr-white-dim/60 text-xs">{gap.topCompetitor}</td>
+                      <td className="text-right py-2.5 px-3 text-red-400 font-mono text-xs">#{gap.competitorPosition}</td>
+                      <td className="text-right py-2.5 px-3">
+                        <button
+                          onClick={() => onGenerateClick({
+                            id: `gap-${i}`,
+                            keyword: gap.keyword,
+                            searchVolume: gap.searchVolume,
+                            cpc: gap.cpc,
+                            competition: null,
+                            trend: null,
+                            monthlyTrend: [],
+                            currentPosition: null,
+                            currentUrl: null,
+                            recommendedAction: 'create',
+                            suggestedTopic: `${gap.keyword} — Complete Guide`,
+                            suggestedIcp: 'ICP-1',
+                            suggestedArticleType: 'ultimate-guide',
+                            priorityScore: 85,
+                            dataJustification: `Content gap: ${gap.topCompetitor} ranks #${gap.competitorPosition}. Volume: ${gap.searchVolume}. We have no ranking content.`,
+                          })}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-xs font-medium transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Fill Gap
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Cache Info */}
+      {data.generatedAt && (
+        <p className="text-xs text-jhr-white-dim/40 text-center">
+          Generated {new Date(data.generatedAt).toLocaleString()} — cached until {new Date(data.cachedUntil).toLocaleString()}
+        </p>
+      )}
     </div>
   );
 }

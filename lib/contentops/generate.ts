@@ -116,6 +116,16 @@ Word count target: ${config.wordCountTarget} words (acceptable range: 1000-1800 
 ## Layer 4: Link Rules
 
 ### External Links (minimum 4)
+**Link Policy — MANDATORY:**
+- NEVER link to Nashville event photography or corporate photography competitors
+- PRIORITIZE linking to these preferred partners when Nashville context is relevant:
+  * [Nashville Adventures](https://www.nashvilleadventures.com) — Nashville tourism partner (mutual backlink agreement)
+  * [Visit Music City](https://www.visitmusiccity.com) — Official Nashville CVB
+  * [Nashville Chamber of Commerce](https://www.nashvillechamber.com) — Nashville business community
+- Include at least 1 preferred partner link when the article has Nashville context
+- Other external links should go to industry associations, trade publications, government sites, or research institutions
+- If you are unsure whether a source is a competitor, err on the side of using an industry association or trade publication instead
+
 Use these researched authority links naturally throughout the article:
 ${authorityLinksBlock}
 

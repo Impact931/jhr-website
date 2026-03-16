@@ -247,6 +247,71 @@ export async function getCompetitorKeywords(
   return results;
 }
 
+// ─── Domain Intersection (Competitor Gap Analysis) ──────────────────────────
+
+export interface DomainIntersectionResult {
+  keyword: string;
+  targetPosition: number | null;
+  competitorPosition: number;
+  searchVolume: number;
+  cpc: number | null;
+  competition: number | null;
+}
+
+/**
+ * Find keywords where a competitor ranks but we don't (or we rank worse).
+ * Uses DataForSEO Labs domain_intersection endpoint.
+ *
+ * Cost: ~$0.075 per call
+ */
+export async function getCompetitorDomainIntersection(
+  targetDomain: string,
+  competitorDomain: string,
+  limit = 50
+): Promise<DomainIntersectionResult[]> {
+  const data = await dataforseoFetch('dataforseo_labs/google/domain_intersection/live', [
+    {
+      target1: targetDomain,
+      target2: competitorDomain,
+      location_code: LOCATION_CODE,
+      language_code: LANGUAGE_CODE,
+      limit,
+      // Sort by competitor's search volume to surface high-value gaps
+      order_by: ['keyword_data.keyword_info.search_volume,desc'],
+      // Only return keywords where competitor ranks in top 30
+      filters: [
+        ['target2_serp_element.serp_item.rank_group', '<=', 30],
+      ],
+    },
+  ]);
+
+  const items = data.tasks?.[0]?.result?.[0]?.items || [];
+  const results: DomainIntersectionResult[] = [];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const item of items) {
+    const keyword = item.keyword_data?.keyword || '';
+    const kwInfo = item.keyword_data?.keyword_info || {};
+    const target1Pos = item.target1_serp_element?.serp_item?.rank_group ?? null;
+    const target2Pos = item.target2_serp_element?.serp_item?.rank_group ?? null;
+
+    // We want keywords where competitor ranks but we don't, or we rank worse
+    if (target2Pos === null) continue;
+    if (target1Pos !== null && target1Pos <= target2Pos) continue;
+
+    results.push({
+      keyword,
+      targetPosition: target1Pos,
+      competitorPosition: target2Pos,
+      searchVolume: kwInfo.search_volume || 0,
+      cpc: kwInfo.cpc ?? null,
+      competition: kwInfo.competition_index ?? null,
+    });
+  }
+
+  return results;
+}
+
 // ─── Credential Check ───────────────────────────────────────────────────────
 
 export function isConfigured(): boolean {

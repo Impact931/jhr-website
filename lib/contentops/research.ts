@@ -37,6 +37,14 @@ Gather the following and return ONLY valid JSON (no markdown fences, no explanat
   ]
 }
 
+IMPORTANT: Link sourcing rules:
+- PRIORITIZE citing content from these preferred partner sites when relevant:
+  * nashvilleadventures.com (Nashville tourism and activities)
+  * visitmusiccity.com (Nashville Convention & Visitors Corp)
+  * nashvillechamber.com (Nashville Area Chamber of Commerce)
+- NEVER include URLs from direct competitors in Nashville event photography or corporate photography. If a URL is from a photographer or photography studio operating in Nashville/Tennessee, exclude it from authorityLinks.
+- For authorityLinks, prefer: industry associations (PCMA, MPI, CEIR, IAEE), trade publications (BizBash, EventMB, Trade Show News Network), destination marketing organizations, government sites, and the preferred partners listed above.
+
 Return ONLY the JSON object. No markdown code fences. No additional text.`;
 }
 
