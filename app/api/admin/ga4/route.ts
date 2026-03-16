@@ -224,7 +224,7 @@ export async function GET(req: NextRequest) {
       error instanceof Error ? error.message : 'Unknown GA4 error';
     console.error('GA4 API error:', message);
     return NextResponse.json(
-      { error: `GA4 request failed: ${message}` },
+      { connected: false, error: `GA4 request failed: ${message}` },
       { status: 502 }
     );
   }

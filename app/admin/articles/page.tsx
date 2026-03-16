@@ -387,7 +387,24 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
       });
       if (!res.ok) throw new Error(await res.text() || 'Research failed');
       const data = await res.json();
-      setResearchResult(data);
+      // Map API response shape to UI's ResearchResult interface
+      const research = data.research || {};
+      setResearchResult({
+        stats: (research.currentStats || []).map((s: { stat: string; source: string }) => ({
+          text: s.stat,
+          source: s.source,
+          year: new Date().getFullYear(),
+        })),
+        authorityLinks: (research.authorityLinks || []).map((l: { url: string; domain: string }) => ({
+          url: l.url,
+          domainType: l.domain,
+        })),
+        expertQuotes: (research.expertQuotes || []).map((q: { quote: string; attribution: string }) => ({
+          quote: q.quote,
+          author: q.attribution,
+        })),
+        relatedQuestions: research.relatedQuestions || [],
+      });
       setResearchOpen(true);
     } catch (err: unknown) {
       setResearchError(err instanceof Error ? err.message : 'Research failed');
