@@ -29,6 +29,17 @@ export interface ResearchPayload {
   }>;
   relatedQuestions: string[];
   competitorUrls: string[];
+  // GEO & programmatic SEO fields
+  localInsights: Array<{
+    insight: string;
+    source: string;
+  }>;
+  contentGaps: string[];
+  geoAnswerFragments: Array<{
+    question: string;
+    answer: string;
+  }>;
+  topicClusterKeywords: string[];
 }
 
 export interface FAQItem {

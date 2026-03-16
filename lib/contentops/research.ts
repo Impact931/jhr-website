@@ -1,49 +1,158 @@
 // ContentOps Engine — Phase 1: Research via Perplexity Sonar API
+// Optimized for programmatic SEO + Generative Engine Optimization (GEO)
 
-import type { ResearchPayload } from './types';
+import type { ResearchPayload, ICPTag } from './types';
+import { getICPTemplate } from './icp-templates';
+import { PREFERRED_PARTNERS } from './link-policy';
 
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
 const PERPLEXITY_MODEL = 'sonar-pro';
 
-function buildResearchPrompt(topic: string, icp: string, primaryKeyword: string): string {
-  return `You are a research assistant gathering data for a professional article about "${topic}" targeting ${icp} audiences in the event photography and corporate media industry. The primary keyword is "${primaryKeyword}".
+// Nashville venue keywords to trigger hyper-local research
+const NASHVILLE_VENUES = [
+  'Music City Center',
+  'Gaylord Opryland',
+  'Bridgestone Arena',
+  'Ryman Auditorium',
+  'Grand Ole Opry House',
+  'Country Music Hall of Fame',
+  'Omni Nashville Hotel',
+  'JW Marriott Nashville',
+  'The Hermitage Hotel',
+  'Marathon Music Works',
+  'The Pinnacle at Symphony Place',
+  'Nashville Convention Center',
+];
 
-Gather the following and return ONLY valid JSON (no markdown fences, no explanation):
+function buildSystemMessage(icpTag: ICPTag): string {
+  const icp = getICPTemplate(icpTag);
+  return `You are a senior B2B content strategist specializing in the Nashville corporate events and conventions industry. You have deep expertise in ${icp.label.toLowerCase()} marketing, event industry trends, and Nashville's venue ecosystem.
+
+Your research supports article creation for JHR Photography — Nashville's premier event and corporate photography company. Articles must rank in the top 3 on Google AND get cited by AI search engines (Google AI Overviews, ChatGPT, Perplexity).
+
+Research rules:
+- Every data point must be specific, verifiable, and from a named source
+- Prefer data from 2024-2026. Reject anything older than 2022
+- Nashville-specific data always beats generic national data
+- Industry metrics that the target reader (${icp.label}) would find decision-useful
+- Return ONLY valid JSON. No markdown fences. No explanation text.`;
+}
+
+function buildResearchPrompt(
+  topic: string,
+  icpTag: ICPTag,
+  primaryKeyword: string
+): string {
+  const icp = getICPTemplate(icpTag);
+  const partnerDomains = PREFERRED_PARTNERS.map(
+    (p) => `  * ${p.domain} (${p.description})`
+  ).join('\n');
+
+  // Detect if topic mentions a specific Nashville venue for hyper-local research
+  const mentionedVenues = NASHVILLE_VENUES.filter(
+    (v) => topic.toLowerCase().includes(v.toLowerCase())
+  );
+  const venueContext = mentionedVenues.length > 0
+    ? `\nVENUE-SPECIFIC RESEARCH: The article focuses on ${mentionedVenues.join(', ')}. Find venue-specific data: capacity, notable events hosted, unique features, logistics details, and any published case studies or press coverage about events at this venue.`
+    : '';
+
+  return `Research topic: "${topic}"
+Primary keyword: "${primaryKeyword}"
+Target reader: ${icp.targetReader}
+
+Their key pain points:
+${icp.painPoints.map((p) => `- ${p}`).join('\n')}
+
+Language they use:
+${icp.languagePatterns.map((p) => `- "${p}"`).join('\n')}
+${venueContext}
+
+Gather the following research data and return as a single JSON object:
 
 {
   "currentStats": [
-    // Minimum 4 statistics with specific numbers relevant to the topic.
-    // Each must have a "stat" (the data point as a sentence) and "source" (where it comes from).
-    // Prefer recent data (2023-2026). Include industry-specific metrics.
+    // 5-8 statistics with SPECIFIC numbers that the target reader would use to justify a decision.
+    // GOOD: "The Nashville convention market generated $2.1B in economic impact in 2025 (Nashville CVB)"
+    // GOOD: "87% of event planners say professional photography increases sponsor retention by 23% (PCMA 2025)"
+    // BAD: "The average salary for an event photographer is $40,921" (irrelevant to the reader's decision)
+    // BAD: "Photography is important for events" (not a statistic)
+    // Focus on: market size, ROI metrics, conversion rates, industry growth, attendee behavior data
     { "stat": "...", "source": "..." }
   ],
+
   "authorityLinks": [
-    // Minimum 5 URLs from authoritative sources: trade publications, government sites,
-    // research institutions, or professional associations (e.g., PCMA, MPI, CEIR, IAEE,
-    // EventMB, BizBash, ASAE, Trade Show News Network).
-    // Each must have "url", "title", and "domain".
+    // 6-8 URLs from authoritative sources directly relevant to the topic.
+    // REQUIRED types: industry associations (PCMA, MPI, CEIR, IAEE, ASAE), trade publications
+    // (BizBash, EventMB/Skift Meetings, Trade Show News Network, Convene), Nashville DMOs,
+    // government/research (.gov, .edu), and preferred partners listed below.
+    // Each URL must link to a SPECIFIC article or page, not a homepage.
+    // NEVER include URLs from Nashville photography studios or photographers.
     { "url": "...", "title": "...", "domain": "..." }
   ],
+
   "expertQuotes": [
-    // 2-3 real, attributable quotes from named industry experts, authors, or researchers
-    // relevant to the topic. Each must have "quote" and "attribution".
+    // 3-4 real, attributable quotes from NAMED industry leaders, published authors, or researchers.
+    // Must be findable in a published source. Include the person's title/org.
+    // GOOD: "quote" — "Jane Smith, VP of Events at PCMA, in Convene Magazine (2025)"
+    // BAD: "quote" — "an industry expert"
     { "quote": "...", "attribution": "..." }
   ],
+
   "relatedQuestions": [
-    // 6-8 questions real people ask about this topic (People Also Ask style)
+    // 8-10 questions that the TARGET READER (${icp.label}) would actually search for.
+    // These must reflect buyer intent, not general curiosity.
+    // GOOD for convention planners: "How do I structure a photography RFP for a multi-day conference?"
+    // GOOD for enterprise marketing: "What's the ROI of professional event photography vs iPhone photos?"
+    // BAD: "What camera do event photographers use?" (photographer question, not buyer question)
+    // Include a mix of: comparison queries, how-to queries, cost/ROI queries, and Nashville-specific queries
   ],
+
   "competitorUrls": [
-    // 3-5 URLs of existing articles ranking for "${primaryKeyword}" or closely related terms
+    // 3-5 URLs currently ranking on page 1 for "${primaryKeyword}" or close variants.
+    // These are articles we need to OUTRANK — not competitor photography studios.
+  ],
+
+  "localInsights": [
+    // 3-5 Nashville-specific data points that make the article genuinely local, not generic.
+    // GOOD: "Music City Center hosted 147 conventions in 2025, up 12% from 2024"
+    // GOOD: "Nashville ranks #6 in the US for convention attendance per capita"
+    // BAD: "Nashville is a popular destination for events" (obvious, not useful)
+    // Include: Nashville market data, venue stats, local industry trends, Nashville-specific regulations or logistics
+    { "insight": "...", "source": "..." }
+  ],
+
+  "contentGaps": [
+    // 4-6 specific topics or angles that the currently-ranking articles for "${primaryKeyword}" FAIL to cover.
+    // These are our competitive advantage — the gaps we fill to outrank them.
+    // GOOD: "No ranking article addresses same-day photo delivery for social media during multi-day conferences"
+    // GOOD: "None of the top 5 results include Nashville venue-specific photography logistics"
+    // BAD: "They don't mention JHR Photography" (obvious, not useful)
+  ],
+
+  "geoAnswerFragments": [
+    // 4-5 self-contained 2-3 sentence answer blocks. Each must:
+    // 1. Directly answer one of the relatedQuestions above
+    // 2. Include at least one specific number or named entity
+    // 3. Be structured so an AI search engine could extract and cite it as a standalone answer
+    // Example: { "question": "How much does corporate event photography cost in Nashville?",
+    //   "answer": "Corporate event photography in Nashville typically ranges from $2,500 to $8,000 per day depending on scope, with multi-day conference packages averaging $4,200. Nashville rates run 15-20% below comparable markets like New York and Chicago while delivering equivalent quality, according to PCMA's 2025 vendor benchmarking report." }
+    { "question": "...", "answer": "..." }
+  ],
+
+  "topicClusterKeywords": [
+    // 8-12 semantically related keywords that should be naturally included in the article
+    // to build topical authority. Include long-tail variations and LSI keywords.
+    // GOOD: ["nashville corporate photographer", "convention photography pricing", "event photo delivery time",
+    //   "conference photography RFP", "Music City Center photography", "multi-day event coverage Nashville"]
+    // BAD: ["photographer", "camera", "photos"] (too generic)
   ]
 }
 
-IMPORTANT: Link sourcing rules:
-- PRIORITIZE citing content from these preferred partner sites when relevant:
-  * nashvilleadventures.com (Nashville tourism and activities)
-  * visitmusiccity.com (Nashville Convention & Visitors Corp)
-  * nashvillechamber.com (Nashville Area Chamber of Commerce)
-- NEVER include URLs from direct competitors in Nashville event photography or corporate photography. If a URL is from a photographer or photography studio operating in Nashville/Tennessee, exclude it from authorityLinks.
-- For authorityLinks, prefer: industry associations (PCMA, MPI, CEIR, IAEE), trade publications (BizBash, EventMB, Trade Show News Network), destination marketing organizations, government sites, and the preferred partners listed above.
+LINK SOURCING RULES:
+- PRIORITIZE these preferred partner domains when Nashville context is relevant:
+${partnerDomains}
+- NEVER include URLs from Nashville event photography or corporate photography studios
+- For authorityLinks, link to SPECIFIC articles/pages (not homepages) from industry associations, trade publications, and DMOs
 
 Return ONLY the JSON object. No markdown code fences. No additional text.`;
 }
@@ -59,10 +168,14 @@ function parseResearchResponse(content: string): ResearchPayload {
 
   // Validate required fields
   if (!Array.isArray(parsed.currentStats) || parsed.currentStats.length < 4) {
-    throw new Error(`Research returned only ${parsed.currentStats?.length ?? 0} stats, minimum 4 required`);
+    throw new Error(
+      `Research returned only ${parsed.currentStats?.length ?? 0} stats, minimum 4 required`
+    );
   }
   if (!Array.isArray(parsed.authorityLinks) || parsed.authorityLinks.length < 5) {
-    throw new Error(`Research returned only ${parsed.authorityLinks?.length ?? 0} authority links, minimum 5 required`);
+    throw new Error(
+      `Research returned only ${parsed.authorityLinks?.length ?? 0} authority links, minimum 5 required`
+    );
   }
   if (!Array.isArray(parsed.expertQuotes)) {
     throw new Error('Research missing expertQuotes array');
@@ -80,6 +193,10 @@ function parseResearchResponse(content: string): ResearchPayload {
     expertQuotes: parsed.expertQuotes,
     relatedQuestions: parsed.relatedQuestions,
     competitorUrls: parsed.competitorUrls,
+    localInsights: parsed.localInsights || [],
+    contentGaps: parsed.contentGaps || [],
+    geoAnswerFragments: parsed.geoAnswerFragments || [],
+    topicClusterKeywords: parsed.topicClusterKeywords || [],
   };
 }
 
@@ -93,30 +210,30 @@ export async function runResearch(
     return { error: 'PERPLEXITY_API_KEY environment variable is not set' };
   }
 
-  const prompt = buildResearchPrompt(topic, icp, primaryKeyword);
+  const icpTag = icp as ICPTag;
+  const systemMessage = buildSystemMessage(icpTag);
+  const prompt = buildResearchPrompt(topic, icpTag, primaryKeyword);
 
   try {
     const response = await fetch(PERPLEXITY_API_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: PERPLEXITY_MODEL,
         messages: [
-          {
-            role: 'system',
-            content: 'You are a research assistant. Return only valid JSON with no markdown formatting or additional text.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
+          { role: 'system', content: systemMessage },
+          { role: 'user', content: prompt },
         ],
         temperature: 0.1,
+        search_recency_filter: 'year',
+        web_search_options: {
+          search_context_size: 'high',
+        },
       }),
-      signal: AbortSignal.timeout(30_000), // 30s timeout
+      signal: AbortSignal.timeout(55_000), // 55s timeout (route allows 60s)
     });
 
     if (!response.ok) {
@@ -136,7 +253,8 @@ export async function runResearch(
     const data = parseResearchResponse(content);
     return { data };
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error during research';
+    const message =
+      err instanceof Error ? err.message : 'Unknown error during research';
     return { error: `Research failed: ${message}` };
   }
 }

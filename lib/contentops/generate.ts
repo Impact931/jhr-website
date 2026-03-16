@@ -99,6 +99,22 @@ function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, 
     .map((q) => `- ${q}`)
     .join('\n');
 
+  const localInsightsBlock = (research.localInsights || [])
+    .map((l) => `- ${l.insight} (Source: ${l.source})`)
+    .join('\n');
+
+  const contentGapsBlock = (research.contentGaps || [])
+    .map((g) => `- ${g}`)
+    .join('\n');
+
+  const geoFragmentsBlock = (research.geoAnswerFragments || [])
+    .map((f) => `- Q: ${f.question}\n  A: ${f.answer}`)
+    .join('\n');
+
+  const clusterKeywordsBlock = (research.topicClusterKeywords || [])
+    .map((k) => `"${k}"`)
+    .join(', ');
+
   return `## Layer 1: Identity & Voice (JHR Brand Voice Guide)
 
 You are writing as JHR Photography, Nashville's premier event and corporate photography company with 15+ years of experience.
@@ -200,7 +216,11 @@ ${statsBlock}
 ${expertQuotesBlock}
 
 ### Related questions (use for FAQ and section inspiration):
-${relatedQuestionsBlock}${competitorContext ? '\n\n' + buildCompetitorBlock(competitorContext) : ''}`;
+${relatedQuestionsBlock}
+${localInsightsBlock ? `\n### Nashville-specific insights to weave in:\n${localInsightsBlock}` : ''}
+${contentGapsBlock ? `\n### Content gaps to exploit (cover what competitors miss):\n${contentGapsBlock}` : ''}
+${geoFragmentsBlock ? `\n### GEO answer fragments (use as basis for key sections — these are structured for AI citation):\n${geoFragmentsBlock}` : ''}
+${clusterKeywordsBlock ? `\n### Topic cluster keywords (weave naturally throughout):\n${clusterKeywordsBlock}` : ''}${competitorContext ? '\n\n' + buildCompetitorBlock(competitorContext) : ''}`;
 }
 
 function buildUserPrompt(config: ContentOpsConfig): string {

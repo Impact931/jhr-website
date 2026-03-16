@@ -135,6 +135,10 @@ interface ResearchResult {
   authorityLinks: Array<{ url: string; domainType: string }>;
   expertQuotes: Array<{ quote: string; author: string }>;
   relatedQuestions: string[];
+  localInsights: Array<{ insight: string; source: string }>;
+  contentGaps: string[];
+  geoAnswerFragments: Array<{ question: string; answer: string }>;
+  topicClusterKeywords: string[];
 }
 
 interface ValidationResult {
@@ -404,6 +408,16 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
           author: q.attribution,
         })),
         relatedQuestions: research.relatedQuestions || [],
+        localInsights: (research.localInsights || []).map((l: { insight: string; source: string }) => ({
+          insight: l.insight,
+          source: l.source,
+        })),
+        contentGaps: research.contentGaps || [],
+        geoAnswerFragments: (research.geoAnswerFragments || []).map((f: { question: string; answer: string }) => ({
+          question: f.question,
+          answer: f.answer,
+        })),
+        topicClusterKeywords: research.topicClusterKeywords || [],
       });
       setResearchOpen(true);
     } catch (err: unknown) {
@@ -676,6 +690,78 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {/* Nashville Local Insights */}
+              {researchResult.localInsights?.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-jhr-white-dim mb-2 flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    Nashville Insights ({researchResult.localInsights.length})
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {researchResult.localInsights.map((item, i) => (
+                      <li key={i} className="text-sm text-jhr-white flex items-start gap-2">
+                        <span className="text-jhr-gold mt-0.5">-</span>
+                        <span>{item.insight}</span>
+                        <span className="text-jhr-white-dim text-xs ml-auto flex-shrink-0">{item.source}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Content Gaps */}
+              {researchResult.contentGaps?.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-jhr-white-dim mb-2 flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Content Gaps to Exploit ({researchResult.contentGaps.length})
+                  </h4>
+                  <ul className="space-y-1">
+                    {researchResult.contentGaps.map((gap, i) => (
+                      <li key={i} className="text-sm text-jhr-white flex items-start gap-2">
+                        <span className="text-green-400 mt-0.5"><Zap className="w-3 h-3" /></span>
+                        {gap}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* GEO Answer Fragments */}
+              {researchResult.geoAnswerFragments?.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-jhr-white-dim mb-2 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    GEO Answer Fragments ({researchResult.geoAnswerFragments.length})
+                  </h4>
+                  <ul className="space-y-3">
+                    {researchResult.geoAnswerFragments.map((frag, i) => (
+                      <li key={i} className="bg-jhr-black rounded-lg p-3 border border-jhr-black-lighter">
+                        <p className="text-xs text-jhr-gold font-medium mb-1">Q: {frag.question}</p>
+                        <p className="text-sm text-jhr-white">{frag.answer}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Topic Cluster Keywords */}
+              {researchResult.topicClusterKeywords?.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-jhr-white-dim mb-2 flex items-center gap-2">
+                    <ArrowRight className="w-4 h-4" />
+                    Topic Cluster Keywords
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {researchResult.topicClusterKeywords.map((kw, i) => (
+                      <span key={i} className="px-2 py-0.5 bg-jhr-gold/10 border border-jhr-gold/20 text-jhr-gold text-xs rounded-full">
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
