@@ -229,11 +229,8 @@ export async function runResearch(
         ],
         temperature: 0.1,
         search_recency_filter: 'year',
-        web_search_options: {
-          search_context_size: 'high',
-        },
       }),
-      signal: AbortSignal.timeout(55_000), // 55s timeout (route allows 60s)
+      signal: AbortSignal.timeout(25_000), // 25s timeout — Amplify SSR has ~30s gateway limit
     });
 
     if (!response.ok) {
