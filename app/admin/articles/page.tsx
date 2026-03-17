@@ -383,6 +383,8 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
   const [researchOpen, setResearchOpen] = useState(true);
   const [researchSavedId, setResearchSavedId] = useState<string | null>(null);
   const [researchProvider, setResearchProvider] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [rawResearch, setRawResearch] = useState<any>(null);
 
   const [generateLoading, setGenerateLoading] = useState(false);
   const [generateResult, setGenerateResult] = useState<GenerationResult | null>(null);
@@ -407,6 +409,7 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
     setResearchResult(null);
     setResearchSavedId(null);
     setResearchProvider(null);
+    setRawResearch(null);
     try {
       const res = await fetch('/api/admin/contentops/research', {
         method: 'POST',
@@ -415,8 +418,9 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
       });
       if (!res.ok) throw new Error(await res.text() || 'Research failed');
       const data = await res.json();
-      // Map API response shape to UI's ResearchResult interface
+      // Store raw research for passing to generate endpoint
       const research = data.research || {};
+      setRawResearch(research);
       setResearchResult({
         stats: (research.currentStats || []).map((s: { stat: string; source: string }) => ({
           text: s.stat,
@@ -467,7 +471,11 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
       const res = await fetch('/api/admin/contentops/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formPayload()),
+        body: JSON.stringify({
+          ...formPayload(),
+          // Pass existing research so generate skips the research phase
+          ...(rawResearch ? { research: rawResearch } : {}),
+        }),
       });
       if (!res.ok) throw new Error(await res.text() || 'Generation failed');
       const data = await res.json();

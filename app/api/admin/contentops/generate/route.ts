@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { topic, primaryKeyword, icpTag, articleType, wordCountTarget, ctaPath } = body;
+    const { topic, primaryKeyword, icpTag, articleType, wordCountTarget, ctaPath, research: preExistingResearch } = body;
 
     if (!topic || !primaryKeyword || !icpTag || !articleType) {
       return NextResponse.json(
@@ -49,19 +49,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Phase 1: Research
-    const researchResult = await runResearch(topic, icpTag, primaryKeyword);
-    if (researchResult.error || !researchResult.data) {
-      return NextResponse.json(
-        { error: researchResult.error || 'Research phase returned no data' },
-        { status: 500 }
-      );
+    // Phase 1: Use pre-existing research if provided, otherwise run fresh
+    let researchData;
+    if (preExistingResearch && preExistingResearch.currentStats) {
+      console.log('[ContentOps] Using pre-existing research data, skipping research phase');
+      researchData = preExistingResearch;
+    } else {
+      const researchResult = await runResearch(topic, icpTag, primaryKeyword);
+      if (researchResult.error || !researchResult.data) {
+        return NextResponse.json(
+          { error: researchResult.error || 'Research phase returned no data' },
+          { status: 500 }
+        );
+      }
+      researchData = researchResult.data;
     }
 
     // Phase 1.5: Competitor scraping (graceful fallback)
     let competitorContext = null;
-    if (researchResult.data.competitorUrls && researchResult.data.competitorUrls.length > 0) {
-      competitorContext = await scrapeCompetitors(researchResult.data.competitorUrls);
+    if (researchData.competitorUrls && researchData.competitorUrls.length > 0) {
+      competitorContext = await scrapeCompetitors(researchData.competitorUrls);
     }
 
     // Phase 2: Generate article (with competitor context)
@@ -74,7 +81,7 @@ export async function POST(request: NextRequest) {
       ctaPath: ctaPath || '/schedule',
     };
 
-    const articleResult = await generateArticle(config, researchResult.data, competitorContext);
+    const articleResult = await generateArticle(config, researchData, competitorContext);
     if (articleResult.error || !articleResult.data) {
       return NextResponse.json(
         { error: articleResult.error || 'Article generation returned no data' },
