@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
+import { listBlogs } from "@/lib/blog-content";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://jhr-photography.com";
   const currentDate = new Date().toISOString();
 
@@ -51,15 +52,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: "/venues/belmont-university", priority: 0.7 },
   ];
 
-  // Blog posts
-  const blogPosts = [
-    { url: "/blog/corporate-event-photography-guide-nashville", priority: 0.7 },
-    { url: "/blog/headshot-activation-trade-shows", priority: 0.7 },
-    { url: "/blog/music-city-center-photography-tips", priority: 0.7 },
-    { url: "/blog/corporate-headshot-program-roi", priority: 0.7 },
-    { url: "/blog/event-video-recap-best-practices", priority: 0.7 },
-    { url: "/blog/association-conference-photography-checklist", priority: 0.7 },
-  ];
+  // Dynamic blog posts from DynamoDB
+  let blogEntries: MetadataRoute.Sitemap = [];
+  try {
+    const published = await listBlogs('published');
+    blogEntries = published.map((post) => ({
+      url: `${baseUrl}/blog/${post.slug}`,
+      lastModified: post.updatedAt || currentDate,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    }));
+  } catch (err) {
+    console.warn('[Sitemap] Failed to fetch blog posts from DynamoDB:', err);
+    // Fallback: no blog entries rather than breaking the sitemap
+  }
 
   return [
     ...corePages.map((page) => ({
@@ -86,11 +92,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: page.priority,
     })),
-    ...blogPosts.map((page) => ({
-      url: `${baseUrl}${page.url}`,
-      lastModified: currentDate,
-      changeFrequency: "monthly" as const,
-      priority: page.priority,
-    })),
+    ...blogEntries,
   ];
 }
