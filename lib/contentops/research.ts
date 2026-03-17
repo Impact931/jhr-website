@@ -7,10 +7,10 @@ import { getICPTemplate } from './icp-templates';
 import { PREFERRED_PARTNERS } from './link-policy';
 
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
-const PERPLEXITY_MODEL = 'sonar-pro';
+const PERPLEXITY_MODEL = 'sonar'; // sonar (not sonar-pro) — cheaper, faster, sufficient for research
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-2.0-flash'; // 2.0-flash is stable and fast
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001';
@@ -225,9 +225,8 @@ async function researchWithPerplexity(
         { role: 'user', content: prompt },
       ],
       temperature: 0.1,
-      search_recency_filter: 'year',
     }),
-    signal: AbortSignal.timeout(25_000),
+    signal: AbortSignal.timeout(45_000),
   });
 
   if (!response.ok) {
@@ -276,7 +275,7 @@ async function researchWithGemini(
         responseMimeType: 'application/json',
       },
     }),
-    signal: AbortSignal.timeout(25_000), // Must fit within Amplify's ~25-30s gateway timeout
+    signal: AbortSignal.timeout(45_000),
   });
 
   if (!response.ok) {
@@ -355,16 +354,16 @@ export async function runResearch(
   // Build list of available providers (only those with API keys configured)
   const providers: Array<{ name: string; fn: () => Promise<ProviderResult> }> = [];
 
-  // Perplexity disabled — re-enable when quota is replenished
-  // if (process.env.PERPLEXITY_API_KEY) {
-  //   providers.push({
-  //     name: 'perplexity',
-  //     fn: async () => {
-  //       const r = await researchWithPerplexity(systemMessage, prompt);
-  //       return r.data ? { data: r.data, provider: 'perplexity' } : { error: r.error };
-  //     },
-  //   });
-  // }
+  // Perplexity Sonar — primary provider (cheapest, fastest, web-grounded)
+  if (process.env.PERPLEXITY_API_KEY) {
+    providers.push({
+      name: 'perplexity',
+      fn: async () => {
+        const r = await researchWithPerplexity(systemMessage, prompt);
+        return r.data ? { data: r.data, provider: 'perplexity' } : { error: r.error };
+      },
+    });
+  }
   if (process.env.GOOGLE_API_KEY) {
     providers.push({
       name: 'gemini',
