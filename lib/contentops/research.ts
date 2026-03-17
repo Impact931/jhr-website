@@ -10,7 +10,7 @@ const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
 const PERPLEXITY_MODEL = 'sonar-pro';
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001';
@@ -276,7 +276,8 @@ async function researchWithGemini(
       ],
       generationConfig: {
         temperature: 0.1,
-        responseMimeType: 'application/json',
+        // NOTE: responseMimeType: 'application/json' is incompatible with google_search tool
+        // The prompt instructs JSON-only output instead
       },
     }),
     signal: AbortSignal.timeout(30_000),
