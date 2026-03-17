@@ -410,6 +410,7 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
   const [researchOpen, setResearchOpen] = useState(true);
   const [researchSavedId, setResearchSavedId] = useState<string | null>(null);
   const [researchProvider, setResearchProvider] = useState<string | null>(null);
+  const [researchDbId, setResearchDbId] = useState<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [rawResearch, setRawResearch] = useState<any>(null);
 
@@ -436,6 +437,7 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
     setResearchResult(null);
     setResearchSavedId(null);
     setResearchProvider(null);
+    setResearchDbId(null);
     setRawResearch(null);
     try {
       const res = await fetch('/api/admin/contentops/research', {
@@ -475,6 +477,9 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
         topicClusterKeywords: research.topicClusterKeywords || [],
       });
       setResearchOpen(true);
+      if (data.researchId) {
+        setResearchDbId(data.researchId);
+      }
       if (data.knowledgeId) {
         setResearchSavedId(data.knowledgeId);
       }
@@ -500,7 +505,9 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formPayload(),
-          // Pass existing research so generate skips the research phase
+          // Pass researchId so generate loads from DynamoDB (reliable)
+          // Falls back to inline research if researchId is missing
+          ...(researchDbId ? { researchId: researchDbId } : {}),
           ...(rawResearch ? { research: rawResearch } : {}),
         }),
       });

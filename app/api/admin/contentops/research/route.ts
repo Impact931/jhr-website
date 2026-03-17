@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { runResearch } from '@/lib/contentops/research';
+import { saveResearchData } from '@/lib/contentops/research-store';
 import { createKnowledgeEntry } from '@/lib/knowledge';
 
 // Allow up to 60s for Perplexity research
@@ -126,12 +127,27 @@ export async function POST(request: NextRequest) {
 
     const result = await runResearch(topic, icpTag, primaryKeyword);
 
-    if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
+    if (result.error || !result.data) {
+      return NextResponse.json({ error: result.error || 'Research returned no data' }, { status: 500 });
     }
 
-    // Save research to knowledge base — fire and forget (don't block response)
-    // This runs in background; we return a placeholder and update async
+    // Save structured research to DynamoDB — this is the primary storage
+    // The generate endpoint loads research from here by researchId
+    let researchId: string | null = null;
+    try {
+      researchId = await saveResearchData({
+        topic,
+        primaryKeyword,
+        icpTag,
+        provider: result.provider || 'unknown',
+        data: result.data,
+      });
+      console.log(`[ContentOps] Research saved: ${researchId}`);
+    } catch (saveErr) {
+      console.error('[ContentOps] Failed to save research:', saveErr);
+    }
+
+    // Also save a markdown copy to the knowledge base (for human reference)
     let knowledgeId: string | null = null;
     const knowledgeSave = (async () => {
       try {
@@ -161,6 +177,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       research: result.data,
+      researchId,
       provider: result.provider || 'unknown',
       knowledgeId,
     });

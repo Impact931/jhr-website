@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { runResearch } from '@/lib/contentops/research';
+import { loadResearchData } from '@/lib/contentops/research-store';
 import { generateArticle } from '@/lib/contentops/generate';
 import { validateArticle } from '@/lib/contentops/validate';
 import { scrapeCompetitors } from '@/lib/contentops/competitor-scrape';
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
       articleType,
       wordCountTarget,
       ctaPath,
+      researchId,
       research: preExistingResearch,
       skipPreFlight,
     } = body;
@@ -106,12 +108,33 @@ export async function POST(request: NextRequest) {
       console.warn('[ContentOps] Failed to load lessons (non-blocking):', lessonsError);
     }
 
-    // ─── Phase 1: Research ─────────────────────────────────────────────────
+    // ─── Phase 1: Load Research ────────────────────────────────────────────
+    // Priority: researchId (DynamoDB) → inline research → run fresh
     let researchData;
-    if (preExistingResearch && preExistingResearch.currentStats) {
-      console.log('[ContentOps] Using pre-existing research data, skipping research phase');
+    let researchSource = 'fresh';
+
+    if (researchId) {
+      // Load from DynamoDB by ID — the reliable path
+      const stored = await loadResearchData(researchId);
+      if (stored) {
+        console.log(`[ContentOps] Loaded research from DynamoDB: ${researchId} (${stored.provider})`);
+        researchData = stored.data;
+        researchSource = 'stored';
+      } else {
+        console.warn(`[ContentOps] Research ID ${researchId} not found in DynamoDB`);
+      }
+    }
+
+    if (!researchData && preExistingResearch && preExistingResearch.currentStats) {
+      // Fallback: inline research passed from frontend state
+      console.log('[ContentOps] Using inline research data from request body');
       researchData = preExistingResearch;
-    } else {
+      researchSource = 'inline';
+    }
+
+    if (!researchData) {
+      // Last resort: run fresh research (costs credits)
+      console.log('[ContentOps] No saved research found, running fresh research');
       const researchResult = await runResearch(topic, icpTag, primaryKeyword);
       if (researchResult.error || !researchResult.data) {
         return NextResponse.json(
@@ -120,12 +143,20 @@ export async function POST(request: NextRequest) {
         );
       }
       researchData = researchResult.data;
+      researchSource = 'fresh';
     }
 
-    // Phase 1.5: Competitor scraping (graceful fallback)
+    // Phase 1.5: Competitor scraping (only on fresh research — skip for stored/inline)
     let competitorContext = null;
-    if (researchData.competitorUrls && researchData.competitorUrls.length > 0) {
-      competitorContext = await scrapeCompetitors(researchData.competitorUrls);
+    if (researchSource === 'fresh' && researchData.competitorUrls && researchData.competitorUrls.length > 0) {
+      try {
+        competitorContext = await Promise.race([
+          scrapeCompetitors(researchData.competitorUrls),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 15_000)),
+        ]);
+      } catch {
+        console.warn('[ContentOps] Competitor scraping timed out or failed, continuing');
+      }
     }
 
     // ─── Phase 2: Generate article (with lessons injected) ─────────────────
@@ -151,18 +182,9 @@ export async function POST(request: NextRequest) {
     // ─── Phase 3: Validate (now includes keyword placement + slop detection) ─
     const validation = await validateArticle(article);
 
-    // ─── Phase 4: GEO scoring via Claude API ───────────────────────────────
-    const geoResult = await scoreArticleGEO(article);
-    if (geoResult) {
-      article.geoScore = geoResult.totalScore;
-
-      if (geoResult.totalScore < 70) {
-        article.status = 'draft';
-        article.geoScoreNotes = geoResult.notes;
-      } else if (geoResult.totalScore >= 85) {
-        article.highGeoPriority = true;
-      }
-    }
+    // ─── Phase 4: GEO scoring — run in parallel with save (non-blocking) ───
+    // We'll save the draft first, then update with GEO score after
+    // This avoids the extra 5-10s Claude API call blocking the response
 
     // Build sections from the article body and FAQ
     const sections: PageSectionContent[] = [];
@@ -223,39 +245,62 @@ export async function POST(request: NextRequest) {
     // Generate slug from the article title
     const slug = generateSlug(article.title || topic);
 
-    // Save to DynamoDB as a blog post draft
-    await saveBlogPost(
-      {
-        slug,
-        title: article.title || topic,
-        sections,
-        excerpt: article.excerpt || article.metaDescription || '',
-        tags: ['contentops-generated', ...(article.secondaryKeywords || [])],
-        categories: [],
-        seo: {
-          pageTitle: article.metaTitle || article.title || topic,
-          metaDescription: article.metaDescription || '',
-          ogTitle: article.title || topic,
-          ogDescription: article.metaDescription || '',
-        },
-        geoMetadata: {
-          topicClassification: [config.articleType, config.icpTag],
-          entities: { people: [], places: ['Nashville'], organizations: ['JHR Photography'] },
-          contentSummary: article.quickAnswer || article.excerpt || '',
-          geoScore: article.geoScore ?? geoResult?.totalScore ?? 0,
-          geoScoreNotes: article.geoScoreNotes || geoResult?.notes || '',
-        },
+    // Save to DynamoDB as a blog post draft (without GEO score initially)
+    const blogData = {
+      slug,
+      title: article.title || topic,
+      sections,
+      excerpt: article.excerpt || article.metaDescription || '',
+      tags: ['contentops-generated', ...(article.secondaryKeywords || [])],
+      categories: [],
+      seo: {
+        pageTitle: article.metaTitle || article.title || topic,
+        metaDescription: article.metaDescription || '',
+        ogTitle: article.title || topic,
+        ogDescription: article.metaDescription || '',
       },
-      'draft',
-      session.user?.email || undefined
-    );
+      geoMetadata: {
+        topicClassification: [config.articleType, config.icpTag],
+        entities: { people: [], places: ['Nashville'], organizations: ['JHR Photography'] },
+        contentSummary: article.quickAnswer || article.excerpt || '',
+        geoScore: 0,
+        geoScoreNotes: 'Scoring in progress...',
+      },
+    };
+
+    await saveBlogPost(blogData, 'draft', session.user?.email || undefined);
+
+    // Fire GEO scoring in the background — don't block the response
+    scoreArticleGEO(article).then(async (geoResult) => {
+      if (geoResult) {
+        try {
+          await saveBlogPost(
+            {
+              ...blogData,
+              geoMetadata: {
+                ...blogData.geoMetadata,
+                geoScore: geoResult.totalScore,
+                geoScoreNotes: geoResult.notes,
+              },
+            },
+            'draft',
+            session.user?.email || undefined
+          );
+          console.log(`[ContentOps] GEO score saved for ${slug}: ${geoResult.totalScore}/100`);
+        } catch (saveErr) {
+          console.warn('[ContentOps] Failed to save GEO score:', saveErr);
+        }
+      }
+    }).catch((err) => {
+      console.warn('[ContentOps] Background GEO scoring failed:', err);
+    });
 
     return NextResponse.json({
       article,
       validation,
       slug,
       competitorContext,
-      geoScoring: geoResult,
+      geoScoring: null, // scored in background
       proofing: articleResult.proofing || null,
       preFlight,
       lessonsLoaded: lessonsCount,

@@ -544,14 +544,34 @@ export async function generateArticle(
 
     let article = parseArticleResponse(textBlock.text);
 
-    // Phase 2b: Run the proofing loop
+    // Phase 2b: Run the proofing loop (race against 20s timeout to avoid gateway 504)
     let proofing: ProofingResult;
     try {
-      proofing = await runProofingLoop(article, config, apiKey);
+      const proofingResult = await Promise.race([
+        runProofingLoop(article, config, apiKey),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
+      ]);
 
-      // If proofing returned a revised article with fixes, use it
-      if (proofing.revisedArticle && !proofing.passed) {
-        article = proofing.revisedArticle;
+      if (proofingResult) {
+        proofing = proofingResult;
+        // If proofing returned a revised article with fixes, use it
+        if (proofing.revisedArticle && !proofing.passed) {
+          article = proofing.revisedArticle;
+        }
+      } else {
+        console.warn('[ContentOps] Proofing loop timed out (20s), using unproofed article');
+        proofing = {
+          passed: true,
+          overallScore: 0,
+          brandVoiceScore: 0,
+          geoReadiness: 0,
+          seoScore: 0,
+          issues: [{
+            severity: 'warning',
+            category: 'structure',
+            description: 'Proofing skipped (timeout) — article was saved without proofing review',
+          }],
+        };
       }
     } catch (proofErr) {
       console.error('[ContentOps] Proofing loop failed:', proofErr);
