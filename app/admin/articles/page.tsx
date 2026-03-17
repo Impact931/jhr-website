@@ -1584,12 +1584,43 @@ function ArticlesTab() {
         <h2 className="text-lg font-semibold text-jhr-white">
           Generated Articles ({articles.length})
         </h2>
-        <button
-          onClick={fetchArticles}
-          className="text-sm text-jhr-white-dim hover:text-jhr-gold transition-colors"
-        >
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => {
+              setActionLoading('rescore');
+              try {
+                const res = await fetch('/api/admin/contentops/rescore', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({}),
+                });
+                if (res.ok) {
+                  await fetchArticles();
+                }
+              } catch {
+                // ignore
+              } finally {
+                setActionLoading(null);
+              }
+            }}
+            disabled={actionLoading === 'rescore'}
+            className="text-sm text-jhr-white-dim hover:text-jhr-gold transition-colors flex items-center gap-1.5 disabled:opacity-50"
+            title="Re-score all articles for GEO"
+          >
+            {actionLoading === 'rescore' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <TrendingUp className="w-3.5 h-3.5" />
+            )}
+            Rescore GEO
+          </button>
+          <button
+            onClick={fetchArticles}
+            className="text-sm text-jhr-white-dim hover:text-jhr-gold transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {articles.length === 0 ? (
@@ -1619,24 +1650,30 @@ function ArticlesTab() {
                   <td className="p-3">{statusBadge(article.status)}</td>
                   <td className="p-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-16 bg-jhr-black rounded-full h-2 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${geoScoreColor(article.geoScore)}`}
-                          style={{ width: `${article.geoScore}%` }}
-                        />
-                      </div>
-                      <span className={`text-sm font-medium ${geoScoreTextColor(article.geoScore)}`}>
-                        {article.geoScore}
-                      </span>
-                      {article.highGeoPriority && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 uppercase tracking-wide" title="High GEO Priority">
-                          HI-GEO
-                        </span>
-                      )}
-                      {article.geoScore < 70 && article.geoScoreNotes && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 uppercase tracking-wide" title={article.geoScoreNotes}>
-                          NEEDS WORK
-                        </span>
+                      {article.geoScore > 0 ? (
+                        <>
+                          <div className="w-16 bg-jhr-black rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${geoScoreColor(article.geoScore)}`}
+                              style={{ width: `${article.geoScore}%` }}
+                            />
+                          </div>
+                          <span className={`text-sm font-medium ${geoScoreTextColor(article.geoScore)}`}>
+                            {article.geoScore}
+                          </span>
+                          {article.highGeoPriority && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 uppercase tracking-wide" title="High GEO Priority">
+                              HI-GEO
+                            </span>
+                          )}
+                          {article.geoScore < 70 && article.geoScoreNotes && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 uppercase tracking-wide" title={article.geoScoreNotes}>
+                              NEEDS WORK
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-jhr-white-dim/50 italic">Not scored</span>
                       )}
                     </div>
                   </td>

@@ -166,11 +166,32 @@ export async function POST(request: NextRequest) {
 
     // Build sections from the article body and FAQ
     const sections: PageSectionContent[] = [];
+    const now = Date.now();
+
+    // Hero section — featured image + title for the article
+    sections.push({
+      id: `hero-${now}`,
+      type: 'hero',
+      order: 0,
+      seo: {
+        ariaLabel: article.title || topic,
+        sectionId: 'article-hero',
+        dataSectionName: 'hero',
+      },
+      variant: 'full-height',
+      title: article.title || topic,
+      subtitle: article.excerpt || article.metaDescription || '',
+      backgroundImage: {
+        src: '/images/blog-default-hero.jpg',
+        alt: article.title || topic,
+      },
+      buttons: [],
+    } as PageSectionContent);
 
     sections.push({
-      id: `text-block-${Date.now()}`,
+      id: `text-block-${now}`,
       type: 'text-block',
-      order: 0,
+      order: 1,
       seo: {
         ariaLabel: 'Article content',
         sectionId: 'article-body',
@@ -182,9 +203,9 @@ export async function POST(request: NextRequest) {
 
     if (article.faqBlock && article.faqBlock.length > 0) {
       sections.push({
-        id: `faq-${Date.now()}`,
+        id: `faq-${now}`,
         type: 'faq',
-        order: 1,
+        order: 2,
         seo: {
           ariaLabel: 'Frequently asked questions',
           sectionId: 'article-faq',

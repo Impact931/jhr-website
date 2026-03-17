@@ -25,9 +25,11 @@ export async function GET(request: NextRequest) {
     const articles = await Promise.all(
       allPosts.map(async (post) => {
         let geoScore = 0;
+        let geoScoreNotes = '';
         try {
           const full = await getBlogContent(post.slug, post.status === 'published' ? 'published' : 'draft');
           geoScore = full?.geoMetadata?.geoScore ?? 0;
+          geoScoreNotes = full?.geoMetadata?.geoScoreNotes || '';
         } catch {
           // ignore — geoScore stays 0
         }
@@ -36,6 +38,8 @@ export async function GET(request: NextRequest) {
           title: post.title,
           status: post.status,
           geoScore,
+          geoScoreNotes,
+          highGeoPriority: geoScore >= 85,
           createdAt: post.updatedAt,
           tags: post.tags,
           excerpt: post.excerpt,

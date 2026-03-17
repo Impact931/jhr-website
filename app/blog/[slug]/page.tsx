@@ -114,6 +114,12 @@ async function getBlogPost(slug: string): Promise<BlogPost | null> {
     if (post) {
       return post;
     }
+
+    // Fall back to draft (allows previewing unpublished articles)
+    const draft = await getBlogContent(slug, 'draft');
+    if (draft) {
+      return draft;
+    }
   } catch (error) {
     console.error('Error fetching blog post from DB:', error);
   }
