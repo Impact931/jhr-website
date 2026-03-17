@@ -27,7 +27,7 @@ export async function GET() {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/webmasters.readonly',
+    scope: 'https://www.googleapis.com/auth/webmasters',
     access_type: 'offline',
     prompt: 'consent',
     state: 'gsc-oauth',
