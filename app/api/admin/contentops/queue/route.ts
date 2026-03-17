@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import {
-  getStoredToken,
-  getValidAccessToken,
+  getGSCAccessToken,
+  GSC_SITE_URL,
   fetchSearchAnalytics,
   getDateRange,
 } from '@/lib/gsc';
@@ -217,14 +217,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const gscToken = await getStoredToken();
-  const gscConnected = !!gscToken;
+  const gscAccessToken = await getGSCAccessToken();
+  const gscConnected = !!gscAccessToken;
   const dataforseoConnected = isDataForSEOConfigured();
 
   try {
     // ── Pull data in parallel ──────────────────────────────────────────
 
-    const siteUrl = process.env.GSC_PROPERTY_URL || 'https://jhr-photography.com';
     const { start, end } = getDateRange(28);
 
     // GSC data (if connected)
@@ -238,13 +237,12 @@ export async function GET(request: NextRequest) {
 
     const promises: Promise<void>[] = [];
 
-    if (gscConnected && gscToken) {
+    if (gscConnected && gscAccessToken) {
       promises.push(
         (async () => {
-          const accessToken = await getValidAccessToken(gscToken);
           const [pageRows, queryRows] = await Promise.all([
-            fetchSearchAnalytics(accessToken, siteUrl, start, end, ['page'], 200),
-            fetchSearchAnalytics(accessToken, siteUrl, start, end, ['query'], 500),
+            fetchSearchAnalytics(gscAccessToken, GSC_SITE_URL, start, end, ['page'], 200),
+            fetchSearchAnalytics(gscAccessToken, GSC_SITE_URL, start, end, ['query'], 500),
           ]);
 
           gscPages = pageRows.map((r) => ({

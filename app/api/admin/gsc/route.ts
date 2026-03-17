@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import {
   TRACKED_KEYWORDS,
-  getStoredToken,
-  getValidAccessToken,
+  GSC_SITE_URL,
+  getGSCAccessToken,
   fetchSearchAnalytics,
 } from '@/lib/gsc';
 
@@ -24,30 +24,23 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type') || 'searchAnalytics';
 
-  // Check for stored OAuth token
-  const token = await getStoredToken();
+  const accessToken = await getGSCAccessToken();
 
-  if (!token) {
+  if (!accessToken) {
     return NextResponse.json({ connected: false });
   }
 
   // For status check, just confirm connection
   if (type === 'status') {
-    return NextResponse.json({
-      connected: true,
-      connectedAt: token.connectedAt,
-      connectedBy: token.connectedBy,
-    });
+    return NextResponse.json({ connected: true });
   }
 
-  const siteUrl = process.env.GSC_PROPERTY_URL || 'https://jhr-photography.com';
+  const siteUrl = GSC_SITE_URL;
 
   try {
-    const accessToken = await getValidAccessToken(token);
-
     // Calculate date range (last 7 days)
     const endDate = new Date();
-    endDate.setDate(endDate.getDate() - 1); // GSC data has ~2 day lag
+    endDate.setDate(endDate.getDate() - 1);
     const startDate = new Date(endDate);
     startDate.setDate(startDate.getDate() - 6);
 
@@ -56,7 +49,6 @@ export async function GET(request: NextRequest) {
     const end = formatDate(endDate);
 
     if (type === 'keywords') {
-      // Fetch data filtered to tracked keywords
       const rows = await fetchSearchAnalytics(
         accessToken,
         siteUrl,
@@ -66,7 +58,6 @@ export async function GET(request: NextRequest) {
         1000
       );
 
-      // Filter to tracked keywords (case-insensitive)
       const keywordData = TRACKED_KEYWORDS.map((keyword) => {
         const row = rows.find(
           (r) => r.keys[0]?.toLowerCase() === keyword.toLowerCase()
@@ -80,7 +71,6 @@ export async function GET(request: NextRequest) {
         };
       });
 
-      // Also fetch previous 7 days for change calculation
       const prevEnd = new Date(startDate);
       prevEnd.setDate(prevEnd.getDate() - 1);
       const prevStart = new Date(prevEnd);
@@ -102,7 +92,6 @@ export async function GET(request: NextRequest) {
         const prevPosition = prevRow ? Math.round(prevRow.position * 10) / 10 : null;
         let change: number | null = null;
         if (kd.position !== null && prevPosition !== null) {
-          // Positive change = improved (went up), negative = declined
           change = Math.round((prevPosition - kd.position) * 10) / 10;
         }
         return { ...kd, change };
@@ -117,13 +106,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'searchAnalytics') {
-      // Fetch top queries and pages
       const [queryRows, pageRows] = await Promise.all([
         fetchSearchAnalytics(accessToken, siteUrl, start, end, ['query'], 50),
         fetchSearchAnalytics(accessToken, siteUrl, start, end, ['page'], 50),
       ]);
 
-      // Calculate totals
       const totals = pageRows.reduce(
         (acc, row) => ({
           clicks: acc.clicks + row.clicks,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { putItem, getItem } from '@/lib/dynamodb';
+import { putItem } from '@/lib/dynamodb';
+import { getGSCAccessToken, GSC_SITE_URL, fetchSearchAnalytics, formatDate } from '@/lib/gsc';
 
 /**
  * POST /api/admin/cron/refresh
@@ -171,71 +172,21 @@ async function fetchGEOScore(): Promise<Record<string, unknown> | null> {
 
 async function fetchGSCSummary(): Promise<Record<string, unknown> | null> {
   try {
-    const token = await getItem<{
-      pk: string;
-      sk: string;
-      refreshToken: string;
-      accessToken: string;
-      expiresAt: number;
-    }>('SETTINGS#gsc', 'oauth-token');
+    const accessToken = await getGSCAccessToken();
+    if (!accessToken) return null;
 
-    if (!token || !token.refreshToken) return null;
-
-    // Refresh token if needed
-    let accessToken = token.accessToken;
-    if (!accessToken || token.expiresAt <= Date.now() + 5 * 60 * 1000) {
-      const clientId = process.env.GOOGLE_CLIENT_ID;
-      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-      if (!clientId || !clientSecret) return null;
-
-      const refreshRes = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          refresh_token: token.refreshToken,
-          grant_type: 'refresh_token',
-        }),
-      });
-      if (!refreshRes.ok) return null;
-      const refreshData = await refreshRes.json();
-      accessToken = refreshData.access_token;
-    }
-
-    const siteUrl = process.env.GSC_PROPERTY_URL || 'https://jhr-photography.com';
     const endDate = new Date();
     endDate.setDate(endDate.getDate() - 1);
     const startDate = new Date(endDate);
     startDate.setDate(startDate.getDate() - 6);
 
-    const formatDate = (d: Date) => d.toISOString().split('T')[0];
-    const encodedSiteUrl = encodeURIComponent(siteUrl);
+    const start = formatDate(startDate);
+    const end = formatDate(endDate);
 
-    const gscRes = await fetch(
-      `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodedSiteUrl}/searchAnalytics/query`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          startDate: formatDate(startDate),
-          endDate: formatDate(endDate),
-          dimensions: ['page'],
-          rowLimit: 100,
-        }),
-        signal: AbortSignal.timeout(15000),
-      }
-    );
-
-    if (!gscRes.ok) return null;
-    const gscData = await gscRes.json();
-    const rows = gscData.rows || [];
+    const rows = await fetchSearchAnalytics(accessToken, GSC_SITE_URL, start, end, ['page'], 100);
 
     const totals = rows.reduce(
-      (acc: { clicks: number; impressions: number }, row: { clicks: number; impressions: number }) => ({
+      (acc, row) => ({
         clicks: acc.clicks + row.clicks,
         impressions: acc.impressions + row.impressions,
       }),
@@ -245,10 +196,7 @@ async function fetchGSCSummary(): Promise<Record<string, unknown> | null> {
     return {
       clicks: totals.clicks,
       impressions: totals.impressions,
-      dateRange: {
-        start: formatDate(startDate),
-        end: formatDate(endDate),
-      },
+      dateRange: { start, end },
       fetchedAt: new Date().toISOString(),
     };
   } catch {

@@ -8,8 +8,8 @@ import {
   type RankedKeywordResult,
 } from '@/lib/dataforseo';
 import {
-  getStoredToken,
-  getValidAccessToken,
+  getGSCAccessToken,
+  GSC_SITE_URL,
   fetchSearchAnalytics,
   getDateRange,
 } from '@/lib/gsc';
@@ -153,8 +153,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const gscToken = await getStoredToken();
-  const gscConnected = !!gscToken;
+  const gscAccessToken = await getGSCAccessToken();
+  const gscConnected = !!gscAccessToken;
   const dataforseoConnected = isDataForSEOConfigured();
 
   if (!dataforseoConnected) {
@@ -178,13 +178,11 @@ export async function GET(request: NextRequest) {
 
     const ourKeywords = new Map<string, { position: number; clicks: number }>();
 
-    if (gscConnected && gscToken) {
+    if (gscConnected && gscAccessToken) {
       try {
-        const accessToken = await getValidAccessToken(gscToken);
-        const siteUrl = process.env.GSC_PROPERTY_URL || `https://${TARGET_DOMAIN}`;
         const { start, end } = getDateRange(28);
         const queryRows = await fetchSearchAnalytics(
-          accessToken, siteUrl, start, end, ['query'], 1000
+          gscAccessToken, GSC_SITE_URL, start, end, ['query'], 1000
         );
         for (const row of queryRows) {
           ourKeywords.set(row.keys[0].toLowerCase(), {
