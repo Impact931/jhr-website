@@ -280,7 +280,7 @@ async function researchWithGemini(
         // The prompt instructs JSON-only output instead
       },
     }),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(22_000), // Must fit within Amplify's ~25-30s gateway timeout
   });
 
   if (!response.ok) {
@@ -343,18 +343,9 @@ async function researchWithOpenRouter(
   return { data };
 }
 
-// ─── Main entry point with fallback chain ───────────────────────────────────
+// ─── Main entry point — race all available providers in parallel ─────────────
 
-type ResearchProvider = 'perplexity' | 'gemini' | 'openrouter';
-
-const PROVIDER_CHAIN: Array<{
-  name: ResearchProvider;
-  fn: (system: string, prompt: string) => Promise<{ data?: ResearchPayload; error?: string }>;
-}> = [
-  { name: 'perplexity', fn: researchWithPerplexity },
-  { name: 'gemini', fn: researchWithGemini },
-  { name: 'openrouter', fn: researchWithOpenRouter },
-];
+type ProviderResult = { data?: ResearchPayload; provider?: string; error?: string };
 
 export async function runResearch(
   topic: string,
@@ -365,30 +356,69 @@ export async function runResearch(
   const systemMessage = buildSystemMessage(icpTag);
   const prompt = buildResearchPrompt(topic, icpTag, primaryKeyword);
 
-  const errors: string[] = [];
+  // Build list of available providers (only those with API keys configured)
+  const providers: Array<{ name: string; fn: () => Promise<ProviderResult> }> = [];
 
-  for (const provider of PROVIDER_CHAIN) {
-    try {
-      console.log(`[ContentOps] Trying research provider: ${provider.name}`);
-      const result = await provider.fn(systemMessage, prompt);
-
-      if (result.data) {
-        console.log(`[ContentOps] Research succeeded via ${provider.name}`);
-        return { data: result.data, provider: provider.name };
-      }
-
-      // Provider returned an error (e.g. missing API key or quota exceeded)
-      const errMsg = `${provider.name}: ${result.error}`;
-      console.warn(`[ContentOps] ${errMsg}`);
-      errors.push(errMsg);
-    } catch (err) {
-      const errMsg = `${provider.name}: ${err instanceof Error ? err.message : 'Unknown error'}`;
-      console.warn(`[ContentOps] ${errMsg}`);
-      errors.push(errMsg);
-    }
+  if (process.env.PERPLEXITY_API_KEY) {
+    providers.push({
+      name: 'perplexity',
+      fn: async () => {
+        const r = await researchWithPerplexity(systemMessage, prompt);
+        return r.data ? { data: r.data, provider: 'perplexity' } : { error: r.error };
+      },
+    });
+  }
+  if (process.env.GOOGLE_API_KEY) {
+    providers.push({
+      name: 'gemini',
+      fn: async () => {
+        const r = await researchWithGemini(systemMessage, prompt);
+        return r.data ? { data: r.data, provider: 'gemini' } : { error: r.error };
+      },
+    });
+  }
+  if (process.env.OPENROUTER_API_KEY) {
+    providers.push({
+      name: 'openrouter',
+      fn: async () => {
+        const r = await researchWithOpenRouter(systemMessage, prompt);
+        return r.data ? { data: r.data, provider: 'openrouter' } : { error: r.error };
+      },
+    });
   }
 
-  return {
-    error: `All research providers failed:\n${errors.join('\n')}`,
-  };
+  if (providers.length === 0) {
+    return { error: 'No research API keys configured (need PERPLEXITY_API_KEY, GOOGLE_API_KEY, or OPENROUTER_API_KEY)' };
+  }
+
+  console.log(`[ContentOps] Racing ${providers.length} research providers: ${providers.map(p => p.name).join(', ')}`);
+
+  // Race all providers — first successful result wins
+  // Each provider promise resolves on success, rejects on failure
+  const racePromises = providers.map(({ name, fn }) =>
+    fn().then((result) => {
+      if (result.data) {
+        console.log(`[ContentOps] Research succeeded via ${name}`);
+        return result;
+      }
+      // No data = treat as failure so Promise.any moves on
+      throw new Error(result.error || `${name} returned no data`);
+    }).catch((err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[ContentOps] ${name} failed: ${msg}`);
+      throw new Error(`${name}: ${msg}`);
+    })
+  );
+
+  try {
+    // Promise.any resolves with the first successful result
+    const winner = await Promise.any(racePromises);
+    return winner;
+  } catch (aggregateError) {
+    // All providers failed — AggregateError contains all errors
+    const errors = aggregateError instanceof AggregateError
+      ? aggregateError.errors.map((e: Error) => e.message)
+      : ['All providers failed'];
+    return { error: `All research providers failed:\n${errors.join('\n')}` };
+  }
 }
