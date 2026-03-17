@@ -163,6 +163,31 @@ interface ProofingResult {
   issues: ProofingIssue[];
 }
 
+interface PreFlightResult {
+  passed: boolean;
+  intent: {
+    type: 'informational' | 'commercial' | 'transactional' | 'navigational';
+    confidence: 'high' | 'medium' | 'low';
+    recommendedPageType: string;
+    reasoning: string;
+  };
+  cannibalization: {
+    clear: boolean;
+    overlaps: Array<{
+      existingPage: string;
+      matchType: string;
+      recommendation: string;
+    }>;
+  };
+  keywordCluster: {
+    cluster: string | null;
+    existingPages: string[];
+    isNewCluster: boolean;
+  };
+  warnings: Array<{ code: string; message: string; detail?: string }>;
+  blocks: Array<{ code: string; message: string; detail?: string }>;
+}
+
 interface GenerationResult {
   title: string;
   slug: string;
@@ -175,6 +200,8 @@ interface GenerationResult {
   proofing?: ProofingResult;
   quickAnswer?: string;
   metaDescription?: string;
+  preFlight?: PreFlightResult | null;
+  lessonsLoaded?: number;
 }
 
 interface BatchRow {
@@ -503,6 +530,8 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
           ],
         },
         proofing: data.proofing || undefined,
+        preFlight: data.preFlight || null,
+        lessonsLoaded: data.lessonsLoaded || 0,
       });
     } catch (err: unknown) {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed');
@@ -859,7 +888,7 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
           <Loader2 className="w-8 h-8 text-jhr-gold animate-spin" />
           <div className="text-center">
             <p className="text-jhr-white font-medium">Generating article...</p>
-            <p className="text-jhr-white-dim text-sm mt-1">Research → Write → Brand Voice Proof → Save Draft</p>
+            <p className="text-jhr-white-dim text-sm mt-1">Pre-Flight → Research → Write (with lessons) → Proof → Validate → Save Draft</p>
             <p className="text-jhr-white-dim text-xs mt-2">This takes 60-90 seconds</p>
           </div>
         </div>
@@ -897,6 +926,82 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
               </button>
             </div>
           </div>
+
+          {/* Pre-Flight Intelligence */}
+          {generateResult.preFlight && (
+            <div className="bg-jhr-black rounded-xl p-4 space-y-3 border border-jhr-black-lighter">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium text-jhr-white-dim flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Pre-Flight Intelligence
+                </h4>
+                {generateResult.lessonsLoaded ? (
+                  <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">
+                    {generateResult.lessonsLoaded} lessons loaded
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Intent Classification */}
+                <div className="bg-jhr-black-light rounded-lg p-3">
+                  <p className="text-xs text-jhr-white-dim mb-1">Search Intent</p>
+                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                    generateResult.preFlight.intent.type === 'transactional' ? 'bg-green-500/20 text-green-400' :
+                    generateResult.preFlight.intent.type === 'commercial' ? 'bg-blue-500/20 text-blue-400' :
+                    generateResult.preFlight.intent.type === 'informational' ? 'bg-purple-500/20 text-purple-400' :
+                    'bg-gray-500/20 text-gray-400'
+                  }`}>
+                    {generateResult.preFlight.intent.type}
+                  </span>
+                  <p className="text-xs text-jhr-white-dim mt-1.5">{generateResult.preFlight.intent.recommendedPageType}</p>
+                </div>
+
+                {/* Cannibalization */}
+                <div className="bg-jhr-black-light rounded-lg p-3">
+                  <p className="text-xs text-jhr-white-dim mb-1">Cannibalization Check</p>
+                  {generateResult.preFlight.cannibalization.clear ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-400">
+                      <CheckCircle className="w-3 h-3" /> Clear
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs text-yellow-400">
+                      <AlertCircle className="w-3 h-3" /> {generateResult.preFlight.cannibalization.overlaps.length} overlap(s)
+                    </span>
+                  )}
+                </div>
+
+                {/* Keyword Cluster */}
+                <div className="bg-jhr-black-light rounded-lg p-3">
+                  <p className="text-xs text-jhr-white-dim mb-1">Keyword Cluster</p>
+                  {generateResult.preFlight.keywordCluster.cluster ? (
+                    <span className="inline-block px-2 py-0.5 bg-jhr-gold/20 text-jhr-gold rounded text-xs">
+                      {generateResult.preFlight.keywordCluster.cluster}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-xs text-yellow-400">
+                      <AlertCircle className="w-3 h-3" /> New cluster
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Warnings */}
+              {generateResult.preFlight.warnings.length > 0 && (
+                <div className="space-y-1.5">
+                  {generateResult.preFlight.warnings.map((w, i) => (
+                    <div key={i} className="flex items-start gap-2 text-xs bg-yellow-500/5 rounded-lg p-2 border border-yellow-500/20">
+                      <AlertCircle className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-yellow-300">{w.message}</p>
+                        {w.detail && <p className="text-yellow-400/70 mt-0.5">{w.detail}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* GEO Score */}
           <div>

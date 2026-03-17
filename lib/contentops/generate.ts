@@ -508,14 +508,21 @@ function parseArticleResponse(content: string): ArticlePayload {
 export async function generateArticle(
   config: ContentOpsConfig,
   research: ResearchPayload,
-  competitorContext?: CompetitorContext | null
+  competitorContext?: CompetitorContext | null,
+  lessonsPrompt?: string
 ): Promise<{ data?: ArticlePayload; proofing?: ProofingResult; error?: string }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return { error: 'ANTHROPIC_API_KEY environment variable is not set' };
   }
 
-  const systemPrompt = buildSystemPrompt(config, research, competitorContext);
+  let systemPrompt = buildSystemPrompt(config, research, competitorContext);
+
+  // Inject lessons from DynamoDB if available
+  if (lessonsPrompt) {
+    systemPrompt = `${systemPrompt}\n\n${lessonsPrompt}`;
+  }
+
   const userPrompt = buildUserPrompt(config);
 
   try {

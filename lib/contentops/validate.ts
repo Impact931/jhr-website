@@ -1,6 +1,8 @@
 // ContentOps Engine — Phase 3: Validation & GEO Scoring
+// Unified quality gates shared by CLI (/seo-geo) and admin dashboard
 
 import type { ArticlePayload, GEOScore, ValidationResult } from './types';
+import { AI_SLOP_TERMS, BRAND_PROHIBITED_TERMS } from './pre-flight';
 
 // --- Hard fail checks ---
 
@@ -41,7 +43,104 @@ function checkHardFails(article: ArticlePayload): string[] {
     fails.push(`Primary keyword "${article.primaryKeyword}" not found in title "${article.title}"`);
   }
 
+  // --- Keyword placement verification (unified with CLI checklist) ---
+  const keywordPlacement = checkKeywordPlacement(article);
+  fails.push(...keywordPlacement);
+
+  // --- AI slop detection (unified blocklist) ---
+  const slopHits = checkAISlop(article);
+  if (slopHits.length > 0) {
+    fails.push(`AI slop terms detected: ${slopHits.join(', ')}`);
+  }
+
+  // --- Brand prohibited terms ---
+  const brandHits = checkBrandProhibited(article);
+  if (brandHits.length > 0) {
+    fails.push(`Brand-prohibited terms detected: ${brandHits.join(', ')}`);
+  }
+
   return fails;
+}
+
+// --- Keyword Placement Verification ---
+
+function checkKeywordPlacement(article: ArticlePayload): string[] {
+  const fails: string[] = [];
+  const kwLower = article.primaryKeyword.toLowerCase();
+
+  // Strip HTML tags for text analysis
+  const bodyText = article.body.replace(/<[^>]+>/g, ' ').toLowerCase();
+  const first100Words = bodyText.split(/\s+/).slice(0, 100).join(' ');
+
+  // Check: keyword in first 100 words
+  if (!first100Words.includes(kwLower)) {
+    fails.push(`Primary keyword "${article.primaryKeyword}" not found in first 100 words of body`);
+  }
+
+  // Check: keyword in at least one H2
+  const h2Pattern = /<h2[^>]*>(.*?)<\/h2>/gi;
+  const h2Texts: string[] = [];
+  let h2Match;
+  while ((h2Match = h2Pattern.exec(article.body)) !== null) {
+    h2Texts.push(h2Match[1].replace(/<[^>]+>/g, '').toLowerCase());
+  }
+  // Also check markdown H2s
+  const mdH2Pattern = /^##\s+(.+)$/gm;
+  let mdMatch;
+  while ((mdMatch = mdH2Pattern.exec(article.body)) !== null) {
+    h2Texts.push(mdMatch[1].toLowerCase());
+  }
+
+  const kwInH2 = h2Texts.some((h2) => h2.includes(kwLower));
+  if (!kwInH2 && h2Texts.length > 0) {
+    fails.push(`Primary keyword "${article.primaryKeyword}" not found in any H2 heading`);
+  }
+
+  // Check: keyword in meta description
+  if (!article.metaDescription.toLowerCase().includes(kwLower)) {
+    fails.push(`Primary keyword "${article.primaryKeyword}" not found in meta description`);
+  }
+
+  // Check: meta title length (50-60 chars)
+  if (article.metaTitle) {
+    const titleLen = article.metaTitle.length;
+    if (titleLen < 50 || titleLen > 60) {
+      // Soft — don't block, just note it
+    }
+  }
+
+  return fails;
+}
+
+// --- AI Slop Detection (shared blocklist from pre-flight.ts) ---
+
+function checkAISlop(article: ArticlePayload): string[] {
+  const bodyText = article.body.replace(/<[^>]+>/g, ' ').toLowerCase();
+  const hits: string[] = [];
+
+  for (const term of AI_SLOP_TERMS) {
+    const regex = new RegExp(`\\b${term}\\b`, 'i');
+    if (regex.test(bodyText)) {
+      hits.push(term);
+    }
+  }
+
+  return hits;
+}
+
+// --- Brand Prohibited Terms ---
+
+function checkBrandProhibited(article: ArticlePayload): string[] {
+  const combined = `${article.title} ${article.body} ${article.metaDescription} ${article.excerpt}`.toLowerCase();
+  const hits: string[] = [];
+
+  for (const term of BRAND_PROHIBITED_TERMS) {
+    if (combined.includes(term.toLowerCase())) {
+      hits.push(term);
+    }
+  }
+
+  return hits;
 }
 
 // --- Soft fail checks ---
@@ -155,9 +254,10 @@ function scoreQuotableDefinition(article: ArticlePayload): number {
 }
 
 function scoreHeadingStructure(article: ArticlePayload): number {
-  // 15 points max
-  const h2Matches = article.body.match(/^##\s+/gm) || [];
-  const h2Count = h2Matches.length;
+  // 15 points max — supports both HTML and markdown headings
+  const mdH2 = article.body.match(/^##\s+/gm) || [];
+  const htmlH2 = article.body.match(/<h2[\s>]/gi) || [];
+  const h2Count = mdH2.length + htmlH2.length;
 
   let score = 0;
 
@@ -167,13 +267,16 @@ function scoreHeadingStructure(article: ArticlePayload): number {
   else if (h2Count >= 2) score += 3;
 
   // Check for question-based headings (good for GEO)
-  const questionHeadings = article.body.match(/^##\s+.*\?/gm) || [];
-  if (questionHeadings.length >= 2) score += 4;
-  else if (questionHeadings.length >= 1) score += 2;
+  const mdQuestions = article.body.match(/^##\s+.*\?/gm) || [];
+  const htmlQuestions = article.body.match(/<h2[^>]*>[^<]*\?/gi) || [];
+  const questionCount = mdQuestions.length + htmlQuestions.length;
+  if (questionCount >= 2) score += 4;
+  else if (questionCount >= 1) score += 2;
 
   // Check for logical hierarchy (H3s under H2s)
-  const h3Matches = article.body.match(/^###\s+/gm) || [];
-  if (h3Matches.length > 0) score += 3;
+  const mdH3 = article.body.match(/^###\s+/gm) || [];
+  const htmlH3 = article.body.match(/<h3[\s>]/gi) || [];
+  if (mdH3.length + htmlH3.length > 0) score += 3;
 
   return Math.min(15, score);
 }

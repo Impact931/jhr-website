@@ -6,6 +6,8 @@ import { generateArticle } from '@/lib/contentops/generate';
 import { validateArticle } from '@/lib/contentops/validate';
 import { scrapeCompetitors } from '@/lib/contentops/competitor-scrape';
 import { scoreArticleGEO } from '@/lib/contentops/geo-score';
+import { runPreFlight } from '@/lib/contentops/pre-flight';
+import { getGenerationLessons, formatLessonsForPrompt } from '@/lib/contentops/lessons-store';
 import { saveBlogPost } from '@/lib/blog-content';
 import { generateSlug } from '@/types/blog';
 import type { PageSectionContent } from '@/types/inline-editor';
@@ -14,7 +16,12 @@ import type { PageSectionContent } from '@/types/inline-editor';
 export const maxDuration = 120;
 
 /**
- * POST /api/admin/contentops/generate — Full pipeline: research -> generate -> validate -> save draft
+ * POST /api/admin/contentops/generate — Full pipeline:
+ *   pre-flight → research → generate (with lessons) → validate → GEO score → save draft
+ *
+ * Pre-flight checks (cannibalization, intent, cluster) run automatically.
+ * Lessons from DynamoDB are injected into the generation prompt.
+ * Both CLI (/seo-geo) and admin dashboard use this same endpoint.
  */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -24,7 +31,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { topic, primaryKeyword, icpTag, articleType, wordCountTarget, ctaPath, research: preExistingResearch } = body;
+    const {
+      topic,
+      primaryKeyword,
+      icpTag,
+      articleType,
+      wordCountTarget,
+      ctaPath,
+      research: preExistingResearch,
+      skipPreFlight,
+    } = body;
 
     if (!topic || !primaryKeyword || !icpTag || !articleType) {
       return NextResponse.json(
@@ -49,7 +65,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Phase 1: Use pre-existing research if provided, otherwise run fresh
+    // ─── Phase 0: Pre-Flight Intelligence ──────────────────────────────────
+    // Runs cannibalization check, intent classification, keyword cluster matching
+    let preFlight = null;
+    if (!skipPreFlight) {
+      try {
+        const baseUrl = request.nextUrl.origin;
+        preFlight = await runPreFlight(primaryKeyword, topic, articleType, { baseUrl });
+        console.log(
+          `[ContentOps] Pre-flight: intent=${preFlight.intent.type}, ` +
+          `cannibalization=${preFlight.cannibalization.clear ? 'clear' : 'WARNING'}, ` +
+          `cluster=${preFlight.keywordCluster.cluster || 'new'}, ` +
+          `warnings=${preFlight.warnings.length}, blocks=${preFlight.blocks.length}`
+        );
+
+        // If pre-flight has blocks, stop and return them
+        if (!preFlight.passed) {
+          return NextResponse.json({
+            preFlight,
+            error: 'Pre-flight checks blocked generation. Review the blocks and fix before proceeding.',
+          }, { status: 422 });
+        }
+      } catch (pfError) {
+        console.warn('[ContentOps] Pre-flight failed (non-blocking):', pfError);
+        // Pre-flight failure is non-blocking — proceed with generation
+      }
+    }
+
+    // ─── Phase 0.5: Load Lessons from DynamoDB ─────────────────────────────
+    let lessonsPrompt = '';
+    let lessonsCount = 0;
+    try {
+      const lessons = await getGenerationLessons();
+      lessonsCount = lessons.length;
+      if (lessons.length > 0) {
+        lessonsPrompt = formatLessonsForPrompt(lessons);
+        console.log(`[ContentOps] Loaded ${lessons.length} lessons for generation prompt`);
+      }
+    } catch (lessonsError) {
+      console.warn('[ContentOps] Failed to load lessons (non-blocking):', lessonsError);
+    }
+
+    // ─── Phase 1: Research ─────────────────────────────────────────────────
     let researchData;
     if (preExistingResearch && preExistingResearch.currentStats) {
       console.log('[ContentOps] Using pre-existing research data, skipping research phase');
@@ -71,7 +128,7 @@ export async function POST(request: NextRequest) {
       competitorContext = await scrapeCompetitors(researchData.competitorUrls);
     }
 
-    // Phase 2: Generate article (with competitor context)
+    // ─── Phase 2: Generate article (with lessons injected) ─────────────────
     const config = {
       topic,
       primaryKeyword,
@@ -81,7 +138,7 @@ export async function POST(request: NextRequest) {
       ctaPath: ctaPath || '/schedule',
     };
 
-    const articleResult = await generateArticle(config, researchData, competitorContext);
+    const articleResult = await generateArticle(config, researchData, competitorContext, lessonsPrompt);
     if (articleResult.error || !articleResult.data) {
       return NextResponse.json(
         { error: articleResult.error || 'Article generation returned no data' },
@@ -91,10 +148,10 @@ export async function POST(request: NextRequest) {
 
     const article = articleResult.data;
 
-    // Phase 3: Validate
+    // ─── Phase 3: Validate (now includes keyword placement + slop detection) ─
     const validation = await validateArticle(article);
 
-    // Phase 4: GEO scoring via Claude API
+    // ─── Phase 4: GEO scoring via Claude API ───────────────────────────────
     const geoResult = await scoreArticleGEO(article);
     if (geoResult) {
       article.geoScore = geoResult.totalScore;
@@ -179,6 +236,8 @@ export async function POST(request: NextRequest) {
       competitorContext,
       geoScoring: geoResult,
       proofing: articleResult.proofing || null,
+      preFlight,
+      lessonsLoaded: lessonsCount,
     });
   } catch (error) {
     console.error('ContentOps generate error:', error);
