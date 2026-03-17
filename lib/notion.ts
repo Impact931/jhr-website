@@ -293,6 +293,137 @@ export async function bulkSyncLeadsToNotion(
   return { synced, failed };
 }
 
+// --- Page content (blocks) helpers ---
+
+/**
+ * Fetch all child blocks from a Notion page, recursively expanding children.
+ * Returns structured text content for the assignment page body.
+ */
+export async function getPageBlocks(pageId: string): Promise<NotionBlock[]> {
+  const notion = getNotionClient();
+  if (!notion) return [];
+
+  try {
+    const allBlocks: NotionBlock[] = [];
+    let cursor: string | undefined;
+
+    do {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const response: any = await notion.blocks.children.list({
+        block_id: pageId,
+        page_size: 100,
+        ...(cursor ? { start_cursor: cursor } : {}),
+      });
+      allBlocks.push(...(response.results || []));
+      cursor = response.has_more ? response.next_cursor : undefined;
+    } while (cursor);
+
+    // Recursively fetch children (callouts, toggles, tables, etc.)
+    for (const block of allBlocks) {
+      if (block.has_children && block.type !== 'child_page' && block.type !== 'child_database') {
+        block._children = await getPageBlocks(block.id);
+      }
+    }
+
+    return allBlocks;
+  } catch (error) {
+    console.error(`Failed to fetch blocks for ${pageId}:`, error);
+    return [];
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface NotionBlock { id: string; type: string; has_children: boolean; _children?: NotionBlock[]; [key: string]: any; }
+
+function extractBlockRichText(richTextArray: Array<{ plain_text: string }> | undefined): string {
+  if (!richTextArray || !Array.isArray(richTextArray)) return '';
+  return richTextArray.map(item => item.plain_text).join('');
+}
+
+/**
+ * Parse a Notion block tree into structured text.
+ * Handles callouts (which contain schedule tables, shot lists, etc.), tables, headings, etc.
+ */
+export function parseBlock(block: NotionBlock): string {
+  if (!block || !block.type) return '';
+  const data = block[block.type];
+
+  switch (block.type) {
+    case 'paragraph':
+      return extractBlockRichText(data?.rich_text) || '';
+    case 'heading_1':
+      return data?.rich_text ? `# ${extractBlockRichText(data.rich_text)}` : '';
+    case 'heading_2':
+      return data?.rich_text ? `## ${extractBlockRichText(data.rich_text)}` : '';
+    case 'heading_3':
+      return data?.rich_text ? `### ${extractBlockRichText(data.rich_text)}` : '';
+    case 'bulleted_list_item':
+      return data?.rich_text ? `- ${extractBlockRichText(data.rich_text)}` : '';
+    case 'numbered_list_item':
+      return data?.rich_text ? `- ${extractBlockRichText(data.rich_text)}` : '';
+    case 'to_do': {
+      const text = extractBlockRichText(data?.rich_text);
+      return text ? `${data?.checked ? '[x]' : '[ ]'} ${text}` : '';
+    }
+    case 'toggle': {
+      const toggleText = extractBlockRichText(data?.rich_text);
+      let result = toggleText ? `> ${toggleText}` : '';
+      if (block._children) {
+        result += '\n' + block._children.map(parseBlock).filter(Boolean).join('\n');
+      }
+      return result;
+    }
+    case 'callout': {
+      const calloutText = extractBlockRichText(data?.rich_text);
+      let result = calloutText || '';
+      if (block._children) {
+        const childContent = block._children.map(parseBlock).filter(Boolean).join('\n\n');
+        result = result ? result + '\n\n' + childContent : childContent;
+      }
+      return result;
+    }
+    case 'quote':
+      return data?.rich_text ? `> ${extractBlockRichText(data.rich_text)}` : '';
+    case 'divider':
+      return '---';
+    case 'table': {
+      if (!block._children) return '';
+      const rows = block._children.map(child => {
+        const cells = child.table_row?.cells || [];
+        return '| ' + cells.map((cell: Array<{ plain_text: string }>) => extractBlockRichText(cell)).join(' | ') + ' |';
+      });
+      if (rows.length > 1) {
+        const cols = rows[0].split('|').slice(1, -1);
+        const sep = '| ' + cols.map(() => '---').join(' | ') + ' |';
+        return [rows[0], sep, ...rows.slice(1)].join('\n');
+      }
+      return rows.join('\n');
+    }
+    case 'table_row': {
+      const cells = data?.cells || [];
+      return '| ' + cells.map((cell: Array<{ plain_text: string }>) => extractBlockRichText(cell)).join(' | ') + ' |';
+    }
+    case 'bookmark':
+      return data?.url ? `[Link: ${data.url}]` : '';
+    case 'image': {
+      const url = data?.file?.url || data?.external?.url || '';
+      return url ? `[Image: ${url}]` : '';
+    }
+    default:
+      return extractBlockRichText(data?.rich_text) || '';
+  }
+}
+
+/**
+ * Convert a block tree into a single text string.
+ */
+export function blocksToText(blocks: NotionBlock[]): string {
+  return blocks
+    .map(parseBlock)
+    .filter(text => text && text.trim() !== '')
+    .join('\n\n');
+}
+
 // --- Assignment-related Notion helpers ---
 
 /**

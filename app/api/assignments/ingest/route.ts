@@ -3,6 +3,8 @@ import { putAssignment, getAssignmentByNotionPageId } from '@/lib/assignments-db
 import {
   getNotionPage,
   updateNotionPage,
+  getPageBlocks,
+  blocksToText,
   extractRelation,
   extractTitle,
   extractPlainText,
@@ -132,10 +134,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Build briefing from event description if available
-    const assignmentBriefing = eventDescription || '';
+    // Fetch assignment page content blocks (schedule, shot list, parking, etc.)
+    const pageBlocks = await getPageBlocks(notionPageId);
+    const pageContent = blocksToText(pageBlocks);
 
-    // Quality check (AI validation + briefing generation)
+    // Quality check + AI dispatcher briefing from full page content
     const qualityResult = await validateAssignmentData({
       dealName,
       operatorName,
@@ -151,8 +154,9 @@ export async function POST(request: NextRequest) {
       totalPay,
       attire,
       gear: gearRollup,
-      assignmentBriefing,
+      assignmentBriefing: eventDescription || '',
       locationNotes,
+      pageContent: pageContent || undefined,
     });
 
     // Build assignment record
@@ -183,8 +187,13 @@ export async function POST(request: NextRequest) {
       totalPay,
       attire: attire || undefined,
       gear: gearRollup || undefined,
-      assignmentBriefing: qualityResult.cleaned.assignmentBriefing || assignmentBriefing || undefined,
+      assignmentBriefing: qualityResult.cleaned.assignmentBriefing || eventDescription || undefined,
       locationNotes: locationNotes || undefined,
+      schedule: qualityResult.cleaned.schedule || undefined,
+      shotList: qualityResult.cleaned.shotList || undefined,
+      parkingInfo: qualityResult.cleaned.parkingInfo || undefined,
+      mapsAndReferences: qualityResult.cleaned.mapsAndReferences || undefined,
+      otherInfo: qualityResult.cleaned.otherInfo || undefined,
       assignmentUrl,
       qualityWarnings: qualityResult.warnings.length > 0 ? qualityResult.warnings : undefined,
       createdAt: now.toISOString(),
