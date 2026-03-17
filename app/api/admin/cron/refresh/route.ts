@@ -133,11 +133,6 @@ async function fetchSocialMetrics(): Promise<Record<string, unknown> | null> {
 
 async function fetchGEOScore(): Promise<Record<string, unknown> | null> {
   try {
-    // Call the internal GEO score endpoint server-side
-    const res = await fetch(`${SITE_URL}/api/admin/geo/score`, {
-      headers: { cookie: '' }, // Will need session - fetch raw instead
-      signal: AbortSignal.timeout(30000),
-    });
     // GEO score endpoint requires session, so we do a simplified check
     // Fetch the homepage and check schema directly
     const siteUrl = 'https://jhr-photography.com';

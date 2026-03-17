@@ -82,7 +82,9 @@ function getServiceAccountKey(): ServiceAccountKey | null {
 
   // Try file (local dev)
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require('fs');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const path = require('path');
     const filePath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE || './google-service-account.json';
     const resolved = path.resolve(process.cwd(), filePath);

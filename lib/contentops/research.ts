@@ -200,7 +200,9 @@ function parseResearchResponse(content: string): ResearchPayload {
 }
 
 // ─── Provider: Perplexity Sonar ─────────────────────────────────────────────
+// Currently disabled (quota exceeded) — will re-enable when quota replenishes
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function researchWithPerplexity(
   systemMessage: string,
   prompt: string
