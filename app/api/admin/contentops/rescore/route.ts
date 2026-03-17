@@ -7,11 +7,107 @@ import type { ArticlePayload } from '@/lib/contentops/types';
 
 export const maxDuration = 120;
 
+// Score a single article and save the result
+async function rescoreSingle(
+  slug: string,
+  postStatus: string,
+  userEmail?: string
+): Promise<{ slug: string; geoScore: number; status: string }> {
+  const full = await getBlogContent(slug, 'draft')
+    || await getBlogContent(slug, 'published');
+
+  if (!full || !full.body) {
+    return { slug, geoScore: 0, status: 'skipped-no-body' };
+  }
+
+  const articleForScoring: ArticlePayload = {
+    title: full.title,
+    slug: full.slug,
+    metaTitle: full.seo?.pageTitle || full.title,
+    metaDescription: full.seo?.metaDescription || full.excerpt || '',
+    excerpt: full.excerpt || '',
+    quickAnswer: '',
+    body: full.body,
+    wordCount: full.body.split(/\s+/).length,
+    readTime: full.readingTime || Math.ceil(full.body.split(/\s+/).length / 250),
+    icpTag: 'ICP-1',
+    primaryKeyword: full.tags?.[1] || full.title.split(' ').slice(0, 4).join(' '),
+    secondaryKeywords: full.tags || [],
+    faqBlock: (full.sections || [])
+      .filter((s) => s.type === 'faq')
+      .flatMap((s) => s.type === 'faq' ? (s.items || []).map((item: { question: string; answer: string }) => ({
+        question: item.question,
+        answer: item.answer,
+      })) : []),
+    linkAudit: [],
+    linkAuditStatus: 'pending',
+    externalLinkCount: (full.body.match(/href="https?:\/\/(?!jhr)/g) || []).length,
+    internalLinkCount: (full.body.match(/href="\/|href="https?:\/\/jhr/g) || []).length,
+    schemaMarkup: { '@context': 'https://schema.org', '@type': 'Article' },
+    openGraph: { title: full.title, description: full.excerpt || '', type: 'article' },
+    status: 'draft',
+  };
+
+  const geoResult = await scoreArticleGEO(articleForScoring);
+
+  if (!geoResult) {
+    return { slug, geoScore: 0, status: 'scoring-failed' };
+  }
+
+  const geoMetadata = {
+    topicClassification: full.geoMetadata?.topicClassification || [],
+    entities: full.geoMetadata?.entities || { people: [], places: ['Nashville'], organizations: ['JHR Photography'] },
+    contentSummary: full.geoMetadata?.contentSummary || full.excerpt || '',
+    geoScore: geoResult.totalScore,
+    geoScoreNotes: geoResult.notes,
+  };
+
+  // Save to draft/current version
+  await saveBlogPost(
+    {
+      slug: full.slug,
+      title: full.title,
+      sections: full.sections,
+      seo: full.seo,
+      excerpt: full.excerpt,
+      tags: full.tags,
+      categories: full.categories,
+      geoMetadata,
+    },
+    full.status || 'draft',
+    userEmail
+  );
+
+  // Also update published version if it exists
+  if (postStatus === 'published') {
+    const pub = await getBlogContent(slug, 'published');
+    if (pub) {
+      await saveBlogPost(
+        {
+          slug: pub.slug,
+          title: pub.title,
+          sections: pub.sections,
+          seo: pub.seo,
+          excerpt: pub.excerpt,
+          tags: pub.tags,
+          categories: pub.categories,
+          geoMetadata,
+        },
+        'published',
+        userEmail
+      );
+    }
+  }
+
+  console.log(`[ContentOps] Rescored ${slug}: GEO ${geoResult.totalScore}/100`);
+  return { slug, geoScore: geoResult.totalScore, status: 'rescored' };
+}
+
 /**
- * POST /api/admin/contentops/rescore — Re-score all articles for GEO
+ * POST /api/admin/contentops/rescore — Re-score articles for GEO
  *
- * Backfills geoMetadata on articles that were generated before GEO scoring was added.
- * Optionally accepts { slug: string } to rescore a single article.
+ * Accepts optional { slug: string } to rescore a single article.
+ * For bulk rescore, processes 3 articles in parallel to stay within timeout.
  */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -22,116 +118,30 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const targetSlug = body.slug as string | undefined;
+    const userEmail = session.user?.email || undefined;
 
     const allPosts = await listBlogs();
     const toRescore = targetSlug
       ? allPosts.filter((p) => p.slug === targetSlug)
       : allPosts;
 
+    // Process in parallel batches of 3 to stay within Amplify timeout
+    const BATCH_SIZE = 3;
     const results: Array<{ slug: string; geoScore: number; status: string }> = [];
 
-    for (const post of toRescore) {
-      try {
-        // Get the draft (preferred) or published version
-        const full = await getBlogContent(post.slug, 'draft')
-          || await getBlogContent(post.slug, 'published');
-
-        if (!full || !full.body) {
-          results.push({ slug: post.slug, geoScore: 0, status: 'skipped-no-body' });
-          continue;
-        }
-
-        // Build a minimal ArticlePayload for scoring
-        const articleForScoring: ArticlePayload = {
-          title: full.title,
-          slug: full.slug,
-          metaTitle: full.seo?.pageTitle || full.title,
-          metaDescription: full.seo?.metaDescription || full.excerpt || '',
-          excerpt: full.excerpt || '',
-          quickAnswer: '',
-          body: full.body,
-          wordCount: full.body.split(/\s+/).length,
-          readTime: full.readingTime || Math.ceil(full.body.split(/\s+/).length / 250),
-          icpTag: 'ICP-1',
-          primaryKeyword: full.tags?.[1] || full.title.split(' ').slice(0, 4).join(' '),
-          secondaryKeywords: full.tags || [],
-          faqBlock: (full.sections || [])
-            .filter((s) => s.type === 'faq')
-            .flatMap((s) => s.type === 'faq' ? (s.items || []).map((item: { question: string; answer: string }) => ({
-              question: item.question,
-              answer: item.answer,
-            })) : []),
-          linkAudit: [],
-          linkAuditStatus: 'pending',
-          externalLinkCount: (full.body.match(/href="https?:\/\/(?!jhr)/g) || []).length,
-          internalLinkCount: (full.body.match(/href="\/|href="https?:\/\/jhr/g) || []).length,
-          schemaMarkup: { '@context': 'https://schema.org', '@type': 'Article' },
-          openGraph: { title: full.title, description: full.excerpt || '', type: 'article' },
-          status: 'draft',
-        };
-
-        const geoResult = await scoreArticleGEO(articleForScoring);
-
-        if (!geoResult) {
-          results.push({ slug: post.slug, geoScore: 0, status: 'scoring-failed' });
-          continue;
-        }
-
-        // Save geoMetadata back to the draft
-        await saveBlogPost(
-          {
-            slug: full.slug,
-            title: full.title,
-            sections: full.sections,
-            seo: full.seo,
-            excerpt: full.excerpt,
-            tags: full.tags,
-            categories: full.categories,
-            geoMetadata: {
-              topicClassification: full.geoMetadata?.topicClassification || [],
-              entities: full.geoMetadata?.entities || { people: [], places: ['Nashville'], organizations: ['JHR Photography'] },
-              contentSummary: full.geoMetadata?.contentSummary || full.excerpt || '',
-              geoScore: geoResult.totalScore,
-              geoScoreNotes: geoResult.notes,
-            },
-          },
-          full.status || 'draft',
-          session.user?.email || undefined
-        );
-
-        // Also update published version if it exists
-        if (post.status === 'published') {
-          const pub = await getBlogContent(post.slug, 'published');
-          if (pub) {
-            await saveBlogPost(
-              {
-                slug: pub.slug,
-                title: pub.title,
-                sections: pub.sections,
-                seo: pub.seo,
-                excerpt: pub.excerpt,
-                tags: pub.tags,
-                categories: pub.categories,
-                geoMetadata: {
-                  topicClassification: pub.geoMetadata?.topicClassification || [],
-                  entities: pub.geoMetadata?.entities || { people: [], places: ['Nashville'], organizations: ['JHR Photography'] },
-                  contentSummary: pub.geoMetadata?.contentSummary || pub.excerpt || '',
-                  geoScore: geoResult.totalScore,
-                  geoScoreNotes: geoResult.notes,
-                },
-              },
-              'published',
-              session.user?.email || undefined
-            );
-          }
-        }
-
-        results.push({ slug: post.slug, geoScore: geoResult.totalScore, status: 'rescored' });
-        console.log(`[ContentOps] Rescored ${post.slug}: GEO ${geoResult.totalScore}/100`);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        results.push({ slug: post.slug, geoScore: 0, status: `error: ${msg}` });
-      }
+    for (let i = 0; i < toRescore.length; i += BATCH_SIZE) {
+      const batch = toRescore.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map((post) =>
+          rescoreSingle(post.slug, post.status || 'draft', userEmail)
+            .catch((err) => ({
+              slug: post.slug,
+              geoScore: 0,
+              status: `error: ${err instanceof Error ? err.message : String(err)}`,
+            }))
+        )
+      );
+      results.push(...batchResults);
     }
 
     return NextResponse.json({

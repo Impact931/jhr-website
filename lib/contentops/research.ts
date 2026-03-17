@@ -10,7 +10,7 @@ const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
 const PERPLEXITY_MODEL = 'sonar'; // sonar (not sonar-pro) — cheaper, faster, sufficient for research
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_MODEL = 'gemini-2.0-flash'; // 2.0-flash is stable and fast
+const GEMINI_MODEL = 'gemini-2.5-flash'; // 2.0-flash blocked for new users, 2.5-flash works
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001';
