@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { runResearch } from '@/lib/contentops/research';
-import { scrapeCompetitors } from '@/lib/contentops/competitor-scrape';
 import { createKnowledgeEntry } from '@/lib/knowledge';
 
 // Allow up to 60s for Perplexity research
@@ -131,38 +130,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    // Save research to knowledge base for future use (social content, etc.)
+    // Save research to knowledge base — fire and forget (don't block response)
+    // This runs in background; we return a placeholder and update async
     let knowledgeId: string | null = null;
-    try {
-      const markdown = researchToMarkdown(topic, primaryKeyword, icpTag, result.data);
-      const entry = await createKnowledgeEntry({
-        title: `Research: ${topic}`,
-        content: markdown,
-        category: 'Document',
-        tags: ['contentops-research', icpTag, primaryKeyword, 'auto-generated'],
-      });
-      knowledgeId = entry.id;
-    } catch (knErr) {
-      console.warn('[ContentOps] Failed to save research to knowledge base:', knErr);
-    }
-
-    // Attempt competitor scraping with a tight timeout — skip if it takes too long
-    let competitorContext = null;
-    if (result.data?.competitorUrls && result.data.competitorUrls.length > 0) {
+    const knowledgeSave = (async () => {
       try {
-        const scrapePromise = scrapeCompetitors(result.data.competitorUrls);
-        const timeoutPromise = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 10_000)
-        );
-        competitorContext = await Promise.race([scrapePromise, timeoutPromise]);
-      } catch {
-        console.warn('[ContentOps] Competitor scraping skipped (timeout or error)');
+        const markdown = researchToMarkdown(topic, primaryKeyword, icpTag, result.data);
+        const entry = await createKnowledgeEntry({
+          title: `Research: ${topic}`,
+          content: markdown,
+          category: 'Document',
+          tags: ['contentops-research', icpTag, primaryKeyword, 'auto-generated'],
+        });
+        return entry.id;
+      } catch (knErr) {
+        console.warn('[ContentOps] Failed to save research to knowledge base:', knErr);
+        return null;
       }
+    })();
+
+    // Race the knowledge save against a 3s timeout — return response either way
+    try {
+      knowledgeId = await Promise.race([
+        knowledgeSave,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3_000)),
+      ]);
+    } catch {
+      // ignore — knowledge save is best-effort
     }
 
     return NextResponse.json({
       research: result.data,
-      competitorContext,
       knowledgeId,
     });
   } catch (error) {
