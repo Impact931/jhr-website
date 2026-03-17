@@ -1960,8 +1960,96 @@ function ContentQueueTab({ onGenerateClick }: { onGenerateClick: (rec: QueueReco
 
 // ─── Competitor Intelligence Tab ──────────────────────────────────────────────
 
+interface CompetitorLaunchState {
+  keyword: string;
+  status: 'idle' | 'running' | 'success' | 'error';
+  step?: string;
+  slug?: string;
+  geoScore?: number;
+  wordCount?: number;
+  error?: string;
+}
+
 function CompetitorRow({ comp, onGenerateClick }: { comp: CompetitorDomain; onGenerateClick: (rec: QueueRecommendation) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const [launches, setLaunches] = useState<Record<string, CompetitorLaunchState>>({});
+
+  const handleLaunch = async (kw: CompetitorKeywordEntry, index: number) => {
+    const key = `${kw.keyword}-${index}`;
+    setLaunches(prev => ({
+      ...prev,
+      [key]: { keyword: kw.keyword, status: 'running', step: 'Scraping competitor page...' },
+    }));
+
+    try {
+      // Update step indicators as time progresses
+      const stepTimer1 = setTimeout(() => {
+        setLaunches(prev => ({
+          ...prev,
+          [key]: { ...prev[key], step: 'Running targeted research...' },
+        }));
+      }, 8_000);
+
+      const stepTimer2 = setTimeout(() => {
+        setLaunches(prev => ({
+          ...prev,
+          [key]: { ...prev[key], step: 'Generating article to outrank...' },
+        }));
+      }, 25_000);
+
+      const stepTimer3 = setTimeout(() => {
+        setLaunches(prev => ({
+          ...prev,
+          [key]: { ...prev[key], step: 'Validating & scoring GEO...' },
+        }));
+      }, 60_000);
+
+      const res = await fetch('/api/admin/contentops/competitor-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          keyword: kw.keyword,
+          competitorUrl: kw.url,
+          competitorDomain: comp.domain,
+          competitorPosition: kw.position,
+          ourPosition: kw.ourPosition,
+          searchVolume: kw.searchVolume,
+          icpTag: 'ICP-1',
+          articleType: 'ultimate-guide',
+        }),
+      });
+
+      clearTimeout(stepTimer1);
+      clearTimeout(stepTimer2);
+      clearTimeout(stepTimer3);
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+        throw new Error(errData.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      setLaunches(prev => ({
+        ...prev,
+        [key]: {
+          keyword: kw.keyword,
+          status: 'success',
+          slug: data.slug,
+          geoScore: data.article?.geoScore ?? data.geoScoring?.totalScore ?? 0,
+          wordCount: data.article?.wordCount ?? 0,
+        },
+      }));
+    } catch (err) {
+      setLaunches(prev => ({
+        ...prev,
+        [key]: {
+          keyword: kw.keyword,
+          status: 'error',
+          error: err instanceof Error ? err.message : 'Launch failed',
+        },
+      }));
+    }
+  };
 
   const DIFFICULTY_COLORS: Record<string, { bg: string; text: string }> = {
     easy: { bg: 'bg-green-500/20', text: 'text-green-400' },
@@ -2038,75 +2126,146 @@ function CompetitorRow({ comp, onGenerateClick }: { comp: CompetitorDomain; onGe
                   {keywords.map((kw, ki) => {
                     const diffStyle = DIFFICULTY_COLORS[kw.difficulty] || DIFFICULTY_COLORS.medium;
                     const actionStyle = ACTION_MAP[kw.suggestedAction] || ACTION_MAP.create;
+                    const launchKey = `${kw.keyword}-${ki}`;
+                    const launch = launches[launchKey];
                     return (
-                      <tr key={`${kw.keyword}-${ki}`} className="border-t border-jhr-black-lighter/10 hover:bg-jhr-black-lighter/10 group">
-                        <td className="py-2 pl-10 pr-3">
-                          <span className="text-jhr-white text-xs">{kw.keyword}</span>
-                        </td>
-                        <td className="text-right py-2 px-3 text-red-400 font-mono text-xs">#{kw.position}</td>
-                        <td className="text-right py-2 px-3 font-mono text-xs">
-                          {kw.ourPosition ? (
-                            <span className="text-yellow-400">#{kw.ourPosition}</span>
-                          ) : (
-                            <span className="text-jhr-white-dim/30">—</span>
-                          )}
-                        </td>
-                        <td className="text-right py-2 px-3 text-jhr-white-dim text-xs">{kw.searchVolume.toLocaleString()}</td>
-                        <td className="text-right py-2 px-3 text-jhr-white-dim text-xs">
-                          {kw.cpc != null ? `$${kw.cpc.toFixed(2)}` : '—'}
-                        </td>
-                        <td className="text-center py-2 px-3">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${diffStyle.bg} ${diffStyle.text}`}>
-                            {kw.difficulty}
-                          </span>
-                        </td>
-                        <td className="text-center py-2 px-3">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${actionStyle.bg} ${actionStyle.text}`}>
-                            {actionStyle.label}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3 max-w-[200px]">
-                          {kw.url && (
-                            <a
-                              href={kw.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-jhr-white-dim/50 text-[10px] hover:text-jhr-gold truncate block"
-                              title={kw.url}
-                            >
-                              {kw.url.replace(/^https?:\/\/[^/]+/, '')}
-                            </a>
-                          )}
-                        </td>
-                        <td className="text-right py-2 px-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onGenerateClick({
-                                id: `comp-${comp.domain}-${ki}`,
-                                keyword: kw.keyword,
-                                searchVolume: kw.searchVolume,
-                                cpc: kw.cpc,
-                                competition: kw.competition,
-                                trend: null,
-                                monthlyTrend: [],
-                                currentPosition: kw.ourPosition,
-                                currentUrl: null,
-                                recommendedAction: kw.suggestedAction === 'overtake' ? 'optimize' : 'create',
-                                suggestedTopic: `${kw.keyword} — Comprehensive Guide`,
-                                suggestedIcp: 'ICP-1',
-                                suggestedArticleType: 'ultimate-guide',
-                                priorityScore: kw.difficulty === 'easy' ? 90 : kw.difficulty === 'medium' ? 70 : 50,
-                                dataJustification: `${comp.domain} ranks #${kw.position} for "${kw.keyword}". ${kw.ourPosition ? `We rank #${kw.ourPosition}.` : 'We don\'t rank.'} Vol: ${kw.searchVolume}`,
-                              });
-                            }}
-                            className="flex items-center gap-1 px-2 py-1 bg-jhr-gold/20 hover:bg-jhr-gold/30 text-jhr-gold rounded text-[10px] font-medium transition-colors opacity-0 group-hover:opacity-100 whitespace-nowrap"
-                          >
-                            <ArrowRight className="w-3 h-3" />
-                            {kw.suggestedAction === 'create' ? 'Create Better' : 'Beat This'}
-                          </button>
-                        </td>
-                      </tr>
+                      <>
+                        <tr key={`${kw.keyword}-${ki}`} className="border-t border-jhr-black-lighter/10 hover:bg-jhr-black-lighter/10 group">
+                          <td className="py-2 pl-10 pr-3">
+                            <span className="text-jhr-white text-xs">{kw.keyword}</span>
+                          </td>
+                          <td className="text-right py-2 px-3 text-red-400 font-mono text-xs">#{kw.position}</td>
+                          <td className="text-right py-2 px-3 font-mono text-xs">
+                            {kw.ourPosition ? (
+                              <span className="text-yellow-400">#{kw.ourPosition}</span>
+                            ) : (
+                              <span className="text-jhr-white-dim/30">—</span>
+                            )}
+                          </td>
+                          <td className="text-right py-2 px-3 text-jhr-white-dim text-xs">{kw.searchVolume.toLocaleString()}</td>
+                          <td className="text-right py-2 px-3 text-jhr-white-dim text-xs">
+                            {kw.cpc != null ? `$${kw.cpc.toFixed(2)}` : '—'}
+                          </td>
+                          <td className="text-center py-2 px-3">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${diffStyle.bg} ${diffStyle.text}`}>
+                              {kw.difficulty}
+                            </span>
+                          </td>
+                          <td className="text-center py-2 px-3">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${actionStyle.bg} ${actionStyle.text}`}>
+                              {actionStyle.label}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 max-w-[200px]">
+                            {kw.url && (
+                              <a
+                                href={kw.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-jhr-white-dim/50 text-[10px] hover:text-jhr-gold truncate block"
+                                title={kw.url}
+                              >
+                                {kw.url.replace(/^https?:\/\/[^/]+/, '')}
+                              </a>
+                            )}
+                          </td>
+                          <td className="text-right py-2 px-3">
+                            {(!launch || launch.status === 'idle') && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLaunch(kw, ki);
+                                }}
+                                className="flex items-center gap-1 px-2 py-1 bg-jhr-gold/20 hover:bg-jhr-gold/30 text-jhr-gold rounded text-[10px] font-medium transition-colors opacity-0 group-hover:opacity-100 whitespace-nowrap"
+                              >
+                                <Zap className="w-3 h-3" />
+                                {kw.suggestedAction === 'create' ? 'Launch' : 'Outrank'}
+                              </button>
+                            )}
+                            {launch?.status === 'running' && (
+                              <span className="flex items-center gap-1 text-jhr-gold text-[10px]">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              </span>
+                            )}
+                            {launch?.status === 'success' && (
+                              <Link
+                                href={`/blog/${launch.slug}?editMode=true`}
+                                className="flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-400 rounded text-[10px] font-medium whitespace-nowrap"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <CheckCircle className="w-3 h-3" />
+                                View
+                              </Link>
+                            )}
+                            {launch?.status === 'error' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLaunch(kw, ki);
+                                }}
+                                className="flex items-center gap-1 px-2 py-1 bg-red-500/20 text-red-400 rounded text-[10px] font-medium whitespace-nowrap"
+                                title={launch.error}
+                              >
+                                <XCircle className="w-3 h-3" />
+                                Retry
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                        {/* Inline progress/result bar */}
+                        {launch?.status === 'running' && (
+                          <tr key={`${kw.keyword}-${ki}-progress`}>
+                            <td colSpan={9} className="py-0 pl-10">
+                              <div className="flex items-center gap-2 py-1.5 text-[10px]">
+                                <Loader2 className="w-3 h-3 text-jhr-gold animate-spin flex-shrink-0" />
+                                <span className="text-jhr-gold">{launch.step}</span>
+                                <span className="text-jhr-white-dim/30">This takes 1-2 minutes</span>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        {launch?.status === 'success' && (
+                          <tr key={`${kw.keyword}-${ki}-result`}>
+                            <td colSpan={9} className="py-0 pl-10">
+                              <div className="flex items-center gap-4 py-1.5 text-[10px]">
+                                <span className="flex items-center gap-1 text-green-400">
+                                  <CheckCircle className="w-3 h-3" />
+                                  Draft saved
+                                </span>
+                                {launch.wordCount ? (
+                                  <span className="text-jhr-white-dim">{launch.wordCount.toLocaleString()} words</span>
+                                ) : null}
+                                {launch.geoScore ? (
+                                  <span className={`px-1.5 py-0.5 rounded font-medium ${
+                                    launch.geoScore >= 85 ? 'bg-green-500/20 text-green-400' :
+                                    launch.geoScore >= 70 ? 'bg-yellow-500/20 text-yellow-400' :
+                                    'bg-red-500/20 text-red-400'
+                                  }`}>
+                                    GEO {launch.geoScore}
+                                  </span>
+                                ) : null}
+                                <Link
+                                  href={`/blog/${launch.slug}?editMode=true`}
+                                  className="text-jhr-gold hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Open article
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                        {launch?.status === 'error' && (
+                          <tr key={`${kw.keyword}-${ki}-error`}>
+                            <td colSpan={9} className="py-0 pl-10">
+                              <div className="flex items-center gap-2 py-1.5 text-[10px] text-red-400">
+                                <XCircle className="w-3 h-3 flex-shrink-0" />
+                                {launch.error}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
                     );
                   })}
                 </tbody>
