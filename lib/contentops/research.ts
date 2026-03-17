@@ -269,18 +269,12 @@ async function researchWithGemini(
           parts: [{ text: prompt }],
         },
       ],
-      tools: [
-        {
-          google_search: {},
-        },
-      ],
       generationConfig: {
         temperature: 0.1,
-        // NOTE: responseMimeType: 'application/json' is incompatible with google_search tool
-        // The prompt instructs JSON-only output instead
+        responseMimeType: 'application/json',
       },
     }),
-    signal: AbortSignal.timeout(22_000), // Must fit within Amplify's ~25-30s gateway timeout
+    signal: AbortSignal.timeout(25_000), // Must fit within Amplify's ~25-30s gateway timeout
   });
 
   if (!response.ok) {
@@ -359,15 +353,16 @@ export async function runResearch(
   // Build list of available providers (only those with API keys configured)
   const providers: Array<{ name: string; fn: () => Promise<ProviderResult> }> = [];
 
-  if (process.env.PERPLEXITY_API_KEY) {
-    providers.push({
-      name: 'perplexity',
-      fn: async () => {
-        const r = await researchWithPerplexity(systemMessage, prompt);
-        return r.data ? { data: r.data, provider: 'perplexity' } : { error: r.error };
-      },
-    });
-  }
+  // Perplexity disabled — re-enable when quota is replenished
+  // if (process.env.PERPLEXITY_API_KEY) {
+  //   providers.push({
+  //     name: 'perplexity',
+  //     fn: async () => {
+  //       const r = await researchWithPerplexity(systemMessage, prompt);
+  //       return r.data ? { data: r.data, provider: 'perplexity' } : { error: r.error };
+  //     },
+  //   });
+  // }
   if (process.env.GOOGLE_API_KEY) {
     providers.push({
       name: 'gemini',
