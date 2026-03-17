@@ -40,6 +40,7 @@
     "@tiptap/react": "^3.17.1",
     "@tiptap/starter-kit": "^3.17.1",
     "clsx": "^2.0.0",
+    "docx": "^9.6.1",
     "dotenv": "^17.2.3",
     "framer-motion": "^10.16.0",
     "googleapis": "^171.4.0",
@@ -47,6 +48,7 @@
     "next": "14.2.35",
     "next-auth": "^4.24.13",
     "openai": "^4.20.0",
+    "pdfkit": "^0.18.0",
     "react": "^18",
     "react-dom": "^18",
     "recharts": "^3.8.0",
@@ -54,6 +56,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/pdfkit": "^0.17.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
