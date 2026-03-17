@@ -1,11 +1,24 @@
 {
   "lastCycleDate": null,
   "cycleNumber": 0,
+  "engineVersion": "2.0-seo-geo",
   "previous": { "pages": [], "keywords": [], "snapshot": {} },
   "latest": { "pages": [], "keywords": [], "snapshot": {} },
   "page_scores": {},
+  "geo_scores": {},
   "actions_log": [],
+  "action_outcomes": [],
   "winner_dna": {},
   "keyword_watchlist": { "improving": [], "declining": [], "new": [] },
-  "serp_positions": {}
+  "serp_positions": {},
+  "cannibalization_alerts": [],
+  "lessons_count": 5,
+  "geo_health": {
+    "ai_crawlers": { "GPTBot": null, "ClaudeBot": null, "PerplexityBot": null },
+    "pages_with_faq_schema": 0,
+    "pages_with_quick_answer": 0,
+    "avg_geo_score_services": null,
+    "avg_geo_score_blog": null,
+    "overall_readiness": null
+  }
 }
