@@ -486,7 +486,7 @@ export async function generateArticle(
       return { error: 'Anthropic API returned no text content' };
     }
 
-    let article = parseArticleResponse(textBlock.text);
+    const article = parseArticleResponse(textBlock.text);
 
     // Proofing loop is deferred — runs as background update after save
     // This keeps the generation response under the Amplify gateway timeout
