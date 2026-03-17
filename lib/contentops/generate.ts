@@ -127,12 +127,9 @@ function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, 
     .map((k) => `"${k}"`)
     .join(', ');
 
-  // Use the full brand voice doc if available, otherwise fall back to inline
-  const voiceSection = brandVoice
-    ? `## Layer 1: JHR Brand Voice (Full Document)
-
-${brandVoice}`
-    : `## Layer 1: Identity & Voice (JHR Brand Voice Guide)
+  // Use concise inline voice guide for API calls (full 26KB doc causes timeouts)
+  // The full brand voice doc is available for Claude Code sessions, not API generation
+  const voiceSection = `## Layer 1: Identity & Voice (JHR Brand Voice Guide)
 
 You are writing as JHR Photography, Nashville's premier event and corporate photography company with 15+ years of experience.
 
@@ -159,16 +156,8 @@ You are writing as JHR Photography, Nashville's premier event and corporate phot
 
 Write naturally. Avoid cliches and filler. Every sentence should deliver value.`;
 
-  // Use full ICP profiles if available, combined with the specific ICP block
-  const icpSection = icpProfiles
-    ? `## Layer 2: ICP Context
-
-### Target ICP for This Article
-${icpBlock}
-
-### Full ICP Reference (use for depth and authenticity)
-${icpProfiles}`
-    : `## Layer 2: ICP Context
+  // Use the specific ICP block only (full 21KB profiles doc causes timeouts)
+  const icpSection = `## Layer 2: ICP Context
 
 ${icpBlock}`;
 
@@ -544,52 +533,9 @@ export async function generateArticle(
 
     let article = parseArticleResponse(textBlock.text);
 
-    // Phase 2b: Run the proofing loop (race against 20s timeout to avoid gateway 504)
-    let proofing: ProofingResult;
-    try {
-      const proofingResult = await Promise.race([
-        runProofingLoop(article, config, apiKey),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
-      ]);
-
-      if (proofingResult) {
-        proofing = proofingResult;
-        // If proofing returned a revised article with fixes, use it
-        if (proofing.revisedArticle && !proofing.passed) {
-          article = proofing.revisedArticle;
-        }
-      } else {
-        console.warn('[ContentOps] Proofing loop timed out (20s), using unproofed article');
-        proofing = {
-          passed: true,
-          overallScore: 0,
-          brandVoiceScore: 0,
-          geoReadiness: 0,
-          seoScore: 0,
-          issues: [{
-            severity: 'warning',
-            category: 'structure',
-            description: 'Proofing skipped (timeout) — article was saved without proofing review',
-          }],
-        };
-      }
-    } catch (proofErr) {
-      console.error('[ContentOps] Proofing loop failed:', proofErr);
-      proofing = {
-        passed: false,
-        overallScore: 0,
-        brandVoiceScore: 0,
-        geoReadiness: 0,
-        seoScore: 0,
-        issues: [{
-          severity: 'warning',
-          category: 'structure',
-          description: `Proofing loop failed: ${proofErr instanceof Error ? proofErr.message : 'Unknown error'}`,
-        }],
-      };
-    }
-
-    return { data: article, proofing };
+    // Proofing loop is deferred — runs as background update after save
+    // This keeps the generation response under the Amplify gateway timeout
+    return { data: article };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error during generation';
     return { error: `Article generation failed: ${message}` };
