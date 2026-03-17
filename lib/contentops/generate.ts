@@ -1,9 +1,8 @@
 // ContentOps Engine — Phase 2: Article Generation via Anthropic Claude
-// Loads full brand voice + ICP docs, includes Claude proofing loop
+// Research is loaded from DynamoDB. Brand voice + ICP are inline (API-optimized).
+// Proofing and GEO scoring run as background updates after the draft is saved.
 
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import type { ContentOpsConfig, ResearchPayload, ArticlePayload, CompetitorContext } from './types';
 import { getICPPromptBlock } from './icp-templates';
 
@@ -26,46 +25,6 @@ const INTERNAL_LINK_MAP: Record<string, string> = {
   '/schedule': 'schedule a strategy call',
 };
 
-// ─── Load brand voice documents from disk ────────────────────────────────────
-
-function loadBrandVoice(): string {
-  try {
-    return readFileSync(
-      join(process.cwd(), '.claude/skills/foundation/jhr-brand-voice.md'),
-      'utf-8'
-    );
-  } catch {
-    console.warn('[ContentOps] Brand voice file not found, using inline fallback');
-    return '';
-  }
-}
-
-function loadICPProfiles(): string {
-  try {
-    return readFileSync(
-      join(process.cwd(), '.claude/skills/foundation/jhr-icp-profiles.md'),
-      'utf-8'
-    );
-  } catch {
-    console.warn('[ContentOps] ICP profiles file not found, using inline fallback');
-    return '';
-  }
-}
-
-// Cache loaded docs in memory for the process lifetime
-let _brandVoiceCache: string | null = null;
-let _icpProfilesCache: string | null = null;
-
-function getBrandVoice(): string {
-  if (_brandVoiceCache === null) _brandVoiceCache = loadBrandVoice();
-  return _brandVoiceCache;
-}
-
-function getICPProfiles(): string {
-  if (_icpProfilesCache === null) _icpProfilesCache = loadICPProfiles();
-  return _icpProfilesCache;
-}
-
 // ─── Competitor analysis block ───────────────────────────────────────────────
 
 function buildCompetitorBlock(competitor: CompetitorContext): string {
@@ -87,8 +46,6 @@ Your article must exceed this depth — aim for at least ${Math.round(competitor
 // ─── System prompt builder ───────────────────────────────────────────────────
 
 function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, competitorContext?: CompetitorContext | null): string {
-  const brandVoice = getBrandVoice();
-  const icpProfiles = getICPProfiles();
   const icpBlock = getICPPromptBlock(config.icpTag);
 
   const internalLinkLines = Object.entries(INTERNAL_LINK_MAP)
@@ -313,12 +270,10 @@ interface ProofingIssue {
 }
 
 function buildProofingPrompt(article: ArticlePayload, config: ContentOpsConfig): string {
-  const brandVoice = getBrandVoice();
-
   return `You are the JHR Photography content quality editor. Your job is to proof this article against the brand voice guide, GEO best practices, and SEO requirements. Be rigorous — this article must rank in the top 3 on Google AND get cited by AI search engines.
 
 ## BRAND VOICE REFERENCE
-${brandVoice || 'Brand voice document not available — check for: AI-sounding language, generic phrasing, and client-as-hero framing.'}
+JHR Photography uses the StoryBrand framework: client is the hero, JHR is the guide. Voice: warm, direct, confident, solution-focused, relationship-first. EDUCATING tone for articles. No AI slop words (crucial, delve, comprehensive, leverage, etc). No generic statements. Every sentence delivers value.
 
 ## ARTICLE TO PROOF
 
