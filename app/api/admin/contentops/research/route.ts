@@ -161,6 +161,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       research: result.data,
+      provider: result.provider || 'unknown',
       knowledgeId,
     });
   } catch (error) {

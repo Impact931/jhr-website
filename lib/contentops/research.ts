@@ -1,4 +1,5 @@
-// ContentOps Engine — Phase 1: Research via Perplexity Sonar API
+// ContentOps Engine — Phase 1: Research via multiple providers
+// Fallback chain: Perplexity Sonar → Gemini (with Google Search grounding) → OpenRouter
 // Optimized for programmatic SEO + Generative Engine Optimization (GEO)
 
 import type { ResearchPayload, ICPTag } from './types';
@@ -7,6 +8,12 @@ import { PREFERRED_PARTNERS } from './link-policy';
 
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
 const PERPLEXITY_MODEL = 'sonar-pro';
+
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+const GEMINI_MODEL = 'gemini-2.0-flash';
+
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001';
 
 // Nashville venue keywords to trigger hyper-local research
 const NASHVILLE_VENUES = [
@@ -166,33 +173,25 @@ function parseResearchResponse(content: string): ResearchPayload {
 
   const parsed = JSON.parse(cleaned);
 
-  // Validate required fields
-  if (!Array.isArray(parsed.currentStats) || parsed.currentStats.length < 4) {
+  // Relaxed validation — different providers return varying quality
+  if (!Array.isArray(parsed.currentStats) || parsed.currentStats.length < 2) {
     throw new Error(
-      `Research returned only ${parsed.currentStats?.length ?? 0} stats, minimum 4 required`
+      `Research returned only ${parsed.currentStats?.length ?? 0} stats, minimum 2 required`
     );
   }
-  if (!Array.isArray(parsed.authorityLinks) || parsed.authorityLinks.length < 5) {
-    throw new Error(
-      `Research returned only ${parsed.authorityLinks?.length ?? 0} authority links, minimum 5 required`
-    );
-  }
-  if (!Array.isArray(parsed.expertQuotes)) {
-    throw new Error('Research missing expertQuotes array');
+  if (!Array.isArray(parsed.authorityLinks)) {
+    throw new Error('Research missing authorityLinks array');
   }
   if (!Array.isArray(parsed.relatedQuestions)) {
     throw new Error('Research missing relatedQuestions array');
   }
-  if (!Array.isArray(parsed.competitorUrls)) {
-    throw new Error('Research missing competitorUrls array');
-  }
 
   return {
-    currentStats: parsed.currentStats,
-    authorityLinks: parsed.authorityLinks,
-    expertQuotes: parsed.expertQuotes,
-    relatedQuestions: parsed.relatedQuestions,
-    competitorUrls: parsed.competitorUrls,
+    currentStats: parsed.currentStats || [],
+    authorityLinks: parsed.authorityLinks || [],
+    expertQuotes: parsed.expertQuotes || [],
+    relatedQuestions: parsed.relatedQuestions || [],
+    competitorUrls: parsed.competitorUrls || [],
     localInsights: parsed.localInsights || [],
     contentGaps: parsed.contentGaps || [],
     geoAnswerFragments: parsed.geoAnswerFragments || [],
@@ -200,58 +199,195 @@ function parseResearchResponse(content: string): ResearchPayload {
   };
 }
 
+// ─── Provider: Perplexity Sonar ─────────────────────────────────────────────
+
+async function researchWithPerplexity(
+  systemMessage: string,
+  prompt: string
+): Promise<{ data?: ResearchPayload; error?: string }> {
+  const apiKey = process.env.PERPLEXITY_API_KEY;
+  if (!apiKey) {
+    return { error: 'PERPLEXITY_API_KEY not set' };
+  }
+
+  const response = await fetch(PERPLEXITY_API_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: PERPLEXITY_MODEL,
+      messages: [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.1,
+      search_recency_filter: 'year',
+    }),
+    signal: AbortSignal.timeout(25_000),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => 'Unknown error');
+    return { error: `Perplexity API error (${response.status}): ${errorBody}` };
+  }
+
+  const json = await response.json();
+  const content = json.choices?.[0]?.message?.content;
+  if (!content) {
+    return { error: 'Perplexity API returned empty response' };
+  }
+
+  const data = parseResearchResponse(content);
+  return { data };
+}
+
+// ─── Provider: Google Gemini (with Google Search grounding) ─────────────────
+
+async function researchWithGemini(
+  systemMessage: string,
+  prompt: string
+): Promise<{ data?: ResearchPayload; error?: string }> {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    return { error: 'GOOGLE_API_KEY not set' };
+  }
+
+  const url = `${GEMINI_API_URL}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system_instruction: {
+        parts: [{ text: systemMessage }],
+      },
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }],
+        },
+      ],
+      tools: [
+        {
+          google_search: {},
+        },
+      ],
+      generationConfig: {
+        temperature: 0.1,
+        responseMimeType: 'application/json',
+      },
+    }),
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => 'Unknown error');
+    return { error: `Gemini API error (${response.status}): ${errorBody}` };
+  }
+
+  const json = await response.json();
+  const content = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!content) {
+    return { error: 'Gemini API returned empty response' };
+  }
+
+  const data = parseResearchResponse(content);
+  return { data };
+}
+
+// ─── Provider: OpenRouter (Gemini Flash via OpenRouter) ─────────────────────
+
+async function researchWithOpenRouter(
+  systemMessage: string,
+  prompt: string
+): Promise<{ data?: ResearchPayload; error?: string }> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return { error: 'OPENROUTER_API_KEY not set' };
+  }
+
+  const response = await fetch(OPENROUTER_API_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': 'https://jhr-photography.com',
+      'X-Title': 'JHR ContentOps Research',
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      messages: [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.1,
+    }),
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => 'Unknown error');
+    return { error: `OpenRouter API error (${response.status}): ${errorBody}` };
+  }
+
+  const json = await response.json();
+  const content = json.choices?.[0]?.message?.content;
+  if (!content) {
+    return { error: 'OpenRouter API returned empty response' };
+  }
+
+  const data = parseResearchResponse(content);
+  return { data };
+}
+
+// ─── Main entry point with fallback chain ───────────────────────────────────
+
+type ResearchProvider = 'perplexity' | 'gemini' | 'openrouter';
+
+const PROVIDER_CHAIN: Array<{
+  name: ResearchProvider;
+  fn: (system: string, prompt: string) => Promise<{ data?: ResearchPayload; error?: string }>;
+}> = [
+  { name: 'perplexity', fn: researchWithPerplexity },
+  { name: 'gemini', fn: researchWithGemini },
+  { name: 'openrouter', fn: researchWithOpenRouter },
+];
+
 export async function runResearch(
   topic: string,
   icp: string,
   primaryKeyword: string
-): Promise<{ data?: ResearchPayload; error?: string }> {
-  const apiKey = process.env.PERPLEXITY_API_KEY;
-  if (!apiKey) {
-    return { error: 'PERPLEXITY_API_KEY environment variable is not set' };
-  }
-
+): Promise<{ data?: ResearchPayload; provider?: string; error?: string }> {
   const icpTag = icp as ICPTag;
   const systemMessage = buildSystemMessage(icpTag);
   const prompt = buildResearchPrompt(topic, icpTag, primaryKeyword);
 
-  try {
-    const response = await fetch(PERPLEXITY_API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: PERPLEXITY_MODEL,
-        messages: [
-          { role: 'system', content: systemMessage },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.1,
-        search_recency_filter: 'year',
-      }),
-      signal: AbortSignal.timeout(25_000), // 25s timeout — Amplify SSR has ~30s gateway limit
-    });
+  const errors: string[] = [];
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => 'Unknown error');
-      return {
-        error: `Perplexity API error (${response.status}): ${errorBody}`,
-      };
+  for (const provider of PROVIDER_CHAIN) {
+    try {
+      console.log(`[ContentOps] Trying research provider: ${provider.name}`);
+      const result = await provider.fn(systemMessage, prompt);
+
+      if (result.data) {
+        console.log(`[ContentOps] Research succeeded via ${provider.name}`);
+        return { data: result.data, provider: provider.name };
+      }
+
+      // Provider returned an error (e.g. missing API key or quota exceeded)
+      const errMsg = `${provider.name}: ${result.error}`;
+      console.warn(`[ContentOps] ${errMsg}`);
+      errors.push(errMsg);
+    } catch (err) {
+      const errMsg = `${provider.name}: ${err instanceof Error ? err.message : 'Unknown error'}`;
+      console.warn(`[ContentOps] ${errMsg}`);
+      errors.push(errMsg);
     }
-
-    const json = await response.json();
-    const content = json.choices?.[0]?.message?.content;
-
-    if (!content) {
-      return { error: 'Perplexity API returned empty response' };
-    }
-
-    const data = parseResearchResponse(content);
-    return { data };
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : 'Unknown error during research';
-    return { error: `Research failed: ${message}` };
   }
+
+  return {
+    error: `All research providers failed:\n${errors.join('\n')}`,
+  };
 }
