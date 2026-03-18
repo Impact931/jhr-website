@@ -27,9 +27,12 @@ export async function createGmailDraft(
     throw new Error(`Failed to get Gmail access token for ${impersonateEmail} — check gmail.compose scope in domain-wide delegation`);
   }
 
+  // Sanitize email — strip any markdown/rich text artifacts
+  const cleanTo = to.replace(/\[.*?\]\(mailto:(.*?)\)/g, '$1').replace(/[<>]/g, '').trim();
+
   const rawMessage = buildMimeWithAttachments({
     from: `JHR Photography <${impersonateEmail}>`,
-    to,
+    to: cleanTo,
     subject,
     htmlBody,
     textBody,
@@ -99,9 +102,11 @@ function buildMimeWithAttachments({
   const mixedBoundary = `mixed_${crypto.randomUUID().replace(/-/g, '')}`;
   const altBoundary = `alt_${crypto.randomUUID().replace(/-/g, '')}`;
 
+  // Ensure To has angle brackets for RFC 5322 compliance
+  const formattedTo = to.includes('<') ? to : `<${to}>`;
   const parts: string[] = [
     `From: ${from}`,
-    `To: ${to}`,
+    `To: ${formattedTo}`,
     `Subject: ${encodeSubject(subject)}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${mixedBoundary}"`,
