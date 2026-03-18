@@ -16,9 +16,8 @@ import {
   extractStatus,
 } from '@/lib/notion';
 import { notionBlocksToSOW } from '@/lib/sow/notion-blocks';
-import { generateSOWPdf } from '@/lib/sow/pdf-generator';
 import { generateSOWDocx } from '@/lib/sow/docx-generator';
-import { uploadToGoogleDrive } from '@/lib/sow/google-drive';
+import { uploadToGoogleDrive, uploadToGoogleDriveReturnId, exportDriveFileAsPdf } from '@/lib/sow/google-drive';
 import { uploadPdfToS3 } from '@/lib/sow/s3-upload';
 import { createGmailDraft } from '@/lib/sow/gmail-draft';
 import { sowDeliveryEmail } from '@/lib/email-templates/sow-email';
@@ -226,21 +225,60 @@ export async function POST(request: NextRequest) {
 
     const safeTitle = title.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_');
 
-    // --- Generate PDF + DOCX in parallel ---
-    step('generate_documents');
-    let pdfBuffer: Buffer;
+    // --- Generate DOCX ---
+    step('generate_docx');
     let docxBuffer: Buffer;
     try {
-      [pdfBuffer, docxBuffer] = await Promise.all([
-        generateSOWPdf(sowBlocks, meta),
-        generateSOWDocx(sowBlocks, meta),
-      ]);
-      step('documents_generated', `PDF=${pdfBuffer.length}b | DOCX=${docxBuffer.length}b`);
+      docxBuffer = await generateSOWDocx(sowBlocks, meta);
+      step('docx_generated', `${docxBuffer.length}b`);
     } catch (e) {
-      stepError('generate_documents', e);
+      stepError('generate_docx', e);
       await saveSOWLog(log).catch(() => {});
-      return NextResponse.json({ error: 'Document generation failed', log: log.steps }, { status: 500 });
+      return NextResponse.json({ error: 'DOCX generation failed', log: log.steps }, { status: 500 });
     }
+
+    // --- Upload DOCX to Google Drive ---
+    step('drive_upload', `folder=${DRIVE_FOLDER_ID}`);
+    let driveFileId: string | null;
+    let driveUrl: string | null;
+    try {
+      driveFileId = await uploadToGoogleDriveReturnId(
+        docxBuffer,
+        `${safeTitle}.docx`,
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        DRIVE_FOLDER_ID
+      );
+      driveUrl = driveFileId ? `https://drive.google.com/file/d/${driveFileId}/view` : null;
+    } catch (e) {
+      stepError('drive_upload', e);
+      driveFileId = null;
+      driveUrl = null;
+    }
+    if (driveUrl) {
+      step('drive_uploaded', driveUrl);
+    } else {
+      stepError('drive_upload', 'uploadToGoogleDriveReturnId returned null');
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'Drive upload failed — cannot export PDF', log: log.steps }, { status: 500 });
+    }
+    log.driveUrl = driveUrl;
+
+    // --- Export PDF from Google Drive ---
+    step('drive_pdf_export');
+    let pdfBuffer: Buffer | null;
+    try {
+      pdfBuffer = await exportDriveFileAsPdf(driveFileId!);
+    } catch (e) {
+      stepError('drive_pdf_export', e);
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'Drive PDF export failed', log: log.steps }, { status: 500 });
+    }
+    if (!pdfBuffer) {
+      stepError('drive_pdf_export', 'exportDriveFileAsPdf returned null');
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'Drive PDF export returned empty', log: log.steps }, { status: 500 });
+    }
+    step('pdf_exported', `${pdfBuffer.length}b`);
 
     // --- Upload PDF to S3 (client download link) ---
     step('s3_upload');
@@ -258,28 +296,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'S3 upload failed', log: log.steps }, { status: 500 });
     }
     step('s3_uploaded', pdfDownloadUrl);
-
-    // --- Upload DOCX to Google Drive (internal ops copy) ---
-    step('drive_upload', `folder=${DRIVE_FOLDER_ID}`);
-    let driveUrl: string | null;
-    try {
-      driveUrl = await uploadToGoogleDrive(
-        docxBuffer,
-        `${safeTitle}.docx`,
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        DRIVE_FOLDER_ID
-      );
-    } catch (e) {
-      stepError('drive_upload', e);
-      // Non-fatal — continue with S3 URL
-      driveUrl = null;
-    }
-    if (driveUrl) {
-      step('drive_uploaded', driveUrl);
-    } else {
-      step('drive_upload_skipped', 'continuing with S3 URL only');
-    }
-    log.driveUrl = driveUrl || pdfDownloadUrl;
 
     // --- Create Gmail drafts for ops (PDF attachment only) ---
     step('gmail_drafts');

@@ -20,19 +20,27 @@ import type { SOWBlock, RichTextSpan } from './types';
 
 function spansToTextRuns(spans: RichTextSpan[], overrides?: Partial<{ bold: boolean; italics: boolean; size: number; color: string }>): TextRun[] {
   if (!spans || spans.length === 0) return [new TextRun('')];
-  return spans.map(
-    (span) =>
-      new TextRun({
-        text: span.text,
-        bold: overrides?.bold ?? span.annotations.bold,
-        italics: overrides?.italics ?? span.annotations.italic,
-        underline: span.annotations.underline ? {} : undefined,
-        strike: span.annotations.strikethrough || undefined,
-        size: overrides?.size,
-        color: overrides?.color,
-        ...(span.href ? { hyperlink: span.href } : {}),
-      })
-  );
+  const runs: TextRun[] = [];
+  for (const span of spans) {
+    // Notion shift+enter creates \n within a text span — split into separate TextRuns with line breaks
+    const lines = span.text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      runs.push(
+        new TextRun({
+          text: lines[i],
+          bold: overrides?.bold ?? span.annotations.bold,
+          italics: overrides?.italics ?? span.annotations.italic,
+          underline: span.annotations.underline ? {} : undefined,
+          strike: span.annotations.strikethrough || undefined,
+          size: overrides?.size,
+          color: overrides?.color,
+          break: i > 0 ? 1 : undefined,
+          ...(span.href ? { hyperlink: span.href } : {}),
+        })
+      );
+    }
+  }
+  return runs;
 }
 
 function blocksToParagraphs(blocks: SOWBlock[]): (Paragraph | Table)[] {

@@ -1,9 +1,8 @@
 import crypto from 'crypto';
-import { getGoogleAccessToken, base64url } from '@/lib/google-auth';
+import { getGoogleAccessToken } from '@/lib/google-auth';
 
 const GMAIL_DRAFTS_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/drafts';
 const SCOPES = ['https://www.googleapis.com/auth/gmail.compose'];
-const FROM_EMAIL = 'assignments@jhr-photography.com';
 
 interface Attachment {
   filename: string;
@@ -30,7 +29,7 @@ export async function createGmailDraft(
   }
 
   const rawMessage = buildMimeWithAttachments({
-    from: `JHR Photography <${FROM_EMAIL}>`,
+    from: `JHR Photography <${impersonateEmail}>`,
     to,
     subject,
     htmlBody,
@@ -38,7 +37,12 @@ export async function createGmailDraft(
     attachments,
   });
 
-  const encodedMessage = base64url(rawMessage);
+  // Gmail API requires URL-safe base64 without padding
+  const encodedMessage = Buffer.from(rawMessage)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
 
   const res = await fetch(GMAIL_DRAFTS_URL, {
     method: 'POST',
@@ -59,6 +63,15 @@ export async function createGmailDraft(
 
   const data = await res.json();
   return data.id;
+}
+
+/** Wrap base64 string at 76 characters per RFC 2045 */
+function wrapBase64(b64: string): string {
+  const lines: string[] = [];
+  for (let i = 0; i < b64.length; i += 76) {
+    lines.push(b64.slice(i, i + 76));
+  }
+  return lines.join('\r\n');
 }
 
 function encodeSubject(subject: string): string {
@@ -103,14 +116,14 @@ function buildMimeWithAttachments({
     'Content-Type: text/plain; charset="UTF-8"',
     'Content-Transfer-Encoding: base64',
     '',
-    Buffer.from(textBody, 'utf-8').toString('base64'),
+    wrapBase64(Buffer.from(textBody, 'utf-8').toString('base64')),
     '',
     // HTML part
     `--${altBoundary}`,
     'Content-Type: text/html; charset="UTF-8"',
     'Content-Transfer-Encoding: base64',
     '',
-    Buffer.from(htmlBody, 'utf-8').toString('base64'),
+    wrapBase64(Buffer.from(htmlBody, 'utf-8').toString('base64')),
     '',
     `--${altBoundary}--`,
   ];
@@ -123,7 +136,7 @@ function buildMimeWithAttachments({
       `Content-Disposition: attachment; filename="${att.filename}"`,
       'Content-Transfer-Encoding: base64',
       '',
-      att.content.toString('base64'),
+      wrapBase64(att.content.toString('base64')),
       ''
     );
   }
