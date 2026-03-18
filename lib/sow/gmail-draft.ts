@@ -24,8 +24,7 @@ export async function createGmailDraft(
 ): Promise<string | null> {
   const accessToken = await getGoogleAccessToken(impersonateEmail, SCOPES);
   if (!accessToken) {
-    console.error(`Failed to get Gmail access token for ${impersonateEmail}`);
-    return null;
+    throw new Error(`Failed to get Gmail access token for ${impersonateEmail} — check gmail.compose scope in domain-wide delegation`);
   }
 
   const rawMessage = buildMimeWithAttachments({
@@ -57,8 +56,7 @@ export async function createGmailDraft(
 
   if (!res.ok) {
     const err = await res.text();
-    console.error(`Gmail draft creation failed for ${impersonateEmail}:`, res.status, err);
-    return null;
+    throw new Error(`Gmail ${res.status} for ${impersonateEmail}: ${err}`);
   }
 
   const data = await res.json();
