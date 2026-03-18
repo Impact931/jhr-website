@@ -522,54 +522,58 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      let currentEventType = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
 
-        // Parse complete SSE events from buffer
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // keep incomplete line in buffer
+        // Parse complete SSE events from buffer (split on double newline = event boundary)
+        while (buffer.includes('\n\n')) {
+          const eventEnd = buffer.indexOf('\n\n');
+          const eventBlock = buffer.slice(0, eventEnd);
+          buffer = buffer.slice(eventEnd + 2);
 
-        let eventType = '';
-        for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            eventType = line.slice(7).trim();
-          } else if (line.startsWith('data: ')) {
-            const payload = JSON.parse(line.slice(6));
+          // Parse the event block
+          for (const line of eventBlock.split('\n')) {
+            if (line.startsWith('event: ')) {
+              currentEventType = line.slice(7).trim();
+            } else if (line.startsWith('data: ')) {
+              const payload = JSON.parse(line.slice(6));
 
-            if (eventType === 'error') {
-              throw new Error(payload.error || 'Generation failed');
-            }
+              if (currentEventType === 'error') {
+                throw new Error(payload.error || 'Generation failed');
+              }
 
-            if (eventType === 'done') {
-              const article = payload.article || {};
-              const validation = payload.validation || {};
-              setGenerateResult({
-                title: article.title || topic,
-                slug: payload.slug || article.slug || '',
-                geoScore: article.geoScore ?? 0,
-                wordCount: article.wordCount || 0,
-                readingTime: article.readTime || article.readingTime || 0,
-                internalLinks: article.internalLinkCount || 0,
-                externalLinks: article.externalLinkCount || 0,
-                quickAnswer: article.quickAnswer || '',
-                metaDescription: article.metaDescription || '',
-                validation: {
-                  passes: [
-                    ...(validation.passed ? [{ label: 'All checks passed' }] : []),
-                    ...((validation.geoScore?.totalScore ?? 0) >= 70 ? [{ label: `GEO score: ${validation.geoScore?.totalScore}/100` }] : []),
-                  ],
-                  fails: [
-                    ...(validation.hardFails || []).map((f: string) => ({ label: f })),
-                    ...(validation.softFails || []).map((f: string) => ({ label: f, detail: 'soft fail' })),
-                  ],
-                },
-                proofing: undefined,
-                preFlight: null,
-                lessonsLoaded: 0,
-              });
+              if (currentEventType === 'done') {
+                const article = payload.article || {};
+                const validation = payload.validation || {};
+                setGenerateResult({
+                  title: article.title || topic,
+                  slug: payload.slug || article.slug || '',
+                  geoScore: article.geoScore ?? 0,
+                  wordCount: article.wordCount || 0,
+                  readingTime: article.readTime || article.readingTime || 0,
+                  internalLinks: article.internalLinkCount || 0,
+                  externalLinks: article.externalLinkCount || 0,
+                  quickAnswer: article.quickAnswer || '',
+                  metaDescription: article.metaDescription || '',
+                  validation: {
+                    passes: [
+                      ...(validation.passed ? [{ label: 'All checks passed' }] : []),
+                      ...((validation.geoScore?.totalScore ?? 0) >= 70 ? [{ label: `GEO score: ${validation.geoScore?.totalScore}/100` }] : []),
+                    ],
+                    fails: [
+                      ...(validation.hardFails || []).map((f: string) => ({ label: f })),
+                      ...(validation.softFails || []).map((f: string) => ({ label: f, detail: 'soft fail' })),
+                    ],
+                  },
+                  proofing: undefined,
+                  preFlight: null,
+                  lessonsLoaded: 0,
+                });
+              }
             }
           }
         }

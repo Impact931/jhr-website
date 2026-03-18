@@ -454,7 +454,7 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   }, [initialPost, isEditing]);
 
   return (
-    <BlogContentProvider>
+    <BlogContentProvider initialPost={post}>
       <SectionBasedContent
         post={post}
         isEditing={isEditing}
