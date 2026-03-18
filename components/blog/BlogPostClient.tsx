@@ -110,15 +110,26 @@ function SectionBasedContent({
     [insertIndex, addSection]
   );
 
+  // In view mode, use post.sections directly (no context delay).
+  // In edit mode, use context sections (supports drag/drop, add/delete).
+  const activeSections = isEditing
+    ? sections
+    : (() => {
+        const postSections = post.sections && post.sections.length > 0
+          ? post.sections
+          : migrateLegacyBlogPost(post).sections || [];
+        return [...postSections].sort((a, b) => a.order - b.order);
+      })();
+
   // Find the hero section for featured image and title display
-  const heroSection = sections.find((s) => s.type === 'hero');
+  const heroSection = activeSections.find((s) => s.type === 'hero');
   const featuredImage =
     heroSection?.type === 'hero'
       ? heroSection.backgroundImage?.src
       : post.featuredImage;
 
   // Get non-hero sections for body content
-  const contentSections = sections.filter((s) => s.type !== 'hero');
+  const contentSections = activeSections.filter((s) => s.type !== 'hero');
 
   return (
     <main className="min-h-screen bg-jhr-black">
