@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
       validation,
       slug,
       geoScoring: geoResult,
-      proofing: articleResult.proofing || null,
+      proofing: null,
       competitorAnalysis: {
         url: competitorUrl,
         domain: competitorDomain,

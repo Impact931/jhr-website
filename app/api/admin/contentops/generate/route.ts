@@ -1,28 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { runResearch } from '@/lib/contentops/research';
 import { loadResearchData } from '@/lib/contentops/research-store';
 import { generateArticle } from '@/lib/contentops/generate';
 import { validateArticle } from '@/lib/contentops/validate';
-import { scrapeCompetitors } from '@/lib/contentops/competitor-scrape';
-import { scoreArticleGEO } from '@/lib/contentops/geo-score';
-import { runPreFlight } from '@/lib/contentops/pre-flight';
-import { getGenerationLessons, formatLessonsForPrompt } from '@/lib/contentops/lessons-store';
 import { saveBlogPost } from '@/lib/blog-content';
 import { generateSlug } from '@/types/blog';
 import type { PageSectionContent } from '@/types/inline-editor';
 
-// Full pipeline can take a while: research + generation + validation
 export const maxDuration = 120;
 
 /**
- * POST /api/admin/contentops/generate — Full pipeline:
- *   pre-flight → research → generate (with lessons) → validate → GEO score → save draft
+ * POST /api/admin/contentops/generate
  *
- * Pre-flight checks (cannibalization, intent, cluster) run automatically.
- * Lessons from DynamoDB are injected into the generation prompt.
- * Both CLI (/seo-geo) and admin dashboard use this same endpoint.
+ * Simple pipeline: load research from DB → generate article → validate → save draft
+ *
+ * Required body: { topic, primaryKeyword, icpTag, articleType, researchId }
+ * Optional body: { wordCountTarget, ctaPath }
  */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -32,17 +26,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const {
-      topic,
-      primaryKeyword,
-      icpTag,
-      articleType,
-      wordCountTarget,
-      ctaPath,
-      researchId,
-      research: preExistingResearch,
-      skipPreFlight,
-    } = body;
+    const { topic, primaryKeyword, icpTag, articleType, wordCountTarget, ctaPath, researchId } = body;
 
     if (!topic || !primaryKeyword || !icpTag || !articleType) {
       return NextResponse.json(
@@ -51,115 +35,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const validIcpTags = ['ICP-1', 'ICP-2', 'ICP-3', 'ICP-4'];
-    if (!validIcpTags.includes(icpTag)) {
+    if (!researchId) {
       return NextResponse.json(
-        { error: `Invalid icpTag. Must be one of: ${validIcpTags.join(', ')}` },
+        { error: 'Missing researchId — run research first, then generate.' },
         { status: 400 }
       );
     }
 
-    const validArticleTypes = ['statistics-hub', 'ultimate-guide', 'pricing-data', 'framework', 'roundup', 'standard'];
-    if (!validArticleTypes.includes(articleType)) {
+    // ─── Load research from DynamoDB ─────────────────────────────────────
+    const stored = await loadResearchData(researchId);
+    if (!stored) {
       return NextResponse.json(
-        { error: `Invalid articleType. Must be one of: ${validArticleTypes.join(', ')}` },
-        { status: 400 }
+        { error: `Research ID "${researchId}" not found. Research may have expired (7-day TTL). Run research again.` },
+        { status: 404 }
       );
     }
+    console.log(`[ContentOps] Loaded research ${researchId} (${stored.provider})`);
 
-    // ─── Phase 0: Pre-Flight Intelligence ──────────────────────────────────
-    // Runs cannibalization check, intent classification, keyword cluster matching
-    let preFlight = null;
-    if (!skipPreFlight) {
-      try {
-        const baseUrl = request.nextUrl.origin;
-        preFlight = await runPreFlight(primaryKeyword, topic, articleType, { baseUrl });
-        console.log(
-          `[ContentOps] Pre-flight: intent=${preFlight.intent.type}, ` +
-          `cannibalization=${preFlight.cannibalization.clear ? 'clear' : 'WARNING'}, ` +
-          `cluster=${preFlight.keywordCluster.cluster || 'new'}, ` +
-          `warnings=${preFlight.warnings.length}, blocks=${preFlight.blocks.length}`
-        );
-
-        // If pre-flight has blocks, stop and return them
-        if (!preFlight.passed) {
-          return NextResponse.json({
-            preFlight,
-            error: 'Pre-flight checks blocked generation. Review the blocks and fix before proceeding.',
-          }, { status: 422 });
-        }
-      } catch (pfError) {
-        console.warn('[ContentOps] Pre-flight failed (non-blocking):', pfError);
-        // Pre-flight failure is non-blocking — proceed with generation
-      }
-    }
-
-    // ─── Phase 0.5: Load Lessons from DynamoDB ─────────────────────────────
-    let lessonsPrompt = '';
-    let lessonsCount = 0;
-    try {
-      const lessons = await getGenerationLessons();
-      lessonsCount = lessons.length;
-      if (lessons.length > 0) {
-        lessonsPrompt = formatLessonsForPrompt(lessons);
-        console.log(`[ContentOps] Loaded ${lessons.length} lessons for generation prompt`);
-      }
-    } catch (lessonsError) {
-      console.warn('[ContentOps] Failed to load lessons (non-blocking):', lessonsError);
-    }
-
-    // ─── Phase 1: Load Research ────────────────────────────────────────────
-    // Priority: researchId (DynamoDB) → inline research → run fresh
-    let researchData;
-    let researchSource = 'fresh';
-
-    if (researchId) {
-      // Load from DynamoDB by ID — the reliable path
-      const stored = await loadResearchData(researchId);
-      if (stored) {
-        console.log(`[ContentOps] Loaded research from DynamoDB: ${researchId} (${stored.provider})`);
-        researchData = stored.data;
-        researchSource = 'stored';
-      } else {
-        console.warn(`[ContentOps] Research ID ${researchId} not found in DynamoDB`);
-      }
-    }
-
-    if (!researchData && preExistingResearch && preExistingResearch.currentStats) {
-      // Fallback: inline research passed from frontend state
-      console.log('[ContentOps] Using inline research data from request body');
-      researchData = preExistingResearch;
-      researchSource = 'inline';
-    }
-
-    if (!researchData) {
-      // Last resort: run fresh research (costs credits)
-      console.log('[ContentOps] No saved research found, running fresh research');
-      const researchResult = await runResearch(topic, icpTag, primaryKeyword);
-      if (researchResult.error || !researchResult.data) {
-        return NextResponse.json(
-          { error: researchResult.error || 'Research phase returned no data' },
-          { status: 500 }
-        );
-      }
-      researchData = researchResult.data;
-      researchSource = 'fresh';
-    }
-
-    // Phase 1.5: Competitor scraping (only on fresh research — skip for stored/inline)
-    let competitorContext = null;
-    if (researchSource === 'fresh' && researchData.competitorUrls && researchData.competitorUrls.length > 0) {
-      try {
-        competitorContext = await Promise.race([
-          scrapeCompetitors(researchData.competitorUrls),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 15_000)),
-        ]);
-      } catch {
-        console.warn('[ContentOps] Competitor scraping timed out or failed, continuing');
-      }
-    }
-
-    // ─── Phase 2: Generate article (with lessons injected) ─────────────────
+    // ─── Generate article ────────────────────────────────────────────────
     const config = {
       topic,
       primaryKeyword,
@@ -169,7 +62,7 @@ export async function POST(request: NextRequest) {
       ctaPath: ctaPath || '/schedule',
     };
 
-    const articleResult = await generateArticle(config, researchData, competitorContext, lessonsPrompt);
+    const articleResult = await generateArticle(config, stored.data);
     if (articleResult.error || !articleResult.data) {
       return NextResponse.json(
         { error: articleResult.error || 'Article generation returned no data' },
@@ -179,34 +72,22 @@ export async function POST(request: NextRequest) {
 
     const article = articleResult.data;
 
-    // ─── Phase 3: Validate (now includes keyword placement + slop detection) ─
+    // ─── Validate ────────────────────────────────────────────────────────
     const validation = await validateArticle(article);
 
-    // ─── Phase 4: GEO scoring — run in parallel with save (non-blocking) ───
-    // We'll save the draft first, then update with GEO score after
-    // This avoids the extra 5-10s Claude API call blocking the response
-
-    // Build sections from the article body and FAQ
-    const sections: PageSectionContent[] = [];
+    // ─── Save as draft ───────────────────────────────────────────────────
     const now = Date.now();
+    const sections: PageSectionContent[] = [];
 
-    // Hero section — featured image + title for the article
     sections.push({
       id: `hero-${now}`,
       type: 'hero',
       order: 0,
-      seo: {
-        ariaLabel: article.title || topic,
-        sectionId: 'article-hero',
-        dataSectionName: 'hero',
-      },
+      seo: { ariaLabel: article.title || topic, sectionId: 'article-hero', dataSectionName: 'hero' },
       variant: 'full-height',
       title: article.title || topic,
       subtitle: article.excerpt || article.metaDescription || '',
-      backgroundImage: {
-        src: '/images/blog-default-hero.jpg',
-        alt: article.title || topic,
-      },
+      backgroundImage: { src: '/images/blog-default-hero.jpg', alt: article.title || topic },
       buttons: [],
     } as PageSectionContent);
 
@@ -214,11 +95,7 @@ export async function POST(request: NextRequest) {
       id: `text-block-${now}`,
       type: 'text-block',
       order: 1,
-      seo: {
-        ariaLabel: 'Article content',
-        sectionId: 'article-body',
-        dataSectionName: 'text-block',
-      },
+      seo: { ariaLabel: 'Article content', sectionId: 'article-body', dataSectionName: 'text-block' },
       content: article.body || '',
       alignment: 'left',
     });
@@ -228,11 +105,7 @@ export async function POST(request: NextRequest) {
         id: `faq-${now}`,
         type: 'faq',
         order: 2,
-        seo: {
-          ariaLabel: 'Frequently asked questions',
-          sectionId: 'article-faq',
-          dataSectionName: 'faq',
-        },
+        seo: { ariaLabel: 'Frequently asked questions', sectionId: 'article-faq', dataSectionName: 'faq' },
         heading: 'Frequently Asked Questions',
         items: article.faqBlock.map((item, i) => ({
           id: `faq-item-${i}`,
@@ -242,11 +115,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate slug from the article title
     const slug = generateSlug(article.title || topic);
 
-    // Save to DynamoDB as a blog post draft (without GEO score initially)
-    const blogData = {
+    await saveBlogPost({
       slug,
       title: article.title || topic,
       sections,
@@ -264,47 +135,11 @@ export async function POST(request: NextRequest) {
         entities: { people: [], places: ['Nashville'], organizations: ['JHR Photography'] },
         contentSummary: article.quickAnswer || article.excerpt || '',
         geoScore: 0,
-        geoScoreNotes: 'Scoring in progress...',
+        geoScoreNotes: 'Pending — use GEO rescore to calculate',
       },
-    };
+    }, 'draft', session.user?.email || undefined);
 
-    await saveBlogPost(blogData, 'draft', session.user?.email || undefined);
-
-    // Fire GEO scoring in the background — don't block the response
-    scoreArticleGEO(article).then(async (geoResult) => {
-      if (geoResult) {
-        try {
-          await saveBlogPost(
-            {
-              ...blogData,
-              geoMetadata: {
-                ...blogData.geoMetadata,
-                geoScore: geoResult.totalScore,
-                geoScoreNotes: geoResult.notes,
-              },
-            },
-            'draft',
-            session.user?.email || undefined
-          );
-          console.log(`[ContentOps] GEO score saved for ${slug}: ${geoResult.totalScore}/100`);
-        } catch (saveErr) {
-          console.warn('[ContentOps] Failed to save GEO score:', saveErr);
-        }
-      }
-    }).catch((err) => {
-      console.warn('[ContentOps] Background GEO scoring failed:', err);
-    });
-
-    return NextResponse.json({
-      article,
-      validation,
-      slug,
-      competitorContext,
-      geoScoring: null, // scored in background
-      proofing: articleResult.proofing || null,
-      preFlight,
-      lessonsLoaded: lessonsCount,
-    });
+    return NextResponse.json({ article, validation, slug });
   } catch (error) {
     console.error('ContentOps generate error:', error);
     return NextResponse.json(

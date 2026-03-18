@@ -249,178 +249,6 @@ Ensure:
 - All JSON is valid and parseable`;
 }
 
-// ─── Claude Proofing Loop ────────────────────────────────────────────────────
-
-export interface ProofingResult {
-  passed: boolean;
-  overallScore: number;
-  brandVoiceScore: number;
-  geoReadiness: number;
-  seoScore: number;
-  issues: ProofingIssue[];
-  revisedArticle?: ArticlePayload;
-}
-
-interface ProofingIssue {
-  severity: 'critical' | 'warning' | 'suggestion';
-  category: 'brand-voice' | 'ai-slop' | 'geo' | 'seo' | 'nashville' | 'structure';
-  description: string;
-  location?: string;
-  fix?: string;
-}
-
-function buildProofingPrompt(article: ArticlePayload, config: ContentOpsConfig): string {
-  return `You are the JHR Photography content quality editor. Your job is to proof this article against the brand voice guide, GEO best practices, and SEO requirements. Be rigorous — this article must rank in the top 3 on Google AND get cited by AI search engines.
-
-## BRAND VOICE REFERENCE
-JHR Photography uses the StoryBrand framework: client is the hero, JHR is the guide. Voice: warm, direct, confident, solution-focused, relationship-first. EDUCATING tone for articles. No AI slop words (crucial, delve, comprehensive, leverage, etc). No generic statements. Every sentence delivers value.
-
-## ARTICLE TO PROOF
-
-Title: ${article.title}
-Primary Keyword: ${article.primaryKeyword}
-ICP: ${config.icpTag}
-Word Count: ${article.wordCount}
-Quick Answer: ${article.quickAnswer}
-
-Body:
-${article.body}
-
-FAQ Block:
-${article.faqBlock.map((f) => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n')}
-
-## PROOFING CHECKLIST
-
-Score each category 0-100 and identify specific issues:
-
-### 1. Brand Voice (0-100)
-- Does it follow the StoryBrand framework? (Client = hero, JHR = guide)
-- Does it match the EDUCATING tone context?
-- Are the voice attributes present? (Warm, Direct, Confident, Solution-Focused, Relationship-First)
-- Does it pass the 5 Content Quality Tests? (Vendor Test, Robot Test, Jayson Test, Hero Test, Warmth Test)
-- Are prohibited terms/phrases used? Check EVERY word against the blocklist.
-- Are JHR-specific term replacements followed? (hourly rate→engagement pricing, etc.)
-
-### 2. AI Slop Detection (deducted from Brand Voice score)
-- Flag ANY instance of: crucial, delve, comprehensive, furthermore, moreover, utilize, streamline, innovative, cutting-edge, state-of-the-art, robust, seamless, elevate, landscape (business metaphor), navigate (business metaphor), empower, unlock, harness, paradigm, synergy, game-changer, leverage
-- Flag generic sentences that could apply to any photographer in any city
-- Flag sentences that don't deliver specific value
-- Flag excessive exclamation points or forced enthusiasm
-
-### 3. GEO Readiness (0-100)
-- Does the first 200 words directly answer the primary query?
-- Are paragraphs 2-3 sentences max? (AI engines extract passages, not walls)
-- Are sections self-contained? (Each should make sense without context)
-- Is there a quotable definition or key concept AI can extract?
-- Are there 10+ named entities throughout? (Organizations, places, people, specific tools)
-- Are statistics cited with sources inline?
-- Are headings question-based where natural?
-- Quick answer: is it 50-75 words, self-contained, with a specific number?
-
-### 4. SEO Score (0-100)
-- Primary keyword in title, H1, first 100 words, and meta description?
-- Minimum 4 H2 headings with keyword variations?
-- Meta description 140-160 characters?
-- Minimum 4 external links (no competitor links)?
-- Minimum 2 internal links?
-- At least 1 preferred partner link (Nashville Adventures, Visit Music City, Nashville Chamber)?
-- Minimum 5 FAQ items with substantive answers?
-- Nashville-specific content that shows genuine local knowledge?
-
-### 5. Nashville Authenticity
-- Does it reference specific Nashville venues, neighborhoods, or landmarks?
-- Does it include Nashville-specific data points (not generic + "Nashville" appended)?
-- Would a Nashville event professional recognize this as written by someone who knows the market?
-
-Return ONLY valid JSON (no markdown fences):
-
-{
-  "passed": true/false,
-  "overallScore": 0-100,
-  "brandVoiceScore": 0-100,
-  "geoReadiness": 0-100,
-  "seoScore": 0-100,
-  "issues": [
-    {
-      "severity": "critical|warning|suggestion",
-      "category": "brand-voice|ai-slop|geo|seo|nashville|structure",
-      "description": "What's wrong",
-      "location": "Where in the article (optional — quote the problematic text)",
-      "fix": "Specific suggested fix (optional)"
-    }
-  ],
-  "revisedBody": "If there are critical issues, provide a revised version of the full HTML body with all issues fixed. If no critical issues, set to null."
-}
-
-SCORING:
-- overallScore = weighted average: brandVoice (30%) + geoReadiness (30%) + seoScore (25%) + nashvilleAuthenticity (15%)
-- passed = true if overallScore >= 75 AND zero critical issues
-- Be specific about locations — quote the problematic text so the issue can be found`;
-}
-
-async function runProofingLoop(
-  article: ArticlePayload,
-  config: ContentOpsConfig,
-  apiKey: string
-): Promise<ProofingResult> {
-  const client = new Anthropic({ apiKey });
-  const proofingPrompt = buildProofingPrompt(article, config);
-
-  const response = await client.messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 8192,
-    system: 'You are a rigorous content quality editor for JHR Photography. Return only valid JSON. Be specific and actionable in your feedback.',
-    messages: [{ role: 'user', content: proofingPrompt }],
-    temperature: 0.2,
-  });
-
-  const textBlock = response.content.find((block) => block.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    return {
-      passed: false,
-      overallScore: 0,
-      brandVoiceScore: 0,
-      geoReadiness: 0,
-      seoScore: 0,
-      issues: [{ severity: 'critical', category: 'structure', description: 'Proofing API returned no content' }],
-    };
-  }
-
-  let cleaned = textBlock.text.trim();
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?\s*```\s*$/, '');
-  }
-
-  const result = JSON.parse(cleaned);
-
-  // If proofing returned a revised body, apply it to the article
-  let revisedArticle: ArticlePayload | undefined;
-  if (result.revisedBody && typeof result.revisedBody === 'string') {
-    revisedArticle = {
-      ...article,
-      body: result.revisedBody,
-      wordCount: result.revisedBody.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length,
-    };
-    revisedArticle.readTime = Math.ceil(revisedArticle.wordCount / 250);
-  }
-
-  return {
-    passed: result.passed ?? false,
-    overallScore: result.overallScore ?? 0,
-    brandVoiceScore: result.brandVoiceScore ?? 0,
-    geoReadiness: result.geoReadiness ?? 0,
-    seoScore: result.seoScore ?? 0,
-    issues: (result.issues || []).map((i: ProofingIssue) => ({
-      severity: i.severity || 'warning',
-      category: i.category || 'structure',
-      description: i.description || '',
-      location: i.location,
-      fix: i.fix,
-    })),
-    revisedArticle,
-  };
-}
-
 // ─── Parse & validate ────────────────────────────────────────────────────────
 
 function parseArticleResponse(content: string): ArticlePayload {
@@ -453,26 +281,18 @@ export async function generateArticle(
   config: ContentOpsConfig,
   research: ResearchPayload,
   competitorContext?: CompetitorContext | null,
-  lessonsPrompt?: string
-): Promise<{ data?: ArticlePayload; proofing?: ProofingResult; error?: string }> {
+): Promise<{ data?: ArticlePayload; error?: string }> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return { error: 'ANTHROPIC_API_KEY environment variable is not set' };
   }
 
-  let systemPrompt = buildSystemPrompt(config, research, competitorContext);
-
-  // Inject lessons from DynamoDB if available
-  if (lessonsPrompt) {
-    systemPrompt = `${systemPrompt}\n\n${lessonsPrompt}`;
-  }
-
+  const systemPrompt = buildSystemPrompt(config, research, competitorContext);
   const userPrompt = buildUserPrompt(config);
 
   try {
     const client = new Anthropic({ apiKey });
 
-    // Phase 2a: Generate the article
     const response = await client.messages.create({
       model: CLAUDE_MODEL,
       max_tokens: 8192,
@@ -487,9 +307,6 @@ export async function generateArticle(
     }
 
     const article = parseArticleResponse(textBlock.text);
-
-    // Proofing loop is deferred — runs as background update after save
-    // This keeps the generation response under the Amplify gateway timeout
     return { data: article };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error during generation';
