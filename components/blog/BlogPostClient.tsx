@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { BlogPost } from '@/types/blog';
-import { formatBlogDate, migrateLegacyBlogPost, extractFeaturedImage } from '@/types/blog';
-import type { PageSectionContent } from '@/types/inline-editor';
+import { formatBlogDate, migrateLegacyBlogPost, extractFeaturedImage, sectionsToBody } from '@/types/blog';
+import type { PageSectionContent, FAQSectionContent } from '@/types/inline-editor';
 import { useEditMode } from '@/context/inline-editor/EditModeContext';
 import { BlogContentProvider, useBlogContent } from '@/context/blog/BlogContentContext';
 import { SectionRenderer } from '@/components/inline-editor/SectionRenderer';
@@ -62,18 +62,165 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
 }
 
 // ============================================================================
-// Section-Based Blog Content Component
+// Article View — simple, direct HTML render for public visitors
+// Layout: Featured Image → Title + Meta → Body → FAQ → CTA
 // ============================================================================
 
-interface SectionBasedContentProps {
-  post: BlogPost;
-  isEditing: boolean;
+function ArticleView({ post }: { post: BlogPost }) {
+  const featuredImage = post.featuredImage || extractFeaturedImage(post.sections);
+
+  // Get body HTML — prefer post.body, fall back to computing from sections
+  const bodyHtml = post.body || (post.sections ? sectionsToBody(post.sections) : '');
+
+  // Extract FAQ items from sections
+  const faqSection = (post.sections || []).find((s) => s.type === 'faq') as FAQSectionContent | undefined;
+
+  return (
+    <main className="min-h-screen bg-jhr-black">
+      <article className="pt-28 pb-12">
+        <div className="section-container max-w-3xl mx-auto">
+          {/* Back link */}
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-1.5 text-jhr-gold hover:text-jhr-gold-light text-body-sm transition-colors mb-8"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Articles
+          </Link>
+
+          {/* Featured Image */}
+          {featuredImage && (
+            <div className="relative aspect-[16/9] rounded-lg overflow-hidden mb-8">
+              <Image
+                src={featuredImage}
+                alt={post.title}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, 768px"
+              />
+            </div>
+          )}
+
+          {/* Title */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {post.categories[0] && (
+              <span className="inline-block px-3 py-1 bg-jhr-gold/20 text-jhr-gold text-xs font-semibold rounded-full mb-4">
+                {post.categories[0]}
+              </span>
+            )}
+
+            <h1 className="text-display-md font-display font-bold text-jhr-white mb-4">
+              {post.title}
+            </h1>
+
+            {/* Meta bar */}
+            <div className="flex flex-wrap items-center gap-4 text-jhr-white-dim text-body-sm pb-6 mb-8 border-b border-jhr-black-lighter">
+              <span className="flex items-center gap-1.5">
+                <User className="w-4 h-4" />
+                {post.author || 'JHR Photography'}
+              </span>
+              {post.publishedAt && (
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4" />
+                  {formatBlogDate(post.publishedAt)}
+                </span>
+              )}
+              {post.readingTime && (
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4" />
+                  {post.readingTime} min read
+                </span>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Article Body — direct HTML render */}
+          {bodyHtml && (
+            <div
+              className="blog-content text-body-md"
+              dangerouslySetInnerHTML={{ __html: bodyHtml }}
+            />
+          )}
+
+          {/* FAQ Section */}
+          {faqSection && faqSection.items && faqSection.items.length > 0 && (
+            <section className="mt-12 pt-8 border-t border-jhr-black-lighter">
+              <h2 className="text-heading-lg font-display font-bold text-jhr-white mb-6">
+                {faqSection.heading || 'Frequently Asked Questions'}
+              </h2>
+              <div className="space-y-4">
+                {faqSection.items.map((item, i) => (
+                  <details
+                    key={item.id || i}
+                    className="group bg-jhr-black-light border border-jhr-black-lighter rounded-lg"
+                  >
+                    <summary className="flex items-center justify-between cursor-pointer px-5 py-4 text-body-md font-medium text-jhr-white hover:text-jhr-gold transition-colors list-none">
+                      {item.question}
+                      <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90 flex-shrink-0 ml-4" />
+                    </summary>
+                    <div className="px-5 pb-4 text-body-md text-jhr-white-dim leading-relaxed">
+                      {item.answer}
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Tags */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-12 pt-6 border-t border-jhr-black-lighter">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Tag className="w-4 h-4 text-jhr-white-dim" />
+                {post.tags
+                  .filter((t) => t !== 'contentops-generated')
+                  .map((tag) => (
+                    <Link
+                      key={tag}
+                      href={`/blog?tag=${encodeURIComponent(tag)}`}
+                      className="px-3 py-1 bg-jhr-black-light border border-jhr-black-lighter text-jhr-white-dim text-xs rounded-full hover:text-jhr-gold hover:border-jhr-gold/30 transition-colors"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </article>
+
+      {/* CTA */}
+      <section className="py-16 bg-jhr-black-light border-t border-jhr-black-lighter">
+        <div className="section-container text-center">
+          <h2 className="text-heading-lg font-display font-bold text-jhr-white mb-4">
+            Ready to Make Your Next Event Stand Out?
+          </h2>
+          <p className="text-body-lg text-jhr-white-dim max-w-xl mx-auto mb-8">
+            Let&apos;s discuss how professional photography can elevate your corporate events, conferences, and trade shows.
+          </p>
+          <Link
+            href="/schedule"
+            className="btn-primary inline-flex items-center gap-2"
+          >
+            Schedule a Strategy Call
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
 }
 
-function SectionBasedContent({
-  post,
-  isEditing,
-}: SectionBasedContentProps) {
+// ============================================================================
+// Section-Based Edit Mode — full editor with section management
+// ============================================================================
+
+function SectionEditMode({ post }: { post: BlogPost }) {
   const {
     sections,
     addSection,
@@ -88,9 +235,7 @@ function SectionBasedContent({
   const [insertIndex, setInsertIndex] = useState(0);
   const [showSEOPanel, setShowSEOPanel] = useState(false);
 
-  // Load blog post into context when component mounts or post changes
   useEffect(() => {
-    // Migrate legacy posts to sections format if needed
     const postToLoad = post.sections && post.sections.length > 0
       ? post
       : { ...post, sections: migrateLegacyBlogPost(post).sections || [] };
@@ -110,278 +255,84 @@ function SectionBasedContent({
     [insertIndex, addSection]
   );
 
-  // In view mode, use post.sections directly (no context delay).
-  // In edit mode, use context sections (supports drag/drop, add/delete).
-  const activeSections = isEditing
-    ? sections
-    : (() => {
-        const postSections = post.sections && post.sections.length > 0
-          ? post.sections
-          : migrateLegacyBlogPost(post).sections || [];
-        return [...postSections].sort((a, b) => a.order - b.order);
-      })();
-
-  // Find the hero section for featured image and title display
-  const heroSection = activeSections.find((s) => s.type === 'hero');
-  const featuredImage =
-    heroSection?.type === 'hero'
-      ? heroSection.backgroundImage?.src
-      : post.featuredImage;
-
-  // Get non-hero sections for body content
-  const contentSections = activeSections.filter((s) => s.type !== 'hero');
-
   return (
     <main className="min-h-screen bg-jhr-black">
       {/* Edit Mode Status Bar */}
-      {isEditing && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-jhr-black-light border border-jhr-black-lighter rounded-lg shadow-xl px-4 py-2 flex items-center gap-3">
-          <span className="text-body-sm text-jhr-white-dim">
-            <Edit3 className="w-4 h-4 inline mr-1.5" />
-            Editing: {post.title.slice(0, 30)}
-            {post.title.length > 30 ? '...' : ''}
+      <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-jhr-black-light border border-jhr-black-lighter rounded-lg shadow-xl px-4 py-2 flex items-center gap-3">
+        <span className="text-body-sm text-jhr-white-dim">
+          <Edit3 className="w-4 h-4 inline mr-1.5" />
+          Editing: {post.title.slice(0, 30)}
+          {post.title.length > 30 ? '...' : ''}
+        </span>
+        {saveState.status === 'saving' && (
+          <span className="inline-flex items-center gap-1.5 text-body-sm text-jhr-white-dim">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Saving...
           </span>
-          {saveState.status === 'saving' && (
-            <span className="inline-flex items-center gap-1.5 text-body-sm text-jhr-white-dim">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Saving...
-            </span>
-          )}
-          {saveState.status === 'saved' && (
-            <span className="inline-flex items-center gap-1.5 text-body-sm text-green-400">
-              <Check className="w-3.5 h-3.5" />
-              Saved
-            </span>
-          )}
-          {saveState.error && (
-            <span className="text-body-sm text-red-400">{saveState.error}</span>
-          )}
-          <button
-            onClick={() => setShowSEOPanel(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-body-sm font-medium bg-jhr-black-lighter text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors border border-transparent"
-          >
-            <Search className="w-3.5 h-3.5" />
-            SEO
-          </button>
-        </div>
-      )}
+        )}
+        {saveState.status === 'saved' && (
+          <span className="inline-flex items-center gap-1.5 text-body-sm text-green-400">
+            <Check className="w-3.5 h-3.5" />
+            Saved
+          </span>
+        )}
+        {saveState.error && (
+          <span className="text-body-sm text-red-400">{saveState.error}</span>
+        )}
+        <button
+          onClick={() => setShowSEOPanel(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-body-sm font-medium bg-jhr-black-lighter text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors border border-transparent"
+        >
+          <Search className="w-3.5 h-3.5" />
+          SEO
+        </button>
+      </div>
 
-      {/* Blog SEO Panel (rendered inside BlogContentProvider for bridge access) */}
       {showSEOPanel && (
         <PageSEOPanel onClose={() => setShowSEOPanel(false)} />
       )}
 
-      {/* Featured Image Hero - only render hero section if it exists */}
-      {heroSection ? (
-        <div className="relative">
-          {isEditing ? (
-            <SectionWrapper
-              sectionType={heroSection.type}
-              sectionId={heroSection.id}
-              index={0}
-              totalSections={sections.length}
-              onMoveUp={() => {}}
-              onMoveDown={() => moveSectionDown(0)}
-              onDelete={() => deleteSection(heroSection.id)}
-            >
-              <SectionRenderer
-                section={heroSection}
-                pageSlug={post.slug}
-                contentKeyPrefix={`${post.slug}:${heroSection.id}`}
-              />
-            </SectionWrapper>
-          ) : (
-            <SectionRenderer
-              section={heroSection}
-              pageSlug={post.slug}
-              contentKeyPrefix={`${post.slug}:${heroSection.id}`}
-            />
-          )}
-        </div>
-      ) : featuredImage ? (
-        // Fallback for legacy posts without hero section
-        <section className="relative w-full h-[50vh] min-h-[400px] max-h-[600px]">
-          <Image
-            src={featuredImage}
-            alt={post.title}
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-jhr-black via-jhr-black/50 to-transparent" />
-        </section>
-      ) : null}
-
-      {/* Post Header - only shown for legacy posts or when hero doesn't have title */}
-      {!heroSection && (
-        <section
-          className={`${
-            featuredImage ? '-mt-32 relative z-10' : 'pt-32'
-          } pb-8`}
-        >
-          <div className="section-container max-w-3xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <Link
-                href="/blog"
-                className="inline-flex items-center gap-1.5 text-jhr-gold hover:text-jhr-gold-light text-body-sm transition-colors mb-6"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Articles
-              </Link>
-
-              {post.categories[0] && (
-                <span className="inline-block px-3 py-1 bg-jhr-gold/20 text-jhr-gold text-xs font-semibold rounded-full mb-4">
-                  {post.categories[0]}
-                </span>
-              )}
-
-              <h1 className="text-display-md font-display font-bold text-jhr-white mb-6">
-                {post.title}
-              </h1>
-
-              <div className="flex flex-wrap items-center gap-4 text-jhr-white-dim text-body-sm pb-6 border-b border-jhr-black-lighter">
-                <span className="flex items-center gap-1.5">
-                  <User className="w-4 h-4" />
-                  {post.author}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4" />
-                  {formatBlogDate(post.publishedAt)}
-                </span>
-                {post.readingTime && (
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" />
-                    {post.readingTime} min read
-                  </span>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        </section>
-      )}
-
-      {/* Meta bar for section-based posts (under hero) */}
-      {heroSection && (
-        <section className="py-4 border-b border-jhr-black-lighter">
-          <div className="section-container max-w-3xl mx-auto">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <Link
-                href="/blog"
-                className="inline-flex items-center gap-1.5 text-jhr-gold hover:text-jhr-gold-light text-body-sm transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Back to Articles
-              </Link>
-              <div className="flex flex-wrap items-center gap-4 text-jhr-white-dim text-body-sm">
-                {post.categories[0] && (
-                  <span className="px-3 py-1 bg-jhr-gold/20 text-jhr-gold text-xs font-semibold rounded-full">
-                    {post.categories[0]}
-                  </span>
-                )}
-                <span className="flex items-center gap-1.5">
-                  <User className="w-4 h-4" />
-                  {post.author}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4" />
-                  {formatBlogDate(post.publishedAt)}
-                </span>
-                {post.readingTime && (
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" />
-                    {post.readingTime} min read
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Content Sections */}
-      <section className="py-8">
+      {/* Render all sections with edit wrappers */}
+      <section className="pt-28 pb-8">
         <div className="section-container max-w-3xl mx-auto">
-          {/* Add section button at top (edit mode only) */}
-          {isEditing && (
-            <button
-              onClick={() => handleOpenAddModal(heroSection ? 1 : 0)}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 mb-6 border-2 border-dashed border-jhr-black-lighter rounded-lg text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="text-body-sm font-medium">Add Section</span>
-            </button>
-          )}
+          <button
+            onClick={() => handleOpenAddModal(0)}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 mb-6 border-2 border-dashed border-jhr-black-lighter rounded-lg text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="text-body-sm font-medium">Add Section</span>
+          </button>
 
-          {/* Render content sections */}
-          {contentSections.map((section, index) => {
-            const actualIndex = heroSection ? index + 1 : index;
+          {sections.map((section, index) => (
+            <div key={section.id} className="mb-6">
+              <SectionWrapper
+                sectionType={section.type}
+                sectionId={section.id}
+                index={index}
+                totalSections={sections.length}
+                onMoveUp={() => moveSectionUp(index)}
+                onMoveDown={() => moveSectionDown(index)}
+                onDelete={() => deleteSection(section.id)}
+              >
+                <SectionRenderer
+                  section={section}
+                  pageSlug={post.slug}
+                  contentKeyPrefix={`${post.slug}:${section.id}`}
+                />
+              </SectionWrapper>
 
-            return (
-              <div key={section.id} className="mb-6">
-                {isEditing ? (
-                  <SectionWrapper
-                    sectionType={section.type}
-                    sectionId={section.id}
-                    index={actualIndex}
-                    totalSections={sections.length}
-                    onMoveUp={() => moveSectionUp(actualIndex)}
-                    onMoveDown={() => moveSectionDown(actualIndex)}
-                    onDelete={() => deleteSection(section.id)}
-                  >
-                    <SectionRenderer
-                      section={section}
-                      pageSlug={post.slug}
-                      contentKeyPrefix={`${post.slug}:${section.id}`}
-                    />
-                  </SectionWrapper>
-                ) : (
-                  <SectionRenderer
-                    section={section}
-                    pageSlug={post.slug}
-                    contentKeyPrefix={`${post.slug}:${section.id}`}
-                  />
-                )}
-
-                {/* Add section button between sections (edit mode only) */}
-                {isEditing && (
-                  <button
-                    onClick={() => handleOpenAddModal(actualIndex + 1)}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-4 mt-4 border-2 border-dashed border-jhr-black-lighter rounded-lg text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors opacity-50 hover:opacity-100"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span className="text-xs font-medium">Add Section</span>
-                  </button>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Tags */}
-          {post.tags.length > 0 && (
-            <div className="mt-12 pt-6 border-t border-jhr-black-lighter">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Tag className="w-4 h-4 text-jhr-white-dim" />
-                {post.tags.map((tag) => (
-                  <Link
-                    key={tag}
-                    href={`/blog?tag=${encodeURIComponent(tag)}`}
-                    className="px-3 py-1 bg-jhr-black-light border border-jhr-black-lighter text-jhr-white-dim text-xs rounded-full hover:text-jhr-gold hover:border-jhr-gold/30 transition-colors"
-                  >
-                    {tag}
-                  </Link>
-                ))}
-              </div>
+              <button
+                onClick={() => handleOpenAddModal(index + 1)}
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 mt-4 border-2 border-dashed border-jhr-black-lighter rounded-lg text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors opacity-50 hover:opacity-100"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="text-xs font-medium">Add Section</span>
+              </button>
             </div>
-          )}
+          ))}
         </div>
       </section>
 
-      {/* Add Section Modal */}
       {addModalOpen && (
         <AddSectionModal
           onAdd={handleAddSection}
@@ -394,16 +345,12 @@ function SectionBasedContent({
 }
 
 // ============================================================================
-// BlogPostClient Props
+// BlogPostClient — switches between view and edit mode
 // ============================================================================
 
 interface BlogPostClientProps {
   initialPost: BlogPost;
 }
-
-// ============================================================================
-// BlogPostClient Component
-// ============================================================================
 
 export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   const [post, setPost] = useState<BlogPost>(initialPost);
@@ -413,7 +360,7 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   const { canEdit, isEditMode } = useEditMode();
   const isEditing = canEdit && isEditMode;
 
-  // Fetch draft version when entering edit mode (edits are saved to draft)
+  // Fetch draft version when entering edit mode
   useEffect(() => {
     if (!isEditing || hasFetchedDraft) return;
 
@@ -434,7 +381,7 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
     fetchDraft();
   }, [isEditing, hasFetchedDraft, post.slug]);
 
-  // Fetch related posts client-side (non-critical for SEO)
+  // Fetch related posts
   useEffect(() => {
     async function fetchRelatedPosts() {
       try {
@@ -450,13 +397,13 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
           setRelatedPosts(related);
         }
       } catch {
-        // Silently fail - related posts are not critical
+        // Silently fail
       }
     }
     fetchRelatedPosts();
   }, [post.slug]);
 
-  // Keep post state in sync if initialPost changes (only when not editing)
+  // Sync with initialPost when not editing
   useEffect(() => {
     if (!isEditing) {
       setPost(initialPost);
@@ -465,49 +412,34 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   }, [initialPost, isEditing]);
 
   return (
-    <BlogContentProvider initialPost={post}>
-      <SectionBasedContent
-        post={post}
-        isEditing={isEditing}
-      />
+    <>
+      {isEditing ? (
+        <BlogContentProvider initialPost={post}>
+          <SectionEditMode post={post} />
+        </BlogContentProvider>
+      ) : (
+        <>
+          <ArticleView post={post} />
 
-      {/* Related Posts */}
-      {relatedPosts.length > 0 && (
-        <section className="py-16 bg-jhr-black-light border-t border-jhr-black-lighter">
-          <div className="section-container">
-            <h2 className="text-heading-lg font-display font-bold text-jhr-white mb-8">
-              Related Articles
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedPosts.map((rp) => (
-                <RelatedPostCard key={rp.slug} post={rp} />
-              ))}
-            </div>
-          </div>
-        </section>
+          {/* Related Posts */}
+          {relatedPosts.length > 0 && (
+            <section className="py-16 bg-jhr-black-light border-t border-jhr-black-lighter">
+              <div className="section-container">
+                <h2 className="text-heading-lg font-display font-bold text-jhr-white mb-8">
+                  Related Articles
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {relatedPosts.map((rp) => (
+                    <RelatedPostCard key={rp.slug} post={rp} />
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+        </>
       )}
 
-      {/* CTA */}
-      <section className="py-16 border-t border-jhr-black-lighter">
-        <div className="section-container text-center">
-          <h2 className="text-heading-lg font-display font-bold text-jhr-white mb-4">
-            Ready to Make Your Next Event Stand Out?
-          </h2>
-          <p className="text-body-lg text-jhr-white-dim max-w-xl mx-auto mb-8">
-            Let&apos;s discuss how professional photography can transform your
-            corporate events.
-          </p>
-          <Link
-            href="/schedule"
-            className="btn-primary inline-flex items-center gap-2"
-          >
-            Schedule a Strategy Call
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
-
-      {/* JSON-LD Structured Data */}
+      {/* JSON-LD */}
       {post.structuredData && (
         <script
           type="application/ld+json"
@@ -516,8 +448,7 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
               '@context': 'https://schema.org',
               '@type': 'BlogPosting',
               headline: post.structuredData.headline || post.title,
-              datePublished:
-                post.structuredData.datePublished || post.publishedAt,
+              datePublished: post.structuredData.datePublished || post.publishedAt,
               author: {
                 '@type': 'Person',
                 name: post.structuredData.author || post.author,
@@ -536,6 +467,6 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
           }}
         />
       )}
-    </BlogContentProvider>
+    </>
   );
 }
