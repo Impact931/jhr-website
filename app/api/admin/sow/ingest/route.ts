@@ -22,6 +22,7 @@ import { uploadToGoogleDrive } from '@/lib/sow/google-drive';
 import { createGmailDraft } from '@/lib/sow/gmail-draft';
 import { sowDeliveryEmail } from '@/lib/email-templates/sow-email';
 import { sendSlackNotification } from '@/lib/slack';
+import { saveSOWLog, type SOWLogEntry } from '@/lib/sow/log';
 import type { SOWContractData } from '@/lib/sow/types';
 
 const WEBHOOK_SECRET = process.env.ASSIGNMENTS_WEBHOOK_SECRET;
@@ -29,6 +30,22 @@ const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_SOW_FOLDER_ID;
 const OPS_EMAILS = ['jayson@jhr-photography.com', 'angus@jhr-photography.com'];
 
 export async function POST(request: NextRequest) {
+  const log: SOWLogEntry = {
+    timestamp: new Date().toISOString(),
+    steps: [],
+    success: false,
+  };
+
+  function step(name: string, detail?: string) {
+    log.steps.push({ name, detail, at: new Date().toISOString() });
+  }
+
+  function stepError(name: string, error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack?.split('\n').slice(0, 3).join(' | ') : undefined;
+    log.steps.push({ name, detail: msg, error: true, stack, at: new Date().toISOString() });
+  }
+
   // Validate webhook secret
   const secret = request.headers.get('x-jhr-secret');
   if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
@@ -36,39 +53,54 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    step('parse_body');
     const body = await request.json();
+
+    // Log the raw webhook payload keys for debugging
+    step('webhook_payload', `keys: ${Object.keys(body).join(', ')}${body.data ? ` | data.keys: ${Object.keys(body.data).join(', ')}` : ''}`);
+
     const notionPageId = body.notionPageId || body.page_id || body.data?.id || body.id;
+    log.notionPageId = notionPageId;
 
     if (!notionPageId) {
-      return NextResponse.json({ error: 'Missing notionPageId' }, { status: 400 });
+      step('missing_page_id', JSON.stringify({ bodyKeys: Object.keys(body), dataKeys: body.data ? Object.keys(body.data) : null }));
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'Missing notionPageId', log: log.steps }, { status: 400 });
     }
 
-    // Fetch contract page from Notion
+    step('notion_fetch_page', notionPageId);
     const contractPage = await getNotionPage(notionPageId);
     if (!contractPage) {
-      return NextResponse.json({ error: 'Failed to fetch Notion contract page' }, { status: 500 });
+      stepError('notion_fetch_page', 'getNotionPage returned null');
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'Failed to fetch Notion contract page', log: log.steps }, { status: 500 });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const props: Record<string, any> = contractPage.properties || {};
+    step('properties_found', Object.keys(props).join(', '));
 
     // Idempotency: if Document Link is already set, return early
     const existingDocLink = extractUrl(props['Document Link']);
     if (existingDocLink) {
+      step('idempotency_skip', existingDocLink);
+      log.success = true;
+      await saveSOWLog(log).catch(() => {});
       return NextResponse.json({
         message: 'Contract already processed',
         documentUrl: existingDocLink,
+        log: log.steps,
       });
     }
 
     // --- Extract contract properties ---
+    step('extract_properties');
     const title = extractTitle(props['Title']) || extractTitle(props['Name']) || 'Untitled Contract';
     const status = extractStatus(props['Status']) || extractSelect(props['Status']);
     const docType = extractSelect(props['Doc Type']) || 'Statement of Work';
     const documentDate = extractDate(props['Document Date']) || new Date().toISOString().split('T')[0];
     const paymentStructure = extractSelect(props['Payment Structure']) || extractPlainText(props['Payment Structure']);
 
-    // Deal Amount - try number first, then formula
     let dealAmount = '';
     const dealAmountNum = extractNumber(props['Deal Amount']);
     if (dealAmountNum !== null) {
@@ -76,6 +108,9 @@ export async function POST(request: NextRequest) {
     } else {
       dealAmount = extractFormula(props['Deal Amount']) || extractPlainText(props['Deal Amount']);
     }
+
+    log.title = title;
+    step('contract_meta', `title=${title} | docType=${docType} | status=${status} | dealAmount=${dealAmount}`);
 
     // --- Resolve relations ---
     let dealName = '';
@@ -94,7 +129,9 @@ export async function POST(request: NextRequest) {
     const products: SOWContractData['products'] = [];
 
     // Deal relation
+    step('resolve_deal');
     const dealIds = extractRelation(props['Deal']);
+    step('deal_ids', dealIds.length ? dealIds.join(', ') : 'none');
     if (dealIds.length > 0) {
       const dealPage = await getNotionPage(dealIds[0]);
       if (dealPage) {
@@ -108,10 +145,14 @@ export async function POST(request: NextRequest) {
         deliverables = extractPlainText(dp['Deliverables']);
         attire = extractSelect(dp['Attire']);
         licensing = extractPlainText(dp['Licensing']) || extractSelect(dp['Licensing']);
+        step('deal_resolved', `dealName=${dealName} | eventDate=${eventDate}`);
+      } else {
+        step('deal_resolved', 'FAILED to fetch deal page');
       }
     }
 
     // Contact relation
+    step('resolve_contact');
     const contactIds = extractRelation(props['Contact']);
     if (contactIds.length > 0) {
       const contactPage = await getNotionPage(contactIds[0]);
@@ -120,10 +161,14 @@ export async function POST(request: NextRequest) {
         contactName = extractTitle(cp['Contact Name']) || extractTitle(cp['Name']);
         contactEmail = extractEmail(cp['Email']);
         contactPhone = extractPhone(cp['Phone (Cell)']) || extractPhone(cp['Phone']);
+        step('contact_resolved', `name=${contactName} | email=${contactEmail}`);
       }
+    } else {
+      step('contact_resolved', 'no contact relation');
     }
 
     // Account relation
+    step('resolve_account');
     const accountIds = extractRelation(props['Account']);
     if (accountIds.length > 0) {
       const accountPage = await getNotionPage(accountIds[0]);
@@ -131,10 +176,14 @@ export async function POST(request: NextRequest) {
         const ap = accountPage.properties || {};
         accountName = extractTitle(ap['Account Name']) || extractTitle(ap['Name']);
         accountWebsite = extractUrl(ap['Website']);
+        step('account_resolved', accountName);
       }
+    } else {
+      step('account_resolved', 'no account relation');
     }
 
     // Product/Service relation (multiple)
+    step('resolve_products');
     const productIds = extractRelation(props['Product/Service']) || extractRelation(props['Products']);
     for (const pid of productIds) {
       const productPage = await getNotionPage(pid);
@@ -147,135 +196,132 @@ export async function POST(request: NextRequest) {
         products.push({ name: pName, price: pPrice, description: pDesc });
       }
     }
+    step('products_resolved', `${products.length} products`);
 
     // --- Fetch page blocks → SOWBlock[] ---
+    step('fetch_blocks');
     const pageBlocks = await getPageBlocks(notionPageId);
+    step('blocks_fetched', `${pageBlocks.length} blocks`);
+
     const sowBlocks = notionBlocksToSOW(pageBlocks);
+    step('blocks_converted', `${sowBlocks.length} SOW blocks`);
 
     const contractData: SOWContractData = {
-      notionPageId,
-      title,
-      status,
-      dealAmount,
-      paymentStructure,
-      docType,
-      documentDate,
-      dealName,
-      eventDate,
-      eventType,
-      dealValue,
-      services,
-      deliverables,
-      attire,
-      licensing,
-      contactName,
-      contactEmail,
-      contactPhone,
-      accountName,
-      accountWebsite,
-      products,
+      notionPageId, title, status, dealAmount, paymentStructure, docType, documentDate,
+      dealName, eventDate, eventType, dealValue, services, deliverables, attire, licensing,
+      contactName, contactEmail, contactPhone, accountName, accountWebsite, products,
       blocks: sowBlocks,
     };
 
-    // Format date for display
     const displayDate = eventDate
-      ? new Date(eventDate).toLocaleDateString('en-US', {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-        })
+      ? new Date(eventDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
       : documentDate;
 
     const meta = {
-      title,
-      docType,
-      documentDate: displayDate,
+      title, docType, documentDate: displayDate,
       accountName: accountName || 'Client',
       contactName: contactName || 'Client',
     };
 
-    // Sanitize title for filenames
     const safeTitle = title.replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_');
 
     // --- Generate PDF + DOCX in parallel ---
-    const [pdfBuffer, docxBuffer] = await Promise.all([
-      generateSOWPdf(sowBlocks, meta),
-      generateSOWDocx(sowBlocks, meta),
-    ]);
-
-    // --- Upload DOCX to Google Drive ---
-    const driveUrl = await uploadToGoogleDrive(
-      docxBuffer,
-      `${safeTitle}.docx`,
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      DRIVE_FOLDER_ID
-    );
-
-    if (!driveUrl) {
-      console.error('Failed to upload DOCX to Google Drive');
-      return NextResponse.json({ error: 'Drive upload failed' }, { status: 500 });
+    step('generate_documents');
+    let pdfBuffer: Buffer;
+    let docxBuffer: Buffer;
+    try {
+      [pdfBuffer, docxBuffer] = await Promise.all([
+        generateSOWPdf(sowBlocks, meta),
+        generateSOWDocx(sowBlocks, meta),
+      ]);
+      step('documents_generated', `PDF=${pdfBuffer.length}b | DOCX=${docxBuffer.length}b`);
+    } catch (e) {
+      stepError('generate_documents', e);
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'Document generation failed', log: log.steps }, { status: 500 });
     }
 
+    // --- Upload DOCX to Google Drive ---
+    step('drive_upload', `folder=${DRIVE_FOLDER_ID}`);
+    let driveUrl: string | null;
+    try {
+      driveUrl = await uploadToGoogleDrive(
+        docxBuffer,
+        `${safeTitle}.docx`,
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        DRIVE_FOLDER_ID
+      );
+    } catch (e) {
+      stepError('drive_upload', e);
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'Drive upload failed', log: log.steps }, { status: 500 });
+    }
+
+    if (!driveUrl) {
+      stepError('drive_upload', 'uploadToGoogleDrive returned null');
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'Drive upload failed', log: log.steps }, { status: 500 });
+    }
+    step('drive_uploaded', driveUrl);
+    log.driveUrl = driveUrl;
+
     // --- Create Gmail drafts for ops ---
+    step('gmail_drafts');
     const emailContent = sowDeliveryEmail(contractData, driveUrl);
     const attachments = [
-      {
-        filename: `${safeTitle}.pdf`,
-        mimeType: 'application/pdf',
-        content: pdfBuffer,
-      },
-      {
-        filename: `${safeTitle}.docx`,
-        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        content: docxBuffer,
-      },
+      { filename: `${safeTitle}.pdf`, mimeType: 'application/pdf', content: pdfBuffer },
+      { filename: `${safeTitle}.docx`, mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', content: docxBuffer },
     ];
 
     const draftPromises = OPS_EMAILS.map((opsEmail) =>
       createGmailDraft(
-        opsEmail,
-        contactEmail || opsEmail,
-        emailContent.subject,
-        emailContent.htmlBody,
-        emailContent.textBody,
-        attachments
-      ).catch((e) => {
-        console.error(`Failed to create draft for ${opsEmail}:`, e);
+        opsEmail, contactEmail || opsEmail,
+        emailContent.subject, emailContent.htmlBody, emailContent.textBody, attachments
+      ).then((id) => {
+        step(`draft_${opsEmail}`, id ? `OK (${id})` : 'returned null');
+        return id;
+      }).catch((e) => {
+        stepError(`draft_${opsEmail}`, e);
         return null;
       })
     );
 
     const draftResults = await Promise.allSettled(draftPromises);
-    const draftIds = draftResults
-      .map((r) => (r.status === 'fulfilled' ? r.value : null))
-      .filter(Boolean);
+    const draftIds = draftResults.map((r) => (r.status === 'fulfilled' ? r.value : null)).filter(Boolean);
+    step('drafts_complete', `${draftIds.length}/${OPS_EMAILS.length} created`);
 
     // --- Write back to Notion ---
+    step('notion_writeback');
     try {
       await updateNotionPage(notionPageId, {
         'Document Link': { url: driveUrl },
         'Agreement URL': { url: driveUrl },
         'Status': { status: { name: 'Sent for Signature' } },
       });
+      step('notion_writeback_done');
     } catch (error) {
-      console.error('Failed to update Notion contract page:', error);
+      stepError('notion_writeback', error);
     }
 
     // --- Slack notification ---
+    step('slack_notify');
     sendSlackNotification({
       text: `:page_facing_up: *SOW Sent* — ${title}\n:bust_in_silhouette: ${contactName} (${accountName})\n${dealAmount ? `:moneybag: ${dealAmount}` : ''}${eventDate ? `\n:calendar_spiral: ${displayDate}` : ''}\n:link: ${driveUrl}\n:email: Drafts created in ${draftIds.length} inbox(es)`,
     }).catch((e) => console.error('Failed to send Slack notification:', e));
+
+    log.success = true;
+    await saveSOWLog(log).catch(() => {});
 
     return NextResponse.json({
       success: true,
       documentUrl: driveUrl,
       draftCount: draftIds.length,
-      title,
-      contactName,
-      accountName,
+      title, contactName, accountName,
+      log: log.steps,
     });
   } catch (error) {
-    console.error('SOW ingest error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    stepError('unhandled_error', error);
+    await saveSOWLog(log).catch(() => {});
+    return NextResponse.json({ error: 'Internal server error', log: log.steps }, { status: 500 });
   }
 }
