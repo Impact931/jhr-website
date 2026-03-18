@@ -1631,6 +1631,37 @@ function ArticlesTab() {
         <div className="flex items-center gap-3">
           <button
             onClick={async () => {
+              setActionLoading('improve-all');
+              try {
+                const res = await fetch('/api/admin/contentops/improve', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ mode: 'needs-work' }),
+                });
+                if (res.ok) {
+                  const data = await res.json();
+                  alert(`Improved ${data.improved} of ${data.total} articles. ${data.failed} failed.`);
+                  await fetchArticles();
+                }
+              } catch {
+                // ignore
+              } finally {
+                setActionLoading(null);
+              }
+            }}
+            disabled={actionLoading === 'improve-all'}
+            className="text-sm text-jhr-white-dim hover:text-jhr-gold transition-colors flex items-center gap-1.5 disabled:opacity-50"
+            title="Auto-improve all articles that need work (GEO < 70)"
+          >
+            {actionLoading === 'improve-all' ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Wand2 className="w-3.5 h-3.5" />
+            )}
+            Improve All
+          </button>
+          <button
+            onClick={async () => {
               setActionLoading('rescore');
               try {
                 const res = await fetch('/api/admin/contentops/rescore', {
@@ -1737,6 +1768,36 @@ function ArticlesTab() {
                       >
                         <Eye className="w-4 h-4" />
                       </a>
+                      {article.geoScore > 0 && article.geoScore < 70 && (
+                        <button
+                          onClick={async () => {
+                            setActionLoading(`improve-${article.slug}`);
+                            try {
+                              const res = await fetch('/api/admin/contentops/improve', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ slug: article.slug }),
+                              });
+                              if (res.ok) {
+                                await fetchArticles();
+                              }
+                            } catch {
+                              // ignore
+                            } finally {
+                              setActionLoading(null);
+                            }
+                          }}
+                          disabled={actionLoading === `improve-${article.slug}`}
+                          className="p-1.5 text-jhr-white-dim hover:text-jhr-gold disabled:opacity-30 transition-colors"
+                          title="Auto-improve this article"
+                        >
+                          {actionLoading === `improve-${article.slug}` ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Wand2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
                       <Link
                         href={`/blog/${article.slug}?editMode=true`}
                         className="p-1.5 text-jhr-white-dim hover:text-jhr-gold transition-colors"
