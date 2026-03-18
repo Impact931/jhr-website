@@ -445,82 +445,45 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formPayload()),
       });
-
-      // Handle non-streaming error responses (auth, validation)
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Research failed');
+      if (!res.ok) throw new Error(await res.text() || 'Research failed');
+      const data = await res.json();
+      const research = data.research || {};
+      setRawResearch(research);
+      setResearchResult({
+        stats: (research.currentStats || []).map((s: { stat: string; source: string }) => ({
+          text: s.stat,
+          source: s.source,
+          year: new Date().getFullYear(),
+        })),
+        authorityLinks: (research.authorityLinks || []).map((l: { url: string; domain: string }) => ({
+          url: l.url,
+          domainType: l.domain,
+        })),
+        expertQuotes: (research.expertQuotes || []).map((q: { quote: string; attribution: string }) => ({
+          quote: q.quote,
+          author: q.attribution,
+        })),
+        relatedQuestions: research.relatedQuestions || [],
+        localInsights: (research.localInsights || []).map((l: { insight: string; source: string }) => ({
+          insight: l.insight,
+          source: l.source,
+        })),
+        contentGaps: research.contentGaps || [],
+        geoAnswerFragments: (research.geoAnswerFragments || []).map((f: { question: string; answer: string }) => ({
+          question: f.question,
+          answer: f.answer,
+        })),
+        topicClusterKeywords: research.topicClusterKeywords || [],
+      });
+      setResearchOpen(true);
+      if (data.researchId) {
+        setResearchDbId(data.researchId);
       }
-
-      if (!res.body) throw new Error('No response body');
-
-      // Read SSE stream
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        while (buffer.includes('\n\n')) {
-          const eventEnd = buffer.indexOf('\n\n');
-          const eventBlock = buffer.slice(0, eventEnd);
-          buffer = buffer.slice(eventEnd + 2);
-
-          let eventType = '';
-          for (const line of eventBlock.split('\n')) {
-            if (line.startsWith('event: ')) {
-              eventType = line.slice(7).trim();
-            } else if (line.startsWith('data: ')) {
-              const payload = JSON.parse(line.slice(6));
-
-              if (eventType === 'error') {
-                throw new Error(payload.error || 'Research failed');
-              }
-
-              if (eventType === 'done') {
-                const research = payload.research || {};
-                setRawResearch(research);
-                setResearchResult({
-                  stats: (research.currentStats || []).map((s: { stat: string; source: string }) => ({
-                    text: s.stat,
-                    source: s.source,
-                    year: new Date().getFullYear(),
-                  })),
-                  authorityLinks: (research.authorityLinks || []).map((l: { url: string; domain: string }) => ({
-                    url: l.url,
-                    domainType: l.domain,
-                  })),
-                  expertQuotes: (research.expertQuotes || []).map((q: { quote: string; attribution: string }) => ({
-                    quote: q.quote,
-                    author: q.attribution,
-                  })),
-                  relatedQuestions: research.relatedQuestions || [],
-                  localInsights: (research.localInsights || []).map((l: { insight: string; source: string }) => ({
-                    insight: l.insight,
-                    source: l.source,
-                  })),
-                  contentGaps: research.contentGaps || [],
-                  geoAnswerFragments: (research.geoAnswerFragments || []).map((f: { question: string; answer: string }) => ({
-                    question: f.question,
-                    answer: f.answer,
-                  })),
-                  topicClusterKeywords: research.topicClusterKeywords || [],
-                });
-                setResearchOpen(true);
-                if (payload.researchId) {
-                  setResearchDbId(payload.researchId);
-                }
-                if (payload.provider) {
-                  setResearchProvider(payload.provider);
-                }
-              }
-            }
-          }
-        }
+      if (data.knowledgeId) {
+        setResearchSavedId(data.knowledgeId);
+      }
+      if (data.provider) {
+        setResearchProvider(data.provider);
       }
     } catch (err: unknown) {
       setResearchError(err instanceof Error ? err.message : 'Research failed');
