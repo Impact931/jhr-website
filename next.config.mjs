@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  experimental: {
+    serverComponentsExternalPackages: ['pdfkit'],
+  },
   serverExternalPackages: ['pdfkit'],
   images: {
     formats: ['image/avif', 'image/webp'],
