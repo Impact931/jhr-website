@@ -71,12 +71,15 @@ export async function uploadToGoogleDrive(
 
 /**
  * Upload a file to Google Drive and return the file ID (for subsequent export).
+ * When convertTo is provided, Drive converts the uploaded file to that format
+ * (e.g. 'application/vnd.google-apps.document' converts DOCX → Google Doc).
  */
 export async function uploadToGoogleDriveReturnId(
   fileBuffer: Buffer,
   fileName: string,
   mimeType: string,
-  folderId?: string
+  folderId?: string,
+  convertTo?: string
 ): Promise<string | null> {
   const accessToken = await getGoogleAccessToken(IMPERSONATE_EMAIL, SCOPES);
   if (!accessToken) {
@@ -88,7 +91,7 @@ export async function uploadToGoogleDriveReturnId(
 
   const metadata = JSON.stringify({
     name: fileName,
-    mimeType,
+    mimeType: convertTo || mimeType,
     ...(folderId ? { parents: [folderId] } : {}),
   });
 

@@ -246,7 +246,8 @@ export async function POST(request: NextRequest) {
         docxBuffer,
         `${safeTitle}.docx`,
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        DRIVE_FOLDER_ID
+        DRIVE_FOLDER_ID,
+        'application/vnd.google-apps.document' // Convert DOCX → Google Doc for PDF export
       );
       driveUrl = driveFileId ? `https://drive.google.com/file/d/${driveFileId}/view` : null;
     } catch (e) {
