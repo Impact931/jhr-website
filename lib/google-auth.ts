@@ -13,8 +13,16 @@ function getServiceAccountCredentials(): { client_email: string; private_key: st
     return null;
   }
   try {
-    const sanitized = keyJson.replace(/\r?\n/g, '\\n');
-    const parsed = JSON.parse(sanitized);
+    // Try parsing as-is first (handles well-formed JSON and base64-decoded)
+    let parsed;
+    try {
+      parsed = JSON.parse(keyJson);
+    } catch {
+      // Env vars may contain literal \n sequences that break JSON.parse
+      const sanitized = keyJson.replace(/\r?\n/g, '\\n');
+      parsed = JSON.parse(sanitized);
+    }
+    // PEM keys require real newlines
     if (parsed.private_key) {
       parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
     }

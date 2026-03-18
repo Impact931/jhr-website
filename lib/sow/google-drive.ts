@@ -28,24 +28,25 @@ export async function uploadToGoogleDrive(
     ...(folderId ? { parents: [folderId] } : {}),
   });
 
-  // Construct multipart body manually
+  // Construct multipart body — Drive expects raw binary, not base64
   const preamble = [
     `--${boundary}`,
     'Content-Type: application/json; charset=UTF-8',
     '',
     metadata,
+    '',
     `--${boundary}`,
     `Content-Type: ${mimeType}`,
-    'Content-Transfer-Encoding: base64',
+    '',
     '',
   ].join('\r\n');
 
-  const epilogue = `\r\n--${boundary}--`;
+  const epilogue = Buffer.from(`\r\n--${boundary}--`, 'utf-8');
 
   const body = Buffer.concat([
     Buffer.from(preamble, 'utf-8'),
-    Buffer.from(fileBuffer.toString('base64'), 'utf-8'),
-    Buffer.from(epilogue, 'utf-8'),
+    fileBuffer,
+    epilogue,
   ]);
 
   const res = await fetch(`${DRIVE_UPLOAD_URL}?uploadType=multipart`, {
