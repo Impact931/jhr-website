@@ -12,7 +12,8 @@ export const maxDuration = 300; // 5 minutes — improvements take longer than s
  * Convert a blog DB record into an ArticlePayload for the improve pipeline.
  * Same pattern as rescore/route.ts.
  */
-function blogToArticlePayload(full: Record<string, unknown>): ArticlePayload {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function blogToArticlePayload(full: any): ArticlePayload {
   const body = (full.body as string) || '';
   const seo = (full.seo as Record<string, string>) || {};
   const tags = (full.tags as string[]) || [];
@@ -266,7 +267,7 @@ export async function POST(request: NextRequest) {
     const failed = results.filter((r) => r.status === 'failed').length;
 
     // Strip improvedData from response (large, not needed by client)
-    const clientResults = results.map(({ improvedData, ...rest }) => rest);
+    const clientResults = results.map(({ improvedData: _data, ...rest }) => rest);
 
     return NextResponse.json({
       improved,

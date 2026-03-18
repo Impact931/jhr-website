@@ -4,7 +4,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ArticlePayload } from './types';
 import { validateArticle } from './validate';
-import { scoreArticleGEO } from './geo-score';
 import { getGenerationLessons, formatLessonsForPrompt, addLesson } from './lessons-store';
 
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
