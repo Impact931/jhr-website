@@ -505,41 +505,75 @@ function GenerateTab({ prefill, onPrefillConsumed }: { prefill?: Prefill | null;
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formPayload(),
-          // Pass researchId so generate loads from DynamoDB (reliable)
-          // Falls back to inline research if researchId is missing
           ...(researchDbId ? { researchId: researchDbId } : {}),
-          ...(rawResearch ? { research: rawResearch } : {}),
         }),
       });
-      if (!res.ok) throw new Error(await res.text() || 'Generation failed');
-      const data = await res.json();
-      // Map API response shape to UI's GenerationResult interface
-      const article = data.article || {};
-      const validation = data.validation || {};
-      setGenerateResult({
-        title: article.title || topic,
-        slug: data.slug || article.slug || '',
-        geoScore: article.geoScore ?? data.geoScoring?.totalScore ?? 0,
-        wordCount: article.wordCount || 0,
-        readingTime: article.readTime || article.readingTime || 0,
-        internalLinks: article.internalLinkCount || 0,
-        externalLinks: article.externalLinkCount || 0,
-        quickAnswer: article.quickAnswer || '',
-        metaDescription: article.metaDescription || '',
-        validation: {
-          passes: [
-            ...(validation.passed ? [{ label: 'All checks passed' }] : []),
-            ...((validation.geoScore?.totalScore ?? 0) >= 70 ? [{ label: `GEO score: ${validation.geoScore?.totalScore}/100` }] : []),
-          ],
-          fails: [
-            ...(validation.hardFails || []).map((f: string) => ({ label: f })),
-            ...(validation.softFails || []).map((f: string) => ({ label: f, detail: 'soft fail' })),
-          ],
-        },
-        proofing: data.proofing || undefined,
-        preFlight: data.preFlight || null,
-        lessonsLoaded: data.lessonsLoaded || 0,
-      });
+
+      // Handle non-streaming error responses (auth, validation, 404)
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Generation failed');
+      }
+
+      if (!res.body) throw new Error('No response body');
+
+      // Read SSE stream from the generate endpoint
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse complete SSE events from buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // keep incomplete line in buffer
+
+        let eventType = '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith('data: ')) {
+            const payload = JSON.parse(line.slice(6));
+
+            if (eventType === 'error') {
+              throw new Error(payload.error || 'Generation failed');
+            }
+
+            if (eventType === 'done') {
+              const article = payload.article || {};
+              const validation = payload.validation || {};
+              setGenerateResult({
+                title: article.title || topic,
+                slug: payload.slug || article.slug || '',
+                geoScore: article.geoScore ?? 0,
+                wordCount: article.wordCount || 0,
+                readingTime: article.readTime || article.readingTime || 0,
+                internalLinks: article.internalLinkCount || 0,
+                externalLinks: article.externalLinkCount || 0,
+                quickAnswer: article.quickAnswer || '',
+                metaDescription: article.metaDescription || '',
+                validation: {
+                  passes: [
+                    ...(validation.passed ? [{ label: 'All checks passed' }] : []),
+                    ...((validation.geoScore?.totalScore ?? 0) >= 70 ? [{ label: `GEO score: ${validation.geoScore?.totalScore}/100` }] : []),
+                  ],
+                  fails: [
+                    ...(validation.hardFails || []).map((f: string) => ({ label: f })),
+                    ...(validation.softFails || []).map((f: string) => ({ label: f, detail: 'soft fail' })),
+                  ],
+                },
+                proofing: undefined,
+                preFlight: null,
+                lessonsLoaded: 0,
+              });
+            }
+          }
+        }
+      }
     } catch (err: unknown) {
       setGenerateError(err instanceof Error ? err.message : 'Generation failed');
     } finally {

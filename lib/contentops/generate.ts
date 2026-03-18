@@ -275,7 +275,7 @@ function parseArticleResponse(content: string): ArticlePayload {
   return parsed as ArticlePayload;
 }
 
-// ─── Main generation function ────────────────────────────────────────────────
+// ─── Main generation function (non-streaming, used by scripts/competitor-generate) ─
 
 export async function generateArticle(
   config: ContentOpsConfig,
@@ -307,6 +307,54 @@ export async function generateArticle(
     }
 
     const article = parseArticleResponse(textBlock.text);
+    return { data: article };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error during generation';
+    return { error: `Article generation failed: ${message}` };
+  }
+}
+
+// ─── Streaming generation (used by the API route to prevent gateway timeouts) ─
+
+export async function generateArticleStreaming(
+  config: ContentOpsConfig,
+  research: ResearchPayload,
+  onChunk?: (chunkCount: number) => void,
+): Promise<{ data?: ArticlePayload; error?: string }> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return { error: 'ANTHROPIC_API_KEY environment variable is not set' };
+  }
+
+  const systemPrompt = buildSystemPrompt(config, research);
+  const userPrompt = buildUserPrompt(config);
+
+  try {
+    const client = new Anthropic({ apiKey });
+    let fullText = '';
+    let chunkCount = 0;
+
+    const stream = client.messages.stream({
+      model: CLAUDE_MODEL,
+      max_tokens: 8192,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+      temperature: 0.7,
+    });
+
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        fullText += event.delta.text;
+        chunkCount++;
+        if (onChunk) onChunk(chunkCount);
+      }
+    }
+
+    if (!fullText) {
+      return { error: 'Anthropic streaming returned no text' };
+    }
+
+    const article = parseArticleResponse(fullText);
     return { data: article };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error during generation';
