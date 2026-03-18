@@ -4,7 +4,8 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import type { ContentOpsConfig, ResearchPayload, ArticlePayload, CompetitorContext } from './types';
-import { getICPPromptBlock } from './icp-templates';
+import { getICPPromptBlock, getICPNarrativeBlock } from './icp-templates';
+import { getGenerationLessons, formatLessonsForPrompt } from './lessons-store';
 
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 
@@ -45,7 +46,7 @@ Your article must exceed this depth — aim for at least ${Math.round(competitor
 
 // ─── System prompt builder ───────────────────────────────────────────────────
 
-function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, competitorContext?: CompetitorContext | null): string {
+async function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, competitorContext?: CompetitorContext | null): Promise<string> {
   const icpBlock = getICPPromptBlock(config.icpTag);
 
   const internalLinkLines = Object.entries(INTERNAL_LINK_MAP)
@@ -84,41 +85,69 @@ function buildSystemPrompt(config: ContentOpsConfig, research: ResearchPayload, 
     .map((k) => `"${k}"`)
     .join(', ');
 
-  // Use concise inline voice guide for API calls (full 26KB doc causes timeouts)
-  // The full brand voice doc is available for Claude Code sessions, not API generation
+  // Enriched voice guide — curated from full 550-line brand voice skill for API efficiency
+  // Includes anti-patterns inline (prevent, not just detect), exemplars, and quality self-check
   const voiceSection = `## Layer 1: Identity & Voice (JHR Brand Voice Guide)
 
-You are writing as JHR Photography, Nashville's premier event and corporate photography company with 15+ years of experience.
+You are writing as JHR Photography, Nashville's event and corporate photography company. 15+ years, 200+ events, 15+ venue partnerships.
 
-### StoryBrand Framework
-- The CLIENT is always the hero. JHR is the guide.
-- The villain is uncertainty — "Will the vendor show up prepared?" "Will the photos be usable?"
-- JHR demonstrates empathy first ("We understand the pressure"), then authority through specifics.
-- Every piece should answer: What does the client want? What stands in the way? What does life look like when they succeed?
+### StoryBrand Framework (ALWAYS ACTIVE)
+- The CLIENT is the hero. JHR is the guide. The villain is uncertainty.
+- Show empathy first ("We understand the pressure"), then authority through specifics.
+- Every article answers: What does the reader want? What stands in the way? What does life look like when they succeed?
 
 ### Voice Attributes
-1. **Warm & Personable** — Write like a trusted partner, not a vendor. Use contractions naturally.
-2. **Direct & Action-Oriented** — Short paragraphs, scannable structure, clear next steps.
-3. **Confident & Knowledgeable** — State what we deliver without hedging. Never "I think" or "hopefully."
-4. **Solution-Focused** — Pair every challenge with a path forward.
+1. **Warm & Personable** — Write like a trusted partner. Use contractions. Sound human.
+2. **Direct & Action-Oriented** — Short paragraphs (2-3 sentences). Scannable. Clear takeaways.
+3. **Confident & Knowledgeable** — State what we deliver without hedging. No "I think" or "hopefully."
+4. **Solution-Focused** — Every challenge gets a path forward.
 5. **Relationship-First** — Prioritize human connection over transactions.
 
-### Tone for Articles (EDUCATING context)
-- Authoritative but accessible
-- Generous with knowledge — teach, don't tease
+### Voice Boundaries
+| Be This | Not That |
+|---|---|
+| Warm | Overly familiar or presumptuous |
+| Confident | Arrogant or self-congratulatory |
+| Direct | Blunt or cold |
+| Knowledgeable | Lecturing or condescending |
+| Specific | Jargon-heavy or technical |
+
+### Tone: EDUCATING Context (Blog/Thought Leadership)
+- Authoritative but accessible — generous with knowledge, teach don't tease
 - Lead with the reader's challenge or question
-- Clear headers, practical takeaways, real examples
+- Clear headers, practical takeaways, real Nashville-specific examples
 - Close with invitation to conversation, not hard sell
-- Nashville-specific examples when relevant
 
-Write naturally. Avoid cliches and filler. Every sentence should deliver value.`;
+### ANTI-PATTERN BLOCKLIST — HARD FAIL IF USED
+**AI Slop Terms (NEVER use these words):**
+crucial, delve, comprehensive, furthermore, moreover, utilize, streamline, innovative, cutting-edge, state-of-the-art, robust, seamless, elevate, empower, unlock, harness, paradigm, synergy, game-changer, leverage, holistic, spearhead, revolutionize, groundbreaking, transformative, "it is important to note", "in today's fast-paced world"
 
-  // Use the specific ICP block only (full 21KB profiles doc causes timeouts)
+**Brand Prohibited Terms (NEVER use):**
+hourly rate, half-day/full-day (pricing), freelancer, discount, day rate, setup fee, photographer availability, photo booth, free consultation, affordable, cheap, budget, premier, elite, championship, risk mitigation, risk transfer
+
+**Use Instead:** engagement pricing (not hourly), operator (not freelancer), Execution Confidence (not risk mitigation), Headshot Activation (not photo booth), investment (not cost)
+
+### StoryBrand Soundbites (Weave naturally into content)
+- Problem: "You've invested [X] into this event. The last thing you need is to wonder whether..."
+- Empathy: "We get it — there's a lot riding on this. That's exactly why we're here."
+- Answer: "We help event professionals [deliver/capture what matters] without [the stress/another vendor to manage]."
+- Change: "From 'I hope this works out' to 'I know it's handled.'"
+
+### Voice Exemplar (THIS is the target tone)
+> "You've invested months into this event. The last thing you need is to wonder whether the media will reflect the work you've put in — or whether it will become one more thing you have to manage."
+
+Write naturally. Vary sentence length. Every sentence delivers value.`;
+
+  // ICP block with narrative arc (want → problem → success) for persuasion structure
+  const icpNarrative = getICPNarrativeBlock(config.icpTag);
   const icpSection = `## Layer 2: ICP Context
 
-${icpBlock}`;
+${icpBlock}
 
-  return `${voiceSection}
+### Narrative Arc (shape the article's persuasion structure)
+${icpNarrative}`;
+
+  const basePrompt = `${voiceSection}
 
 ${icpSection}
 
@@ -179,6 +208,17 @@ ${localInsightsBlock ? `\n### Nashville-specific insights to weave in:\n${localI
 ${contentGapsBlock ? `\n### Content gaps to exploit (cover what competitors miss):\n${contentGapsBlock}` : ''}
 ${geoFragmentsBlock ? `\n### GEO answer fragments (use as basis for key sections — these are structured for AI citation):\n${geoFragmentsBlock}` : ''}
 ${clusterKeywordsBlock ? `\n### Topic cluster keywords (weave naturally throughout):\n${clusterKeywordsBlock}` : ''}${competitorContext ? '\n\n' + buildCompetitorBlock(competitorContext) : ''}`;
+
+  // Layer 5: Inject lessons from previous generation/improvement cycles
+  let lessonsBlock = '';
+  try {
+    const lessons = await getGenerationLessons();
+    lessonsBlock = formatLessonsForPrompt(lessons);
+  } catch {
+    // Lessons unavailable — continue without them
+  }
+
+  return lessonsBlock ? `${basePrompt}\n\n${lessonsBlock}` : basePrompt;
 }
 
 function buildUserPrompt(config: ContentOpsConfig): string {
@@ -246,7 +286,14 @@ Ensure:
 - externalLinkCount and internalLinkCount are accurate counts from the body
 - linkAudit contains every link found in the body
 - slug is lowercase, hyphen-separated, no spaces
-- All JSON is valid and parseable`;
+- All JSON is valid and parseable
+
+BEFORE FINALIZING, mentally apply these 5 checks:
+1. Vendor Test: Could any photography vendor have written this? If yes, add JHR/Nashville specifics.
+2. Robot Test: Does this sound like AI? If yes, vary sentence length, add personal touches.
+3. Jayson Test: Would JHR's founder say this naturally? If no, make it more conversational.
+4. Hero Test: Is the CLIENT the hero? If JHR is the hero, reframe.
+5. Warmth Test: Would the reader feel a real person wrote this? If not, add genuine connection.`;
 }
 
 // ─── Parse & validate ────────────────────────────────────────────────────────
@@ -287,7 +334,7 @@ export async function generateArticle(
     return { error: 'ANTHROPIC_API_KEY environment variable is not set' };
   }
 
-  const systemPrompt = buildSystemPrompt(config, research, competitorContext);
+  const systemPrompt = await buildSystemPrompt(config, research, competitorContext);
   const userPrompt = buildUserPrompt(config);
 
   try {
@@ -298,7 +345,7 @@ export async function generateArticle(
       max_tokens: 8192,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
-      temperature: 0.7,
+      temperature: 0.5,
     });
 
     const textBlock = response.content.find((block) => block.type === 'text');
@@ -326,7 +373,7 @@ export async function generateArticleStreaming(
     return { error: 'ANTHROPIC_API_KEY environment variable is not set' };
   }
 
-  const systemPrompt = buildSystemPrompt(config, research);
+  const systemPrompt = await buildSystemPrompt(config, research);
   const userPrompt = buildUserPrompt(config);
 
   try {
@@ -339,7 +386,7 @@ export async function generateArticleStreaming(
       max_tokens: 8192,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
-      temperature: 0.7,
+      temperature: 0.5,
     });
 
     for await (const event of stream) {

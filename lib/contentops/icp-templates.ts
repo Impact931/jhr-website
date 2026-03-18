@@ -143,3 +143,47 @@ export function getICPPromptBlock(tag: ICPTag): string {
     t.writingInstructions,
   ].join('\n');
 }
+
+// ─── ICP Narrative Arc (StoryBrand: want → problem → success) ────────────────
+
+const ICP_NARRATIVES: Record<ICPTag, { want: string; problem: string; success: string; message: string; leadService: string }> = {
+  'ICP-1': {
+    want: 'Nashville event feels controlled, polished, professionally executed without micromanaging local vendors',
+    problem: 'Local vendors require too much oversight, create ambiguity, feel disconnected from agency operations',
+    success: 'A local partner who operates as an extension of their team — already aligned, predictable, agency-ready',
+    message: "You don't need another vendor — you need a local extension of your team who already understands how this work is supposed to run.",
+    leadService: 'Corporate Event Coverage → Trade-Show Media → Event Video',
+  },
+  'ICP-2': {
+    want: 'Events that feel professional and worth the investment, with media supporting long-term use',
+    problem: 'Event media is inconsistent, slow, or not aligned to organizational communications',
+    success: 'A reliable partner delivering media reusable across recruiting, training, comms, and marketing',
+    message: "We help you turn your events into professional assets your organization can use all year — not just memories.",
+    leadService: 'Corporate Event Coverage → Executive Imaging → Executive Story System',
+  },
+  'ICP-3': {
+    want: 'Booth stands out, drives conversations, generates assets sales can follow up with',
+    problem: 'Swag gets ignored, raffles attract wrong people, traditional photography doesn\'t move the needle',
+    success: 'An activation that increases dwell time, captures data, gives attendees something valuable',
+    message: "This isn't photography — it's a booth engagement system that produces leads and assets your sales team actually uses.",
+    leadService: 'Headshot Activation → Social Recap System → Event Highlight',
+  },
+  'ICP-4': {
+    want: 'Planners have smooth events that reflect well on the venue',
+    problem: 'Hesitate to suggest vendors who might create issues or extra work for their team',
+    success: 'A partner they can reference confidently — professional, prepared, no special handling needed',
+    message: "We're the kind of partner you can mention without worrying how it will reflect back on you.",
+    leadService: 'Relationship (not direct sale) → Corporate Event Coverage at venue',
+  },
+};
+
+export function getICPNarrativeBlock(tag: ICPTag): string {
+  const n = ICP_NARRATIVES[tag];
+  return [
+    `**What the reader wants:** ${n.want}`,
+    `**What stands in their way:** ${n.problem}`,
+    `**What success looks like:** ${n.success}`,
+    `**StoryBrand message to weave in:** "${n.message}"`,
+    `**Service to naturally position:** ${n.leadService}`,
+  ].join('\n');
+}
