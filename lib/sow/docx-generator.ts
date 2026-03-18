@@ -251,9 +251,9 @@ export async function generateSOWDocx(
                     color: 'C8A45E',
                   }),
                   new TextRun({
-                    text: `    ${meta.docType} | ${meta.documentDate}`,
+                    text: `\t${meta.documentDate}`,
                     size: 16,
-                    color: '52525B',
+                    color: '71717A',
                   }),
                 ],
               }),
@@ -292,28 +292,40 @@ export async function generateSOWDocx(
           }),
         },
         children: [
-          // Title
+          // Company name
           new Paragraph({
             children: [
               new TextRun({
-                text: meta.title,
+                text: 'JHR Photography',
                 bold: true,
-                size: 40,
+                size: 36,
+                color: 'C8A45E',
+              }),
+            ],
+            spacing: { after: 40 },
+          }),
+          // Document type + client
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Statement of Work`,
+                bold: true,
+                size: 48,
                 color: '1A1A1A',
               }),
             ],
-            spacing: { after: 80 },
+            spacing: { after: 40 },
           }),
-          // Subtitle
           new Paragraph({
             children: [
               new TextRun({
-                text: `Prepared for ${meta.contactName} — ${meta.accountName}`,
-                size: 22,
-                color: '52525B',
+                text: meta.accountName || meta.contactName,
+                bold: true,
+                size: 32,
+                color: '3F3F46',
               }),
             ],
-            spacing: { after: 200 },
+            spacing: { after: 80 },
           }),
           // Gold divider
           new Paragraph({
@@ -321,7 +333,23 @@ export async function generateSOWDocx(
             border: {
               bottom: { style: BorderStyle.SINGLE, size: 12, color: 'C8A45E' },
             },
-            spacing: { after: 240 },
+            spacing: { after: 120 },
+          }),
+          // Prepared for line
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Prepared for ${meta.contactName}`,
+                size: 22,
+                color: '52525B',
+              }),
+              new TextRun({
+                text: `  |  ${meta.documentDate}`,
+                size: 22,
+                color: '71717A',
+              }),
+            ],
+            spacing: { after: 280 },
           }),
           // Content
           ...blocksToParagraphs(blocks),
