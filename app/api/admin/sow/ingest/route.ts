@@ -19,6 +19,7 @@ import { notionBlocksToSOW } from '@/lib/sow/notion-blocks';
 import { generateSOWPdf } from '@/lib/sow/pdf-generator';
 import { generateSOWDocx } from '@/lib/sow/docx-generator';
 import { uploadToGoogleDrive } from '@/lib/sow/google-drive';
+import { uploadPdfToS3 } from '@/lib/sow/s3-upload';
 import { createGmailDraft } from '@/lib/sow/gmail-draft';
 import { sowDeliveryEmail } from '@/lib/email-templates/sow-email';
 import { sendSlackNotification } from '@/lib/slack';
@@ -241,7 +242,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Document generation failed', log: log.steps }, { status: 500 });
     }
 
-    // --- Upload DOCX to Google Drive ---
+    // --- Upload PDF to S3 (client download link) ---
+    step('s3_upload');
+    let pdfDownloadUrl: string | null;
+    try {
+      pdfDownloadUrl = await uploadPdfToS3(pdfBuffer, `${safeTitle}.pdf`);
+    } catch (e) {
+      stepError('s3_upload', e);
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'S3 upload failed', log: log.steps }, { status: 500 });
+    }
+    if (!pdfDownloadUrl) {
+      stepError('s3_upload', 'uploadPdfToS3 returned null');
+      await saveSOWLog(log).catch(() => {});
+      return NextResponse.json({ error: 'S3 upload failed', log: log.steps }, { status: 500 });
+    }
+    step('s3_uploaded', pdfDownloadUrl);
+
+    // --- Upload DOCX to Google Drive (internal ops copy) ---
     step('drive_upload', `folder=${DRIVE_FOLDER_ID}`);
     let driveUrl: string | null;
     try {
@@ -253,24 +271,21 @@ export async function POST(request: NextRequest) {
       );
     } catch (e) {
       stepError('drive_upload', e);
-      await saveSOWLog(log).catch(() => {});
-      return NextResponse.json({ error: 'Drive upload failed', log: log.steps }, { status: 500 });
+      // Non-fatal — continue with S3 URL
+      driveUrl = null;
     }
-
-    if (!driveUrl) {
-      stepError('drive_upload', 'uploadToGoogleDrive returned null');
-      await saveSOWLog(log).catch(() => {});
-      return NextResponse.json({ error: 'Drive upload failed', log: log.steps }, { status: 500 });
+    if (driveUrl) {
+      step('drive_uploaded', driveUrl);
+    } else {
+      step('drive_upload_skipped', 'continuing with S3 URL only');
     }
-    step('drive_uploaded', driveUrl);
-    log.driveUrl = driveUrl;
+    log.driveUrl = driveUrl || pdfDownloadUrl;
 
-    // --- Create Gmail drafts for ops ---
+    // --- Create Gmail drafts for ops (PDF attachment only) ---
     step('gmail_drafts');
-    const emailContent = sowDeliveryEmail(contractData, driveUrl);
+    const emailContent = sowDeliveryEmail(contractData, pdfDownloadUrl);
     const attachments = [
       { filename: `${safeTitle}.pdf`, mimeType: 'application/pdf', content: pdfBuffer },
-      { filename: `${safeTitle}.docx`, mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', content: docxBuffer },
     ];
 
     const draftPromises = OPS_EMAILS.map((opsEmail) =>
@@ -292,10 +307,11 @@ export async function POST(request: NextRequest) {
 
     // --- Write back to Notion ---
     step('notion_writeback');
+    const notionDocUrl = driveUrl || pdfDownloadUrl;
     try {
       await updateNotionPage(notionPageId, {
-        'Document Link': { url: driveUrl },
-        'Agreement URL': { url: driveUrl },
+        'Document Link': { url: notionDocUrl },
+        'Agreement URL': { url: pdfDownloadUrl },
         'Status': { status: { name: 'Sent for Signature' } },
       });
       step('notion_writeback_done');
@@ -305,16 +321,22 @@ export async function POST(request: NextRequest) {
 
     // --- Slack notification ---
     step('slack_notify');
-    sendSlackNotification({
-      text: `:page_facing_up: *SOW Sent* — ${title}\n:bust_in_silhouette: ${contactName} (${accountName})\n${dealAmount ? `:moneybag: ${dealAmount}` : ''}${eventDate ? `\n:calendar_spiral: ${displayDate}` : ''}\n:link: ${driveUrl}\n:email: Drafts created in ${draftIds.length} inbox(es)`,
-    }).catch((e) => console.error('Failed to send Slack notification:', e));
+    try {
+      const slackResult = await sendSlackNotification({
+        text: `*SOW Sent* -- ${title}\n${contactName} (${accountName})\n${dealAmount ? `${dealAmount} | ` : ''}${eventDate ? displayDate : ''}\nDrive: ${driveUrl || 'n/a'}\nPDF: ${pdfDownloadUrl}\nDrafts: ${draftIds.length} inbox(es)`,
+      });
+      step('slack_result', slackResult ? 'sent' : 'failed (no webhook?)');
+    } catch (e) {
+      stepError('slack_notify', e);
+    }
 
     log.success = true;
     await saveSOWLog(log).catch(() => {});
 
     return NextResponse.json({
       success: true,
-      documentUrl: driveUrl,
+      pdfUrl: pdfDownloadUrl,
+      driveUrl: driveUrl || null,
       draftCount: draftIds.length,
       title, contactName, accountName,
       log: log.steps,
