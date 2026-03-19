@@ -1573,7 +1573,12 @@ function ArticlesTab() {
 
     if (!res.ok || !res.body) {
       const text = await res.text().catch(() => 'Unknown error');
-      throw new Error(text);
+      let errorMsg = text;
+      try {
+        const parsed = JSON.parse(text);
+        errorMsg = parsed.error || text;
+      } catch { /* use raw text */ }
+      throw new Error(errorMsg);
     }
 
     const reader = res.body.getReader();

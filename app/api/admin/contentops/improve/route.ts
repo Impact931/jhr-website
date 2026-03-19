@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { listBlogs, getBlogContent, saveBlogPost } from '@/lib/blog-content';
-import { improveArticleStreaming, type ImproveResult } from '@/lib/contentops/improve';
+import { improveArticleStreaming } from '@/lib/contentops/improve';
+import type { ImproveResult } from '@/lib/contentops/improve';
 import { validateArticle } from '@/lib/contentops/validate';
 import { scoreArticleGEO } from '@/lib/contentops/geo-score';
 import type { ArticlePayload } from '@/lib/contentops/types';
@@ -157,10 +158,19 @@ async function saveImprovedArticle(
  *   { mode: "all" }            — improve all articles below 80
  */
 export async function POST(request: NextRequest) {
+  try {
   const session = await getServerSession(authOptions);
   if (!session) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Check for ANTHROPIC_API_KEY before starting the stream
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured on server' }), {
+      status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
   }
@@ -394,4 +404,14 @@ export async function POST(request: NextRequest) {
       'Connection': 'keep-alive',
     },
   });
+  } catch (outerError) {
+    console.error('ContentOps improve outer error:', outerError);
+    return new Response(
+      JSON.stringify({
+        error: outerError instanceof Error ? outerError.message : 'Unexpected server error in improve route',
+        stack: outerError instanceof Error ? outerError.stack?.split('\n').slice(0, 5) : undefined,
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
 }
