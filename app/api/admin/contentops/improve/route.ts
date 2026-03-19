@@ -22,7 +22,7 @@ function blogToArticlePayload(full: any): ArticlePayload {
     metaTitle: seo.pageTitle || (full.title as string) || '',
     metaDescription: seo.metaDescription || (full.excerpt as string) || '',
     excerpt: (full.excerpt as string) || '',
-    quickAnswer: (full.quickAnswer as string) || '',
+    quickAnswer: (full.quickAnswer as string) || (full.geoMetadata?.contentSummary as string) || '',
     body,
     wordCount: body.split(/\s+/).length,
     readTime: Math.ceil(body.split(/\s+/).length / 250),

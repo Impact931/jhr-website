@@ -26,7 +26,7 @@ async function rescoreSingle(
     metaTitle: full.seo?.pageTitle || full.title,
     metaDescription: full.seo?.metaDescription || full.excerpt || '',
     excerpt: full.excerpt || '',
-    quickAnswer: '',
+    quickAnswer: full.quickAnswer || '',
     body: full.body,
     wordCount: full.body.split(/\s+/).length,
     readTime: full.readingTime || Math.ceil(full.body.split(/\s+/).length / 250),

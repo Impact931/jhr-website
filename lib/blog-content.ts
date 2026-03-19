@@ -48,6 +48,7 @@ export interface BlogContentInput {
   body?: string;
   featuredImage?: string;
   excerpt?: string;
+  quickAnswer?: string;
   author?: string;
   tags?: string[];
   categories?: string[];
@@ -298,6 +299,7 @@ export async function saveBlogPost(
     body,
     featuredImage,
     excerpt,
+    quickAnswer: input.quickAnswer || existing?.quickAnswer,
     author: input.author || existing?.author || 'JHR Photography',
     publishedAt: existing?.publishedAt || (status === 'published' ? now : ''),
     scheduledPublishAt: input.scheduledPublishAt,

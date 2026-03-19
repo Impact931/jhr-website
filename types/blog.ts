@@ -140,6 +140,8 @@ export interface BlogPost {
   // ============================================================================
   /** Short excerpt for listing cards (150-200 chars). */
   excerpt?: string;
+  /** Quick answer block for GEO optimization (50-75 words, self-contained). */
+  quickAnswer?: string;
   /** Author name. */
   author: string;
   /** ISO date string of publication. */
