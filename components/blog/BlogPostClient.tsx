@@ -66,14 +66,35 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
 // Layout: Featured Image → Title + Meta → Body → FAQ → CTA
 // ============================================================================
 
-function ArticleView({ post }: { post: BlogPost }) {
-  const featuredImage = post.featuredImage || extractFeaturedImage(post.sections);
+const DEFAULT_HERO_PLACEHOLDER = '/images/blog-default-hero.jpg';
 
-  // Get body HTML — prefer post.body, fall back to computing from sections
-  const bodyHtml = post.body || (post.sections ? sectionsToBody(post.sections) : '');
+function isRealImage(src: string | undefined | null): src is string {
+  if (!src) return false;
+  if (src === DEFAULT_HERO_PLACEHOLDER) return false;
+  return true;
+}
+
+function ArticleView({ post }: { post: BlogPost }) {
+  const rawFeaturedImage = post.featuredImage || extractFeaturedImage(post.sections);
+  const featuredImage = isRealImage(rawFeaturedImage) ? rawFeaturedImage : null;
 
   // Extract FAQ items from sections
   const faqSection = (post.sections || []).find((s) => s.type === 'faq') as FAQSectionContent | undefined;
+
+  // Get body HTML — prefer post.body, fall back to computing from sections
+  let bodyHtml = post.body || (post.sections ? sectionsToBody(post.sections) : '');
+
+  // Strip inline FAQ content from body when a separate FAQ section exists,
+  // to avoid rendering FAQs twice (once in body, once as accordion module)
+  if (faqSection && faqSection.items && faqSection.items.length > 0 && bodyHtml) {
+    for (const item of faqSection.items) {
+      const escapedQ = item.question.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      bodyHtml = bodyHtml.replace(
+        new RegExp(`<h[23][^>]*>\\s*${escapedQ}\\s*</h[23]>\\s*(<p[^>]*>.*?</p>)?`, 'is'),
+        ''
+      );
+    }
+  }
 
   return (
     <main className="min-h-screen bg-jhr-black">

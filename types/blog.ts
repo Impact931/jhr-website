@@ -244,11 +244,7 @@ export function sectionsToBody(sections: PageSectionContent[]): string {
         }
         break;
       case 'faq':
-        // Convert FAQ items to content
-        for (const item of section.items) {
-          bodyParts.push(`<h3>${item.question}</h3>`);
-          bodyParts.push(item.answer);
-        }
+        // FAQ is rendered as a separate accordion module — skip in body
         break;
       // Other section types don't contribute to plain body text
     }

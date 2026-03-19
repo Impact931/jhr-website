@@ -1626,9 +1626,16 @@ function ArticlesTab() {
     <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter">
       <div className="flex items-center justify-between p-4 border-b border-jhr-black-lighter">
         <h2 className="text-lg font-semibold text-jhr-white">
-          Generated Articles ({articles.length})
+          All Articles ({articles.length})
         </h2>
         <div className="flex items-center gap-3">
+          <Link
+            href="/admin/articles/create"
+            className="text-sm text-jhr-black bg-jhr-gold hover:bg-jhr-gold/90 px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Create Article
+          </Link>
           <button
             onClick={async () => {
               setActionLoading('improve-all');

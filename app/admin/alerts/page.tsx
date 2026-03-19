@@ -251,8 +251,8 @@ export default function AdminAlertsPage() {
             title: `${drafts.length} Draft Post${drafts.length !== 1 ? 's' : ''} Pending Review`,
             message: `You have ${drafts.length} unpublished blog post${drafts.length !== 1 ? 's' : ''} that may need attention.`,
             timestamp: timeAgo(now),
-            link: '/admin/blog',
-            linkLabel: 'View Blog',
+            link: '/admin/articles',
+            linkLabel: 'View Articles',
           });
         } else {
           newAlerts.push({
@@ -261,8 +261,8 @@ export default function AdminAlertsPage() {
             title: 'Blog Up to Date',
             message: 'No draft posts pending review.',
             timestamp: timeAgo(now),
-            link: '/admin/blog',
-            linkLabel: 'View Blog',
+            link: '/admin/articles',
+            linkLabel: 'View Articles',
           });
         }
       }

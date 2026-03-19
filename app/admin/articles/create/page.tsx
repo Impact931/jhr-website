@@ -22,10 +22,10 @@ import type { PageSectionContent, PageSEOMetadata } from '@/types/inline-editor'
 import { generateSlug, createDefaultBlogSections } from '@/types/blog';
 
 // ============================================================================
-// Blog Metadata Panel Component
+// Article Metadata Panel
 // ============================================================================
 
-interface BlogMetadataPanelProps {
+interface ArticleMetadataPanelProps {
   title: string;
   excerpt: string;
   tags: string;
@@ -42,7 +42,7 @@ interface BlogMetadataPanelProps {
   onScheduledPublishAtChange: (value: string) => void;
 }
 
-function BlogMetadataPanel({
+function ArticleMetadataPanel({
   title,
   excerpt,
   tags,
@@ -57,19 +57,18 @@ function BlogMetadataPanel({
   onAuthorChange,
   onStatusChange,
   onScheduledPublishAtChange,
-}: BlogMetadataPanelProps) {
+}: ArticleMetadataPanelProps) {
   return (
     <div className="space-y-4">
-      {/* Title */}
       <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-4">
         <label className="block text-body-sm font-medium text-jhr-white mb-2">
-          Post Title <span className="text-red-400">*</span>
+          Article Title <span className="text-red-400">*</span>
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="Enter post title..."
+          placeholder="Enter article title..."
           className="w-full px-3 py-2 bg-jhr-black border border-jhr-black-lighter rounded-lg text-jhr-white placeholder:text-jhr-white-dim focus:outline-none focus:ring-2 focus:ring-jhr-gold/50 focus:border-jhr-gold text-sm"
         />
         {title && (
@@ -79,7 +78,6 @@ function BlogMetadataPanel({
         )}
       </div>
 
-      {/* Excerpt */}
       <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-4">
         <label className="block text-body-sm font-medium text-jhr-white mb-2">Excerpt</label>
         <textarea
@@ -91,7 +89,6 @@ function BlogMetadataPanel({
         />
       </div>
 
-      {/* Author */}
       <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-4">
         <label className="block text-body-sm font-medium text-jhr-white mb-2">Author</label>
         <input
@@ -103,11 +100,8 @@ function BlogMetadataPanel({
         />
       </div>
 
-      {/* Tags */}
       <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-4">
-        <label className="block text-body-sm font-medium text-jhr-white mb-2">
-          Tags (comma separated)
-        </label>
+        <label className="block text-body-sm font-medium text-jhr-white mb-2">Tags (comma separated)</label>
         <input
           type="text"
           value={tags}
@@ -117,11 +111,8 @@ function BlogMetadataPanel({
         />
       </div>
 
-      {/* Categories */}
       <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-4">
-        <label className="block text-body-sm font-medium text-jhr-white mb-2">
-          Categories (comma separated)
-        </label>
+        <label className="block text-body-sm font-medium text-jhr-white mb-2">Categories (comma separated)</label>
         <input
           type="text"
           value={categories}
@@ -131,7 +122,6 @@ function BlogMetadataPanel({
         />
       </div>
 
-      {/* Status */}
       <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-4">
         <label className="block text-body-sm font-medium text-jhr-white mb-2">Status</label>
         <div className="flex gap-2">
@@ -160,7 +150,6 @@ function BlogMetadataPanel({
         </div>
       </div>
 
-      {/* Scheduled Publish */}
       {status === 'draft' && (
         <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-4">
           <label className="block text-body-sm font-medium text-jhr-white mb-2">
@@ -185,7 +174,7 @@ function BlogMetadataPanel({
 }
 
 // ============================================================================
-// Section Editor Component
+// Section Editor
 // ============================================================================
 
 interface SectionEditorProps {
@@ -223,7 +212,6 @@ function SectionEditor({
 
   return (
     <div className="space-y-4">
-      {/* Add Section Button at top */}
       <button
         onClick={() => handleOpenAddModal(0)}
         className="w-full flex items-center justify-center gap-2 py-3 px-4 border-2 border-dashed border-jhr-black-lighter rounded-lg text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors"
@@ -232,7 +220,6 @@ function SectionEditor({
         <span className="text-body-sm font-medium">Add Section at Top</span>
       </button>
 
-      {/* Sections List */}
       {sections.length === 0 ? (
         <div className="bg-jhr-black-light rounded-xl border border-jhr-black-lighter p-12 text-center">
           <div className="p-4 rounded-full bg-jhr-black-lighter inline-block mb-4">
@@ -240,7 +227,7 @@ function SectionEditor({
           </div>
           <p className="text-body-md text-jhr-white-dim">No sections yet</p>
           <p className="text-body-sm text-jhr-white-dim mt-1">
-            Click &ldquo;Add Section&rdquo; to start building your blog post.
+            Click &ldquo;Add Section&rdquo; to start building your article.
           </p>
         </div>
       ) : (
@@ -262,7 +249,6 @@ function SectionEditor({
               />
             </SectionWrapper>
 
-            {/* Add Section Button between sections */}
             <button
               onClick={() => handleOpenAddModal(index + 1)}
               className="w-full flex items-center justify-center gap-2 py-2 px-4 border-2 border-dashed border-jhr-black-lighter rounded-lg text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors opacity-50 hover:opacity-100"
@@ -274,7 +260,6 @@ function SectionEditor({
         ))
       )}
 
-      {/* Add Section Modal */}
       {addModalOpen && (
         <AddSectionModal
           onAdd={handleAddSection}
@@ -287,10 +272,10 @@ function SectionEditor({
 }
 
 // ============================================================================
-// Main Blog Create Page Content
+// Create Article Page Content
 // ============================================================================
 
-function BlogCreateContent() {
+function ArticleCreateContent() {
   const router = useRouter();
   const {
     sections,
@@ -301,7 +286,6 @@ function BlogCreateContent() {
     loadSections,
   } = useContent();
 
-  // Blog metadata state
   const [title, setTitle] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [tags, setTags] = useState('');
@@ -309,24 +293,12 @@ function BlogCreateContent() {
   const [author, setAuthor] = useState('JHR Photography');
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [scheduledPublishAt, setScheduledPublishAt] = useState('');
-
-  // UI state
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize with default sections if empty
-  const handleInitialize = useCallback(() => {
-    if (sections.length === 0) {
-      const defaultSections = createDefaultBlogSections(title || 'Untitled Post');
-      loadSections(defaultSections);
-    }
-  }, [sections.length, title, loadSections]);
-
-  // Update hero title when title changes
   const handleTitleChange = useCallback(
     (newTitle: string) => {
       setTitle(newTitle);
-      // Initialize sections if this is the first title entry
       if (sections.length === 0 && newTitle.trim()) {
         const defaultSections = createDefaultBlogSections(newTitle);
         loadSections(defaultSections);
@@ -342,7 +314,7 @@ function BlogCreateContent() {
     }
 
     if (sections.length === 0) {
-      setError('Please add at least one section to your post.');
+      setError('Please add at least one section to your article.');
       return;
     }
 
@@ -352,7 +324,6 @@ function BlogCreateContent() {
     try {
       const slug = generateSlug(title);
 
-      // Prepare SEO metadata
       const seo: PageSEOMetadata = {
         pageTitle: title,
         metaDescription: excerpt || '',
@@ -360,7 +331,6 @@ function BlogCreateContent() {
         ogDescription: excerpt || '',
       };
 
-      // Prepare request body
       const body = {
         title: title.trim(),
         sections,
@@ -389,36 +359,34 @@ function BlogCreateContent() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to create post');
+        throw new Error(data.error || 'Failed to create article');
       }
 
-      router.push('/admin/blog');
+      router.push('/admin/articles');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create post');
+      setError(err instanceof Error ? err.message : 'Failed to create article');
     } finally {
       setSaving(false);
     }
   };
 
-  // Generate slug for display
-  const slug = title ? generateSlug(title) : 'new-post';
+  const slug = title ? generateSlug(title) : 'new-article';
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Link
-          href="/admin/blog"
+          href="/admin/articles"
           className="p-2 rounded-lg text-jhr-white-dim hover:text-jhr-white hover:bg-jhr-black-lighter transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="flex-1">
           <h1 className="text-display-sm font-display font-bold text-jhr-white">
-            Create Blog Post
+            Create Article
           </h1>
           <p className="mt-1 text-body-sm text-jhr-white-dim">
-            Build your blog post using sections, just like pages.
+            Build your article using sections — same editor as pages.
           </p>
         </div>
         <button
@@ -431,11 +399,10 @@ function BlogCreateContent() {
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {saving ? 'Saving...' : 'Save Post'}
+          {saving ? 'Saving...' : 'Save Article'}
         </button>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-red-400" />
@@ -443,9 +410,7 @@ function BlogCreateContent() {
         </div>
       )}
 
-      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Section Editor - 2/3 width */}
         <div className="lg:col-span-2">
           <SectionEditor
             sections={sections}
@@ -457,9 +422,8 @@ function BlogCreateContent() {
           />
         </div>
 
-        {/* Metadata Sidebar - 1/3 width */}
         <div>
-          <BlogMetadataPanel
+          <ArticleMetadataPanel
             title={title}
             excerpt={excerpt}
             tags={tags}
@@ -485,11 +449,11 @@ function BlogCreateContent() {
 // Main Export with Providers
 // ============================================================================
 
-export default function BlogCreatePage() {
+export default function ArticleCreatePage() {
   return (
     <EditModeProvider forceEditMode={true}>
       <ContentProvider>
-        <BlogCreateContent />
+        <ArticleCreateContent />
       </ContentProvider>
     </EditModeProvider>
   );
