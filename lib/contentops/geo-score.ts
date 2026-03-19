@@ -3,7 +3,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ArticlePayload } from './types';
 
-const CLAUDE_MODEL = 'claude-sonnet-4-6';
+const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 
 interface GEOScoringResult {
   totalScore: number;

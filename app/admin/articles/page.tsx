@@ -1538,6 +1538,64 @@ function ArticlesTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [improveStatus, setImproveStatus] = useState<string | null>(null);
+
+  /** Consume SSE from the improve endpoint and return the final 'done' payload. */
+  const runImproveSSE = useCallback(async (body: Record<string, unknown>): Promise<void> => {
+    const res = await fetch('/api/admin/contentops/improve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok || !res.body) {
+      const text = await res.text().catch(() => 'Unknown error');
+      throw new Error(text);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      let eventType = '';
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7);
+        } else if (line.startsWith('data: ') && eventType) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (eventType === 'progress' && data.message) {
+              setImproveStatus(data.message);
+            } else if (eventType === 'article-result') {
+              const label = data.status === 'improved'
+                ? `✓ ${data.slug}: ${data.beforeScore} → ${data.afterScore}`
+                : data.status === 'already-passing'
+                  ? `○ ${data.slug}: already passing`
+                  : `✗ ${data.slug}: ${data.error || 'failed'}`;
+              setImproveStatus(label);
+            } else if (eventType === 'done') {
+              const msg = `Done — ${data.improved} improved, ${data.failed || 0} failed, ${data.total} total`;
+              setImproveStatus(msg);
+            } else if (eventType === 'error') {
+              throw new Error(data.error || 'Improvement failed');
+            }
+          } catch (e) {
+            if (e instanceof SyntaxError) continue;
+            throw e;
+          }
+          eventType = '';
+        }
+      }
+    }
+  }, []);
 
   const fetchArticles = useCallback(async () => {
     setLoading(true);
@@ -1639,21 +1697,15 @@ function ArticlesTab() {
           <button
             onClick={async () => {
               setActionLoading('improve-all');
+              setImproveStatus('Starting batch improvement...');
               try {
-                const res = await fetch('/api/admin/contentops/improve', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ mode: 'needs-work' }),
-                });
-                if (res.ok) {
-                  const data = await res.json();
-                  alert(`Improved ${data.improved} of ${data.total} articles. ${data.failed} failed.`);
-                  await fetchArticles();
-                }
-              } catch {
-                // ignore
+                await runImproveSSE({ mode: 'needs-work' });
+                await fetchArticles();
+              } catch (err) {
+                setImproveStatus(`Error: ${err instanceof Error ? err.message : 'Unknown'}`);
               } finally {
                 setActionLoading(null);
+                setTimeout(() => setImproveStatus(null), 8000);
               }
             }}
             disabled={actionLoading === 'improve-all'}
@@ -1704,6 +1756,13 @@ function ArticlesTab() {
           </button>
         </div>
       </div>
+
+      {improveStatus && (
+        <div className="px-4 py-2 border-b border-jhr-black-lighter bg-jhr-black-lighter/30 flex items-center gap-2">
+          {actionLoading?.startsWith('improve') && <Loader2 className="w-3.5 h-3.5 animate-spin text-jhr-gold" />}
+          <span className="text-xs text-jhr-white-dim font-mono">{improveStatus}</span>
+        </div>
+      )}
 
       {articles.length === 0 ? (
         <div className="p-8 text-center">
@@ -1779,19 +1838,15 @@ function ArticlesTab() {
                         <button
                           onClick={async () => {
                             setActionLoading(`improve-${article.slug}`);
+                            setImproveStatus(`Improving "${article.slug}"...`);
                             try {
-                              const res = await fetch('/api/admin/contentops/improve', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ slug: article.slug }),
-                              });
-                              if (res.ok) {
-                                await fetchArticles();
-                              }
-                            } catch {
-                              // ignore
+                              await runImproveSSE({ slug: article.slug });
+                              await fetchArticles();
+                            } catch (err) {
+                              setImproveStatus(`Error: ${err instanceof Error ? err.message : 'Unknown'}`);
                             } finally {
                               setActionLoading(null);
+                              setTimeout(() => setImproveStatus(null), 8000);
                             }
                           }}
                           disabled={actionLoading === `improve-${article.slug}`}

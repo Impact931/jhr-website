@@ -220,6 +220,80 @@ export async function improveArticle(
 }
 
 /**
+ * Streaming version of improveArticle — uses client.messages.stream()
+ * to prevent Amplify gateway timeouts (~25s). Calls onChunk periodically
+ * so the SSE route can send keepalive events.
+ */
+export async function improveArticleStreaming(
+  article: ArticlePayload,
+  geoNotes?: string,
+  onChunk?: (chunkCount: number) => void,
+): Promise<{ data?: ArticlePayload; changes: string[]; error?: string }> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return { changes: [], error: 'ANTHROPIC_API_KEY not set' };
+  }
+
+  const validation = await validateArticle(article);
+
+  if (validation.passed && validation.geoScore.totalScore >= 70 && !geoNotes) {
+    return { data: article, changes: ['No improvements needed — article passes all checks'] };
+  }
+
+  let lessonsBlock = '';
+  try {
+    const lessons = await getGenerationLessons();
+    lessonsBlock = formatLessonsForPrompt(lessons);
+  } catch {
+    // Lessons unavailable — continue without them
+  }
+
+  const userPrompt = buildImprovementPrompt(
+    article,
+    validation.hardFails,
+    validation.softFails,
+    geoNotes || '',
+    lessonsBlock,
+  );
+
+  try {
+    const client = new Anthropic({ apiKey });
+    let fullText = '';
+    let chunkCount = 0;
+
+    const stream = client.messages.stream({
+      model: CLAUDE_MODEL,
+      max_tokens: 8192,
+      system: IMPROVE_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userPrompt }],
+      temperature: 0.3,
+    });
+
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        fullText += event.delta.text;
+        chunkCount++;
+        if (onChunk) onChunk(chunkCount);
+      }
+    }
+
+    if (!fullText) {
+      return { changes: [], error: 'Claude streaming returned no text' };
+    }
+
+    const improved = parseImprovedArticle(fullText);
+    improved.slug = article.slug;
+    improved.status = article.status;
+
+    const changes = diffChanges(article, improved);
+    return { data: improved, changes };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { changes: [], error: `Improvement failed: ${message}` };
+  }
+}
+
+/**
  * Improve an article and validate the result.
  * If the improved version is worse, return the original.
  * Optionally stores a lesson if improvement revealed a pattern.
