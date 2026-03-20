@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Fragment } from 'react';
 import {
   Wand2,
   Search,
@@ -1551,6 +1551,7 @@ function ArticlesTab() {
   const [improvePhase, setImprovePhase] = useState<string | null>(null);
   const [improveSummary, setImproveSummary] = useState<string | null>(null);
   const [improveProgress, setImproveProgress] = useState<{ current: number; total: number } | null>(null);
+  const [notesSlug, setNotesSlug] = useState<string | null>(null);
 
   const addLogEntry = useCallback((entry: ImproveLogEntry) => {
     setImproveLog((prev) => [...prev, entry]);
@@ -1910,7 +1911,8 @@ function ArticlesTab() {
             </thead>
             <tbody>
               {articles.map((article) => (
-                <tr key={article.slug} className="border-b border-jhr-black-lighter/50 last:border-0 hover:bg-jhr-black-lighter/20">
+                <Fragment key={article.slug}>
+                <tr className="border-b border-jhr-black-lighter/50 last:border-0 hover:bg-jhr-black-lighter/20">
                   <td className="p-3">
                     <p className="text-sm text-jhr-white font-medium">{article.title}</p>
                     <p className="text-xs text-jhr-white-dim mt-0.5">/blog/{article.slug}</p>
@@ -1935,9 +1937,12 @@ function ArticlesTab() {
                             </span>
                           )}
                           {article.geoScore < 90 && article.geoScoreNotes && (
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${article.geoScore < 70 ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`} title={article.geoScoreNotes}>
+                            <button
+                              onClick={() => setNotesSlug(notesSlug === article.slug ? null : article.slug)}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide cursor-pointer hover:opacity-80 transition-opacity ${article.geoScore < 70 ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}
+                            >
                               {article.geoScore < 70 ? 'NEEDS WORK' : 'IMPROVE'}
-                            </span>
+                            </button>
                           )}
                         </>
                       ) : (
@@ -2018,6 +2023,27 @@ function ArticlesTab() {
                     </div>
                   </td>
                 </tr>
+                {notesSlug === article.slug && article.geoScoreNotes && (
+                  <tr className="bg-jhr-black-lighter/30">
+                    <td colSpan={5} className="px-4 py-3">
+                      <div className="text-sm space-y-1.5">
+                        <p className="text-xs font-semibold text-jhr-white-dim/70 uppercase tracking-wide mb-2">Improvement Notes</p>
+                        <ul className="space-y-1">
+                          {article.geoScoreNotes.split(/;\s*/).filter(Boolean).map((note, i) => (
+                            <li key={i} className="flex items-start gap-2 text-jhr-white-dim">
+                              <span className={`mt-0.5 w-1.5 h-1.5 rounded-full shrink-0 ${
+                                note.toLowerCase().includes('minimum') || note.toLowerCase().includes('not found') || note.toLowerCase().includes('missing')
+                                  ? 'bg-red-400' : 'bg-yellow-400'
+                              }`} />
+                              <span>{note.trim()}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

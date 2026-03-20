@@ -4,6 +4,16 @@
 import type { ArticlePayload, GEOScore, ValidationResult } from './types';
 import { AI_SLOP_TERMS, BRAND_PROHIBITED_TERMS } from './pre-flight';
 
+// --- Fuzzy keyword matching ---
+// Checks that ALL individual words in the keyword appear in the target text (any order, case-insensitive).
+// Standard SEO practice: "corporate event photography noelle nashville" matches
+// "Corporate Event Photography at Noelle Nashville" because all keyword terms are present.
+function keywordTermsPresent(text: string, keyword: string): boolean {
+  const textLower = text.toLowerCase();
+  const terms = keyword.toLowerCase().split(/\s+/).filter(Boolean);
+  return terms.every((term) => textLower.includes(term));
+}
+
 // --- Hard fail checks ---
 
 function checkHardFails(article: ArticlePayload): string[] {
@@ -37,9 +47,7 @@ function checkHardFails(article: ArticlePayload): string[] {
     fails.push('Slug contains uppercase characters');
   }
 
-  const titleLower = article.title.toLowerCase();
-  const keywordLower = article.primaryKeyword.toLowerCase();
-  if (!titleLower.includes(keywordLower)) {
+  if (!keywordTermsPresent(article.title, article.primaryKeyword)) {
     fails.push(`Primary keyword "${article.primaryKeyword}" not found in title "${article.title}"`);
   }
 
@@ -66,14 +74,13 @@ function checkHardFails(article: ArticlePayload): string[] {
 
 function checkKeywordPlacement(article: ArticlePayload): string[] {
   const fails: string[] = [];
-  const kwLower = article.primaryKeyword.toLowerCase();
 
   // Strip HTML tags for text analysis
   const bodyText = article.body.replace(/<[^>]+>/g, ' ').toLowerCase();
   const first100Words = bodyText.split(/\s+/).slice(0, 100).join(' ');
 
   // Check: keyword in first 100 words
-  if (!first100Words.includes(kwLower)) {
+  if (!keywordTermsPresent(first100Words, article.primaryKeyword)) {
     fails.push(`Primary keyword "${article.primaryKeyword}" not found in first 100 words of body`);
   }
 
@@ -82,22 +89,22 @@ function checkKeywordPlacement(article: ArticlePayload): string[] {
   const h2Texts: string[] = [];
   let h2Match;
   while ((h2Match = h2Pattern.exec(article.body)) !== null) {
-    h2Texts.push(h2Match[1].replace(/<[^>]+>/g, '').toLowerCase());
+    h2Texts.push(h2Match[1].replace(/<[^>]+>/g, ''));
   }
   // Also check markdown H2s
   const mdH2Pattern = /^##\s+(.+)$/gm;
   let mdMatch;
   while ((mdMatch = mdH2Pattern.exec(article.body)) !== null) {
-    h2Texts.push(mdMatch[1].toLowerCase());
+    h2Texts.push(mdMatch[1]);
   }
 
-  const kwInH2 = h2Texts.some((h2) => h2.includes(kwLower));
+  const kwInH2 = h2Texts.some((h2) => keywordTermsPresent(h2, article.primaryKeyword));
   if (!kwInH2 && h2Texts.length > 0) {
     fails.push(`Primary keyword "${article.primaryKeyword}" not found in any H2 heading`);
   }
 
   // Check: keyword in meta description
-  if (!article.metaDescription.toLowerCase().includes(kwLower)) {
+  if (!keywordTermsPresent(article.metaDescription, article.primaryKeyword)) {
     fails.push(`Primary keyword "${article.primaryKeyword}" not found in meta description`);
   }
 
@@ -207,11 +214,10 @@ function scoreQuickAnswer(article: ArticlePayload): number {
 
   const wordCount = article.quickAnswer.split(/\s+/).filter(Boolean).length;
 
-  // Ideal: 50-75 words
-  if (wordCount >= 50 && wordCount <= 75) return 20;
-  if (wordCount >= 40 && wordCount <= 85) return 15;
-  if (wordCount >= 25) return 10;
-  return 5;
+  // Ideal: 30-100 words
+  if (wordCount >= 30 && wordCount <= 100) return 20;
+  if (wordCount >= 20 && wordCount <= 120) return 15;
+  return 10;
 }
 
 function scoreStatisticsDensity(article: ArticlePayload): number {
