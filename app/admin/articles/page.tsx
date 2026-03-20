@@ -1561,22 +1561,39 @@ function ArticlesTab() {
 
   /** Improve a single article via SSE streaming (same pattern as generate). */
   const improveSingle = useCallback(async (slug: string): Promise<{ status: string; afterScore?: number; changes?: string[]; error?: string }> => {
-    const res = await fetch('/api/admin/contentops/improve', {
+    // ─── Phase 1: ANALYZE (JSON response, ~5s) ───────────────────
+    addLogEntry({ time: timestamp(), type: 'progress', message: 'Phase 1: Analyzing structure...', slug });
+
+    const analyzeRes = await fetch('/api/admin/contentops/improve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug }),
+      body: JSON.stringify({ slug, phase: 'analyze' }),
+    });
+    const analyzeData = await analyzeRes.json();
+    if (!analyzeRes.ok || analyzeData.error) {
+      throw new Error(analyzeData.error || 'Analysis failed');
+    }
+    addLogEntry({ time: timestamp(), type: 'progress', message: analyzeData.message || 'Outline ready', slug });
+
+    // ─── Phase 2: REWRITE (SSE streaming, ~15-20s) ───────────────
+    addLogEntry({ time: timestamp(), type: 'progress', message: 'Phase 2: Rewriting body...', slug });
+
+    const rewriteRes = await fetch('/api/admin/contentops/improve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, phase: 'rewrite' }),
     });
 
-    if (!res.ok || !res.body) {
-      const text = await res.text().catch(() => 'Unknown error');
+    if (!rewriteRes.ok || !rewriteRes.body) {
+      const text = await rewriteRes.text().catch(() => 'Rewrite failed');
       try { const j = JSON.parse(text); throw new Error(j.error || text); } catch (e) { if (e instanceof SyntaxError) throw new Error(text); throw e; }
     }
 
-    // Read SSE stream
-    const reader = res.body.getReader();
+    // Read SSE stream for Phase 2
+    const reader = rewriteRes.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-    let result: { status: string; afterScore?: number; changes?: string[]; error?: string } = { status: 'failed' };
+    let rewriteResult: { status?: string; wordCount?: number; error?: string } = {};
 
     while (true) {
       const { done, value } = await reader.read();
@@ -1595,16 +1612,37 @@ function ArticlesTab() {
             if (eventType === 'progress' && data.message) {
               addLogEntry({ time: timestamp(), type: 'progress', message: data.message, slug });
             } else if (eventType === 'done') {
-              result = { status: data.status || 'improved', afterScore: data.afterScore, changes: data.changes };
+              rewriteResult = data;
             } else if (eventType === 'error') {
-              throw new Error(data.error || 'Improvement failed');
+              throw new Error(data.error || 'Rewrite failed');
             }
           } catch (e) { if (e instanceof SyntaxError) continue; throw e; }
           eventType = '';
         }
       }
     }
-    return result;
+
+    if (rewriteResult.error) throw new Error(rewriteResult.error);
+    addLogEntry({ time: timestamp(), type: 'progress', message: rewriteResult.status === 'complete' ? `Body complete: ~${rewriteResult.wordCount} words` : 'Body rewritten', slug });
+
+    // ─── Phase 3: POLISH + SAVE (JSON response, ~5s) ─────────────
+    addLogEntry({ time: timestamp(), type: 'progress', message: 'Phase 3: Polishing metadata & saving...', slug });
+
+    const polishRes = await fetch('/api/admin/contentops/improve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, phase: 'polish' }),
+    });
+    const polishData = await polishRes.json();
+    if (!polishRes.ok || polishData.error) {
+      throw new Error(polishData.error || 'Polish failed');
+    }
+
+    return {
+      status: polishData.status || 'improved',
+      afterScore: polishData.afterScore,
+      changes: polishData.changes,
+    };
   }, [addLogEntry]);
 
   /** Improve one or more articles with progress tracking. */
