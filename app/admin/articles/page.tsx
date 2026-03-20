@@ -1558,35 +1558,53 @@ function ArticlesTab() {
 
   const timestamp = () => new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-  /** Two-phase improve: prepare (fast) then execute (Claude call). Each fits under 30s. */
+  /** Improve a single article via SSE streaming (same pattern as generate). */
   const improveSingle = useCallback(async (slug: string): Promise<{ status: string; afterScore?: number; changes?: string[]; error?: string }> => {
-    // Phase 1: Prepare — load article + validate (~3s)
-    const prepRes = await fetch('/api/admin/contentops/improve', {
+    const res = await fetch('/api/admin/contentops/improve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, phase: 'prepare' }),
+      body: JSON.stringify({ slug }),
     });
-    const prep = await prepRes.json();
-    if (!prepRes.ok) throw new Error(prep.error || 'Prepare failed');
 
-    // Phase 2: Execute — Claude call + save (~28s)
-    const execRes = await fetch('/api/admin/contentops/improve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        slug,
-        phase: 'execute',
-        article: prep.article,
-        hardFails: prep.hardFails,
-        softFails: prep.softFails,
-        geoNotes: prep.geoNotes,
-        originalStatus: prep.originalStatus,
-      }),
-    });
-    const result = await execRes.json();
-    if (!execRes.ok) throw new Error(result.error || 'Improvement failed');
+    if (!res.ok || !res.body) {
+      const text = await res.text().catch(() => 'Unknown error');
+      try { const j = JSON.parse(text); throw new Error(j.error || text); } catch (e) { if (e instanceof SyntaxError) throw new Error(text); throw e; }
+    }
+
+    // Read SSE stream
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result: { status: string; afterScore?: number; changes?: string[]; error?: string } = { status: 'failed' };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      let eventType = '';
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7);
+        } else if (line.startsWith('data: ') && eventType) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (eventType === 'progress' && data.message) {
+              addLogEntry({ time: timestamp(), type: 'progress', message: data.message, slug });
+            } else if (eventType === 'done') {
+              result = { status: data.status || 'improved', afterScore: data.afterScore, changes: data.changes };
+            } else if (eventType === 'error') {
+              throw new Error(data.error || 'Improvement failed');
+            }
+          } catch (e) { if (e instanceof SyntaxError) continue; throw e; }
+          eventType = '';
+        }
+      }
+    }
     return result;
-  }, []);
+  }, [addLogEntry]);
 
   /** Improve one or more articles with progress tracking. */
   const runImprove = useCallback(async (opts: { slug?: string; mode?: string }): Promise<void> => {
