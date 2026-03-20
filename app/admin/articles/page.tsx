@@ -1558,16 +1558,34 @@ function ArticlesTab() {
 
   const timestamp = () => new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-  /** Improve a single article via JSON POST. */
+  /** Two-phase improve: prepare (fast) then execute (Claude call). Each fits under 30s. */
   const improveSingle = useCallback(async (slug: string): Promise<{ status: string; afterScore?: number; changes?: string[]; error?: string }> => {
-    const res = await fetch('/api/admin/contentops/improve', {
+    // Phase 1: Prepare — load article + validate (~3s)
+    const prepRes = await fetch('/api/admin/contentops/improve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug }),
+      body: JSON.stringify({ slug, phase: 'prepare' }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Improvement failed');
-    return data;
+    const prep = await prepRes.json();
+    if (!prepRes.ok) throw new Error(prep.error || 'Prepare failed');
+
+    // Phase 2: Execute — Claude call + save (~28s)
+    const execRes = await fetch('/api/admin/contentops/improve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slug,
+        phase: 'execute',
+        article: prep.article,
+        hardFails: prep.hardFails,
+        softFails: prep.softFails,
+        geoNotes: prep.geoNotes,
+        originalStatus: prep.originalStatus,
+      }),
+    });
+    const result = await execRes.json();
+    if (!execRes.ok) throw new Error(result.error || 'Improvement failed');
+    return result;
   }, []);
 
   /** Improve one or more articles with progress tracking. */

@@ -1,28 +1,21 @@
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { listBlogs, getBlogContent, saveBlogPost } from '@/lib/blog-content';
-import { improveArticleStreaming } from '@/lib/contentops/improve';
-import { scoreArticleGEO } from '@/lib/contentops/geo-score';
+import { getBlogContent, saveBlogPost } from '@/lib/blog-content';
+import { improveArticleFast } from '@/lib/contentops/improve';
+import { validateArticle } from '@/lib/contentops/validate';
 import type { ArticlePayload } from '@/lib/contentops/types';
 
 export const maxDuration = 300;
 
 /**
- * GET /api/admin/contentops/improve — SSE health check.
+ * GET /api/admin/contentops/improve — health check
  */
 export async function GET() {
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    start(controller) {
-      controller.enqueue(encoder.encode(`event: progress\ndata: ${JSON.stringify({ phase: 'health-check', message: 'SSE streaming OK' })}\n\n`));
-      controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify({ status: 'healthy', hasApiKey: !!process.env.ANTHROPIC_API_KEY })}\n\n`));
-      controller.close();
-    },
-  });
-  return new Response(stream, {
-    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
-  });
+  return new Response(JSON.stringify({
+    status: 'healthy',
+    hasApiKey: !!process.env.ANTHROPIC_API_KEY,
+  }), { headers: { 'Content-Type': 'application/json' } });
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,110 +61,13 @@ function blogToArticlePayload(full: any): ArticlePayload {
 }
 
 /**
- * Save improved article back to DynamoDB.
- * GEO re-score is skipped here to stay within 30s Lambda budget — use /rescore separately.
- */
-async function saveImprovedArticle(
-  slug: string,
-  improved: ArticlePayload,
-  originalStatus: string,
-  userEmail?: string,
-): Promise<{ geoScore?: number }> {
-  const current = await getBlogContent(slug, 'draft')
-    || await getBlogContent(slug, 'published');
-
-  if (!current) return {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sections = (current.sections || []) as any[];
-  const updatedSections = sections.map((section) => {
-    if (section.type === 'text-block' || section.type === 'rich-text') {
-      return { ...section, content: improved.body };
-    }
-    return section;
-  });
-
-  const hasTextBlock = updatedSections.some(
-    (s) => s.type === 'text-block' || s.type === 'rich-text'
-  );
-  if (!hasTextBlock) {
-    updatedSections.push({
-      id: `text-${Date.now()}`,
-      type: 'text-block',
-      content: improved.body,
-    });
-  }
-
-  // Update FAQ section
-  const faqSectionIdx = updatedSections.findIndex((s) => s.type === 'faq');
-  if (faqSectionIdx >= 0 && improved.faqBlock?.length > 0) {
-    updatedSections[faqSectionIdx] = {
-      ...updatedSections[faqSectionIdx],
-      items: improved.faqBlock,
-    };
-  } else if (faqSectionIdx < 0 && improved.faqBlock?.length > 0) {
-    updatedSections.push({
-      id: `faq-${Date.now()}`,
-      type: 'faq',
-      title: 'Frequently Asked Questions',
-      items: improved.faqBlock,
-    });
-  }
-
-  // Quick local GEO score (no Claude call — just the formula)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let geoMetadata: any = current.geoMetadata || {};
-  let newGeoScore: number | undefined;
-  try {
-    const geoResult = await scoreArticleGEO(improved);
-    if (geoResult) {
-      geoMetadata = {
-        ...geoMetadata,
-        geoScore: geoResult.totalScore,
-        geoScoreNotes: geoResult.notes,
-      };
-      newGeoScore = geoResult.totalScore;
-    }
-  } catch {
-    // Non-blocking
-  }
-
-  const savePayload = {
-    slug,
-    title: improved.title,
-    sections: updatedSections,
-    seo: {
-      ...(current.seo || {}),
-      pageTitle: improved.metaTitle,
-      metaDescription: improved.metaDescription,
-    },
-    excerpt: improved.excerpt,
-    tags: current.tags,
-    categories: current.categories,
-    body: improved.body,
-    quickAnswer: improved.quickAnswer,
-    geoMetadata,
-  };
-
-  await saveBlogPost(savePayload, 'draft', userEmail);
-
-  if (originalStatus === 'published') {
-    const pub = await getBlogContent(slug, 'published');
-    if (pub) {
-      await saveBlogPost(savePayload, 'published', userEmail);
-    }
-  }
-
-  return { geoScore: newGeoScore };
-}
-
-/**
  * POST /api/admin/contentops/improve
  *
- * Improves ONE article per invocation to fit within Amplify's 30s Lambda timeout.
- * Returns JSON (not SSE) for simplicity and reliability.
+ * Two-phase approach to fit within Amplify's 30s Lambda timeout:
+ *   Phase 1: { slug, phase: "prepare" } — loads article, validates, returns deficiencies (~3s)
+ *   Phase 2: { slug, phase: "execute", hardFails, softFails, geoNotes, article } — calls Claude + saves (~28s)
  *
- * Body: { slug: string }
+ * Legacy: { slug } with no phase — tries both in one call (may timeout)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -192,6 +88,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const slug = body.slug as string | undefined;
+    const phase = (body.phase as string) || 'all';
     const userEmail = session.user?.email || undefined;
 
     if (!slug) {
@@ -201,58 +98,126 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ─── Load article ────────────────────────────────────────────
-    const full = await getBlogContent(slug, 'draft')
-      || await getBlogContent(slug, 'published');
+    // ─── Phase 1: PREPARE ──────────────────────────────────────
+    if (phase === 'prepare') {
+      const full = await getBlogContent(slug, 'draft')
+        || await getBlogContent(slug, 'published');
 
-    if (!full || !full.body) {
-      return new Response(JSON.stringify({ error: 'Article not found or has no body', slug }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+      if (!full || !full.body) {
+        return Response.json({ error: 'Article not found or has no body', slug }, { status: 404 });
+      }
 
-    const articlePayload = blogToArticlePayload(full);
-    const geoNotes = (full.geoMetadata?.geoScoreNotes as string) || '';
+      const articlePayload = blogToArticlePayload(full);
+      const geoNotes = (full.geoMetadata?.geoScoreNotes as string) || '';
+      const validation = await validateArticle(articlePayload);
 
-    // ─── Call Claude (Haiku — fast enough for 30s budget) ────────
-    const improveResult = await improveArticleStreaming(articlePayload, geoNotes);
-
-    if (improveResult.error || !improveResult.data) {
-      return new Response(JSON.stringify({
+      return Response.json({
+        phase: 'prepared',
         slug,
-        status: 'failed',
-        error: improveResult.error,
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        article: articlePayload,
+        hardFails: validation.hardFails,
+        softFails: validation.softFails,
+        geoNotes,
+        geoScore: validation.geoScore.totalScore,
+        originalStatus: full.status || 'draft',
       });
     }
 
-    // ─── Save ────────────────────────────────────────────────────
-    const saveResult = await saveImprovedArticle(
-      slug,
-      improveResult.data,
-      full.status || 'draft',
-      userEmail,
-    );
+    // ─── Phase 2: EXECUTE ──────────────────────────────────────
+    if (phase === 'execute') {
+      const article = body.article as ArticlePayload;
+      const hardFails = (body.hardFails as string[]) || [];
+      const softFails = (body.softFails as string[]) || [];
+      const geoNotes = (body.geoNotes as string) || '';
+      const originalStatus = (body.originalStatus as string) || 'draft';
 
-    return new Response(JSON.stringify({
-      slug,
-      status: 'improved',
-      afterScore: saveResult.geoScore ?? null,
-      changes: improveResult.changes,
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+      if (!article?.body) {
+        return Response.json({ error: 'article payload is required' }, { status: 400 });
+      }
+
+      // Call Claude
+      const improveResult = await improveArticleFast(article, hardFails, softFails, geoNotes);
+
+      if (improveResult.error || !improveResult.data) {
+        return Response.json({ slug, status: 'failed', error: improveResult.error }, { status: 500 });
+      }
+
+      // Save to DynamoDB
+      const improved = improveResult.data;
+      const current = await getBlogContent(slug, 'draft')
+        || await getBlogContent(slug, 'published');
+
+      if (current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const sections = (current.sections || []) as any[];
+        const updatedSections = sections.map((section) => {
+          if (section.type === 'text-block' || section.type === 'rich-text') {
+            return { ...section, content: improved.body };
+          }
+          return section;
+        });
+        if (!updatedSections.some((s) => s.type === 'text-block' || s.type === 'rich-text')) {
+          updatedSections.push({ id: `text-${Date.now()}`, type: 'text-block', content: improved.body });
+        }
+        // Update FAQ
+        const faqIdx = updatedSections.findIndex((s) => s.type === 'faq');
+        if (faqIdx >= 0 && improved.faqBlock?.length > 0) {
+          updatedSections[faqIdx] = { ...updatedSections[faqIdx], items: improved.faqBlock };
+        } else if (faqIdx < 0 && improved.faqBlock?.length > 0) {
+          updatedSections.push({ id: `faq-${Date.now()}`, type: 'faq', title: 'Frequently Asked Questions', items: improved.faqBlock });
+        }
+
+        // Local GEO re-score
+        const afterValidation = await validateArticle(improved);
+        const newGeoScore = afterValidation.geoScore.totalScore;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const existingGeo = (current.geoMetadata || {}) as Record<string, any>;
+        const savePayload = {
+          slug,
+          title: improved.title,
+          sections: updatedSections,
+          seo: { ...(current.seo || {}), pageTitle: improved.metaTitle, metaDescription: improved.metaDescription },
+          excerpt: improved.excerpt,
+          tags: current.tags,
+          categories: current.categories,
+          body: improved.body,
+          quickAnswer: improved.quickAnswer,
+          geoMetadata: {
+            ...existingGeo,
+            geoScore: newGeoScore,
+            geoScoreNotes: afterValidation.hardFails.length > 0
+              ? afterValidation.hardFails.join('; ')
+              : afterValidation.softFails.join('; ') || 'Passing',
+          },
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await saveBlogPost(savePayload as any, 'draft', userEmail);
+        if (originalStatus === 'published') {
+          const pub = await getBlogContent(slug, 'published');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (pub) await saveBlogPost(savePayload as any, 'published', userEmail);
+        }
+
+        return Response.json({
+          slug,
+          status: 'improved',
+          afterScore: newGeoScore,
+          changes: improveResult.changes,
+        });
+      }
+
+      return Response.json({ slug, status: 'improved', changes: improveResult.changes });
+    }
+
+    // ─── Legacy: both phases in one call (may timeout on Amplify) ──
+    return Response.json({ error: 'Use phase="prepare" then phase="execute" for Amplify compatibility' }, { status: 400 });
   } catch (err) {
     console.error('ContentOps improve error:', err);
-    return new Response(JSON.stringify({
-      error: err instanceof Error ? err.message : 'Improvement failed',
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return Response.json(
+      { error: err instanceof Error ? err.message : 'Improvement failed' },
+      { status: 500 },
+    );
   }
 }
