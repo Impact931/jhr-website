@@ -9,7 +9,12 @@ import type { ArticlePayload } from '@/lib/contentops/types';
 export const maxDuration = 120;
 
 /**
- * POST /api/admin/contentops/improve — SSE streaming, same pattern as /generate.
+ * POST /api/admin/contentops/improve — 3-phase SSE streaming improvement.
+ *
+ * Phase 1: ANALYZE (Haiku) — structure + outline
+ * Phase 2: REWRITE (Sonnet streaming) — body content
+ * Phase 3: POLISH (Haiku) — metadata + FAQ
+ *
  * Body: { slug: string }
  */
 export async function POST(request: NextRequest) {
@@ -96,14 +101,21 @@ export async function POST(request: NextRequest) {
 
         const geoNotes = (full.geoMetadata?.geoScoreNotes as string) || '';
 
-        // ─── Stream improvement (keeps connection alive) ───────────
-        send('progress', { phase: 'improving', message: 'Rewriting article with Claude...' });
-
-        const result = await improveArticleStreaming(article, geoNotes, (chunkCount) => {
-          if (chunkCount % 10 === 0) {
-            send('progress', { phase: 'improving', chunks: chunkCount });
-          }
-        });
+        // ─── 3-Phase Improvement (streaming) ─────────────────────
+        const result = await improveArticleStreaming(
+          article,
+          geoNotes,
+          // onChunk — keepalive during body streaming (Phase 2)
+          (chunkCount) => {
+            if (chunkCount % 10 === 0) {
+              send('progress', { phase: 'rewrite', chunks: chunkCount });
+            }
+          },
+          // onProgress — phase transitions
+          (phase, message) => {
+            send('progress', { phase, message });
+          },
+        );
 
         if (result.error || !result.data) {
           send('error', { error: result.error || 'Improvement failed' });
@@ -111,8 +123,8 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        // ─── Save ──────────────────────────────────────────────────
-        send('progress', { phase: 'saving', message: 'Saving improved article...' });
+        // ─── Validate & Save ─────────────────────────────────────
+        send('progress', { phase: 'saving', message: 'Validating and saving...' });
 
         const improved = result.data;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -131,7 +143,7 @@ export async function POST(request: NextRequest) {
           updatedSections.push({ id: `faq-${Date.now()}`, type: 'faq', title: 'Frequently Asked Questions', items: improved.faqBlock });
         }
 
-        // Local GEO score
+        // GEO score
         const afterValidation = await validateArticle(improved);
         const newGeoScore = afterValidation.geoScore.totalScore;
 
@@ -156,7 +168,7 @@ export async function POST(request: NextRequest) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any, 'draft', session.user?.email || undefined);
 
-        // ─── Done ──────────────────────────────────────────────────
+        // ─── Done ────────────────────────────────────────────────
         send('done', {
           slug,
           status: 'improved',
