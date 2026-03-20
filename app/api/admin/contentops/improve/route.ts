@@ -10,6 +10,24 @@ import type { ArticlePayload } from '@/lib/contentops/types';
 
 export const maxDuration = 300;
 
+/**
+ * GET /api/admin/contentops/improve — SSE health check.
+ * Returns a minimal SSE stream to verify streaming works on Amplify.
+ */
+export async function GET() {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(`event: progress\ndata: ${JSON.stringify({ phase: 'health-check', message: 'SSE streaming OK' })}\n\n`));
+      controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify({ status: 'healthy', hasApiKey: !!process.env.ANTHROPIC_API_KEY, skillFile: 'loaded-at-runtime' })}\n\n`));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
+  });
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function blogToArticlePayload(full: any): ArticlePayload {
   const body = (full.body as string) || '';

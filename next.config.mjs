@@ -3,6 +3,10 @@ const nextConfig = {
   output: 'standalone',
   experimental: {
     serverComponentsExternalPackages: ['pdfkit'],
+    outputFileTracingIncludes: {
+      '/api/admin/contentops/improve': ['./lib/contentops/improve-skill.md'],
+      '/api/admin/contentops/generate': ['./lib/contentops/improve-skill.md'],
+    },
   },
   serverExternalPackages: ['pdfkit'],
   images: {
