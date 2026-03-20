@@ -1627,7 +1627,7 @@ function ArticlesTab() {
     } else {
       // Batch: get articles that need work, then improve one-at-a-time
       addLogEntry({ time: timestamp(), type: 'progress', message: 'Loading articles that need improvement...' });
-      const needsWork = articles.filter((a) => a.geoScore > 0 && a.geoScore < (opts.mode === 'all' ? 80 : 70));
+      const needsWork = articles.filter((a) => a.geoScore > 0 && a.geoScore < (opts.mode === 'all' ? 90 : 90));
       if (needsWork.length === 0) {
         setImprovePhase('done');
         setImproveSummary('No articles need improvement');
@@ -1777,7 +1777,7 @@ function ArticlesTab() {
             }}
             disabled={actionLoading === 'improve-all'}
             className="text-sm text-jhr-white-dim hover:text-jhr-gold transition-colors flex items-center gap-1.5 disabled:opacity-50"
-            title="Auto-improve all articles that need work (GEO < 70)"
+            title="Auto-improve all articles below 90 GEO score"
           >
             {actionLoading === 'improve-all' ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1934,9 +1934,9 @@ function ArticlesTab() {
                               HI-GEO
                             </span>
                           )}
-                          {article.geoScore < 70 && article.geoScoreNotes && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 uppercase tracking-wide" title={article.geoScoreNotes}>
-                              NEEDS WORK
+                          {article.geoScore < 90 && article.geoScoreNotes && (
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${article.geoScore < 70 ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`} title={article.geoScoreNotes}>
+                              {article.geoScore < 70 ? 'NEEDS WORK' : 'IMPROVE'}
                             </span>
                           )}
                         </>
@@ -1961,7 +1961,7 @@ function ArticlesTab() {
                       >
                         <Eye className="w-4 h-4" />
                       </a>
-                      {article.geoScore > 0 && article.geoScore < 70 && (
+                      {article.geoScore > 0 && article.geoScore < 90 && (
                         <button
                           onClick={async () => {
                             setActionLoading(`improve-${article.slug}`);
