@@ -1558,91 +1558,76 @@ function ArticlesTab() {
 
   const timestamp = () => new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-  /** Consume SSE from the improve endpoint with detailed progress tracking. */
-  const runImproveSSE = useCallback(async (body: Record<string, unknown>): Promise<void> => {
-    setImproveLog([]);
-    setImprovePhase('connecting');
-    setImproveSummary(null);
-    setImproveProgress(null);
-
+  /** Improve a single article via JSON POST. */
+  const improveSingle = useCallback(async (slug: string): Promise<{ status: string; afterScore?: number; changes?: string[]; error?: string }> => {
     const res = await fetch('/api/admin/contentops/improve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ slug }),
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Improvement failed');
+    return data;
+  }, []);
 
-    if (!res.ok || !res.body) {
-      const text = await res.text().catch(() => 'Unknown error');
-      let errorMsg = text;
-      try {
-        const parsed = JSON.parse(text);
-        errorMsg = parsed.error || text;
-      } catch { /* use raw text */ }
-      throw new Error(errorMsg);
-    }
+  /** Improve one or more articles with progress tracking. */
+  const runImprove = useCallback(async (opts: { slug?: string; mode?: string }): Promise<void> => {
+    setImproveLog([]);
+    setImprovePhase('working');
+    setImproveSummary(null);
+    setImproveProgress(null);
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+    if (opts.slug) {
+      // Single article
+      addLogEntry({ time: timestamp(), type: 'progress', message: `Improving "${opts.slug}"...`, slug: opts.slug });
+      const result = await improveSingle(opts.slug);
+      if (result.status === 'improved') {
+        addLogEntry({ time: timestamp(), type: 'result', message: `Improved! GEO score: ${result.afterScore ?? '—'}`, slug: opts.slug, afterScore: result.afterScore });
+      } else {
+        addLogEntry({ time: timestamp(), type: 'error', message: result.error || 'Failed', slug: opts.slug });
+      }
+      setImprovePhase('done');
+      setImproveSummary(result.status === 'improved' ? 'Article improved' : `Failed: ${result.error}`);
+    } else {
+      // Batch: get articles that need work, then improve one-at-a-time
+      addLogEntry({ time: timestamp(), type: 'progress', message: 'Loading articles that need improvement...' });
+      const needsWork = articles.filter((a) => a.geoScore > 0 && a.geoScore < (opts.mode === 'all' ? 80 : 70));
+      if (needsWork.length === 0) {
+        setImprovePhase('done');
+        setImproveSummary('No articles need improvement');
+        addLogEntry({ time: timestamp(), type: 'done', message: 'No articles need improvement' });
+        return;
+      }
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+      let improved = 0;
+      let failed = 0;
+      setImproveProgress({ current: 0, total: needsWork.length });
+      addLogEntry({ time: timestamp(), type: 'progress', message: `Found ${needsWork.length} articles to improve` });
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      let eventType = '';
-      for (const line of lines) {
-        if (line.startsWith('event: ')) {
-          eventType = line.slice(7);
-        } else if (line.startsWith('data: ') && eventType) {
-          try {
-            const data = JSON.parse(line.slice(6));
-
-            if (eventType === 'progress') {
-              setImprovePhase(data.phase || 'working');
-              if (data.message) {
-                addLogEntry({ time: timestamp(), type: 'progress', message: data.message, slug: data.slug });
-              }
-              if (data.total && data.current) {
-                setImproveProgress({ current: data.current, total: data.total });
-              }
-            } else if (eventType === 'article-result') {
-              const msg = data.status === 'improved'
-                ? `Improved: GEO ${data.beforeScore} -> ${data.afterScore}`
-                : data.status === 'already-passing'
-                  ? 'Already passing — skipped'
-                  : data.status === 'rejected'
-                    ? `Rejected: scored lower (${data.afterScore} vs ${data.beforeScore})`
-                    : `Failed: ${data.error || 'unknown error'}`;
-              addLogEntry({
-                time: timestamp(),
-                type: 'result',
-                message: msg,
-                slug: data.slug,
-                beforeScore: data.beforeScore,
-                afterScore: data.afterScore,
-              });
-            } else if (eventType === 'done') {
-              setImprovePhase('done');
-              const summary = `Completed: ${data.improved} improved, ${data.alreadyPassing || 0} already passing, ${data.failed || 0} failed (${data.total} total)`;
-              setImproveSummary(summary);
-              addLogEntry({ time: timestamp(), type: 'done', message: summary });
-            } else if (eventType === 'error') {
-              setImprovePhase('error');
-              throw new Error(data.error || 'Improvement failed');
-            }
-          } catch (e) {
-            if (e instanceof SyntaxError) continue;
-            throw e;
+      for (let i = 0; i < needsWork.length; i++) {
+        const article = needsWork[i];
+        setImproveProgress({ current: i + 1, total: needsWork.length });
+        addLogEntry({ time: timestamp(), type: 'progress', message: `Improving "${article.slug}" (${i + 1}/${needsWork.length})...`, slug: article.slug });
+        try {
+          const result = await improveSingle(article.slug);
+          if (result.status === 'improved') {
+            improved++;
+            addLogEntry({ time: timestamp(), type: 'result', message: `Improved! GEO: ${result.afterScore ?? '—'}`, slug: article.slug, afterScore: result.afterScore });
+          } else {
+            failed++;
+            addLogEntry({ time: timestamp(), type: 'error', message: result.error || 'Failed', slug: article.slug });
           }
-          eventType = '';
+        } catch (err) {
+          failed++;
+          addLogEntry({ time: timestamp(), type: 'error', message: err instanceof Error ? err.message : 'Failed', slug: article.slug });
         }
       }
+
+      setImprovePhase('done');
+      setImproveSummary(`Completed: ${improved} improved, ${failed} failed (${needsWork.length} total)`);
+      addLogEntry({ time: timestamp(), type: 'done', message: `Completed: ${improved} improved, ${failed} failed` });
     }
-  }, [addLogEntry]);
+  }, [addLogEntry, articles, improveSingle]);
 
   const fetchArticles = useCallback(async () => {
     setLoading(true);
@@ -1745,7 +1730,7 @@ function ArticlesTab() {
             onClick={async () => {
               setActionLoading('improve-all');
               try {
-                await runImproveSSE({ mode: 'needs-work' });
+                await runImprove({ mode: 'needs-work' });
                 await fetchArticles();
               } catch (err) {
                 setImprovePhase('error');
@@ -1945,7 +1930,7 @@ function ArticlesTab() {
                           onClick={async () => {
                             setActionLoading(`improve-${article.slug}`);
                             try {
-                              await runImproveSSE({ slug: article.slug });
+                              await runImprove({ slug: article.slug });
                               await fetchArticles();
                             } catch (err) {
                               setImprovePhase('error');

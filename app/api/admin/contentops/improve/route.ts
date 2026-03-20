@@ -3,8 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { listBlogs, getBlogContent, saveBlogPost } from '@/lib/blog-content';
 import { improveArticleStreaming } from '@/lib/contentops/improve';
-import type { ImproveResult } from '@/lib/contentops/improve';
-import { validateArticle } from '@/lib/contentops/validate';
 import { scoreArticleGEO } from '@/lib/contentops/geo-score';
 import type { ArticlePayload } from '@/lib/contentops/types';
 
@@ -12,14 +10,13 @@ export const maxDuration = 300;
 
 /**
  * GET /api/admin/contentops/improve — SSE health check.
- * Returns a minimal SSE stream to verify streaming works on Amplify.
  */
 export async function GET() {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
       controller.enqueue(encoder.encode(`event: progress\ndata: ${JSON.stringify({ phase: 'health-check', message: 'SSE streaming OK' })}\n\n`));
-      controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify({ status: 'healthy', hasApiKey: !!process.env.ANTHROPIC_API_KEY, skillFile: 'loaded-at-runtime' })}\n\n`));
+      controller.enqueue(encoder.encode(`event: done\ndata: ${JSON.stringify({ status: 'healthy', hasApiKey: !!process.env.ANTHROPIC_API_KEY })}\n\n`));
       controller.close();
     },
   });
@@ -72,6 +69,7 @@ function blogToArticlePayload(full: any): ArticlePayload {
 
 /**
  * Save improved article back to DynamoDB.
+ * GEO re-score is skipped here to stay within 30s Lambda budget — use /rescore separately.
  */
 async function saveImprovedArticle(
   slug: string,
@@ -120,7 +118,7 @@ async function saveImprovedArticle(
     });
   }
 
-  // GEO re-score (non-blocking — we catch errors)
+  // Quick local GEO score (no Claude call — just the formula)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let geoMetadata: any = current.geoMetadata || {};
   let newGeoScore: number | undefined;
@@ -135,7 +133,7 @@ async function saveImprovedArticle(
       newGeoScore = geoResult.totalScore;
     }
   } catch {
-    // Scoring failure is non-blocking
+    // Non-blocking
   }
 
   const savePayload = {
@@ -168,268 +166,93 @@ async function saveImprovedArticle(
 }
 
 /**
- * POST /api/admin/contentops/improve — SSE streaming improvement pipeline.
+ * POST /api/admin/contentops/improve
  *
- * Body options:
- *   { slug: string }           — improve a single article
- *   { mode: "needs-work" }     — improve all articles with geoScore < 70
- *   { mode: "all" }            — improve all articles below 80
+ * Improves ONE article per invocation to fit within Amplify's 30s Lambda timeout.
+ * Returns JSON (not SSE) for simplicity and reliability.
+ *
+ * Body: { slug: string }
  */
 export async function POST(request: NextRequest) {
   try {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const slug = body.slug as string | undefined;
+    const userEmail = session.user?.email || undefined;
+
+    if (!slug) {
+      return new Response(JSON.stringify({ error: 'slug is required' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ─── Load article ────────────────────────────────────────────
+    const full = await getBlogContent(slug, 'draft')
+      || await getBlogContent(slug, 'published');
+
+    if (!full || !full.body) {
+      return new Response(JSON.stringify({ error: 'Article not found or has no body', slug }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const articlePayload = blogToArticlePayload(full);
+    const geoNotes = (full.geoMetadata?.geoScoreNotes as string) || '';
+
+    // ─── Call Claude (Haiku — fast enough for 30s budget) ────────
+    const improveResult = await improveArticleStreaming(articlePayload, geoNotes);
+
+    if (improveResult.error || !improveResult.data) {
+      return new Response(JSON.stringify({
+        slug,
+        status: 'failed',
+        error: improveResult.error,
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // ─── Save ────────────────────────────────────────────────────
+    const saveResult = await saveImprovedArticle(
+      slug,
+      improveResult.data,
+      full.status || 'draft',
+      userEmail,
+    );
+
+    return new Response(JSON.stringify({
+      slug,
+      status: 'improved',
+      afterScore: saveResult.geoScore ?? null,
+      changes: improveResult.changes,
+    }), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
-  }
-
-  // Check for ANTHROPIC_API_KEY before starting the stream
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return new Response(JSON.stringify({ error: 'ANTHROPIC_API_KEY not configured on server' }), {
+  } catch (err) {
+    console.error('ContentOps improve error:', err);
+    return new Response(JSON.stringify({
+      error: err instanceof Error ? err.message : 'Improvement failed',
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
-  }
-
-  const body = await request.json().catch(() => ({}));
-  const targetSlug = body.slug as string | undefined;
-  const mode = (body.mode as string) || 'needs-work';
-  const userEmail = session.user?.email || undefined;
-
-  const encoder = new TextEncoder();
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      const send = (event: string, data: Record<string, unknown>) => {
-        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
-      };
-
-      try {
-        // ─── Determine which articles to improve ────────────────────
-        send('progress', { phase: 'loading', message: 'Loading articles...' });
-
-        const allPosts = await listBlogs();
-        let toImprove: Array<{ slug: string; status: string }>;
-
-        if (targetSlug) {
-          toImprove = allPosts.filter((p) => p.slug === targetSlug);
-        } else {
-          const withScores = await Promise.all(
-            allPosts.map(async (post) => {
-              try {
-                const full = await getBlogContent(
-                  post.slug,
-                  post.status === 'published' ? 'published' : 'draft'
-                );
-                return {
-                  slug: post.slug,
-                  status: post.status || 'draft',
-                  geoScore: full?.geoMetadata?.geoScore ?? 0,
-                };
-              } catch {
-                return { slug: post.slug, status: post.status || 'draft', geoScore: 0 };
-              }
-            })
-          );
-          const threshold = mode === 'all' ? 80 : 70;
-          toImprove = withScores.filter((p) => p.geoScore < threshold);
-        }
-
-        if (toImprove.length === 0) {
-          send('done', { improved: 0, total: 0, message: 'No articles need improvement', results: [] });
-          controller.close();
-          return;
-        }
-
-        send('progress', {
-          phase: 'starting',
-          message: `Improving ${toImprove.length} article${toImprove.length > 1 ? 's' : ''}...`,
-          total: toImprove.length,
-        });
-
-        // ─── Process each article ───────────────────────────────────
-        const results: Omit<ImproveResult, 'improvedData'>[] = [];
-
-        for (let i = 0; i < toImprove.length; i++) {
-          const post = toImprove[i];
-
-          send('progress', {
-            phase: 'improving',
-            message: `Improving "${post.slug}" (${i + 1}/${toImprove.length})...`,
-            current: i + 1,
-            total: toImprove.length,
-            slug: post.slug,
-          });
-
-          try {
-            const full = await getBlogContent(post.slug, 'draft')
-              || await getBlogContent(post.slug, 'published');
-
-            if (!full || !full.body) {
-              results.push({
-                slug: post.slug,
-                status: 'skipped',
-                beforeScore: 0,
-                afterScore: null,
-                beforeHardFails: [],
-                afterHardFails: [],
-                changes: [],
-                error: 'No body content found',
-              });
-              send('article-result', { slug: post.slug, status: 'skipped', error: 'No body content' });
-              continue;
-            }
-
-            const articlePayload = blogToArticlePayload(full);
-            const geoNotes = full.geoMetadata?.geoScoreNotes || '';
-
-            // Score before
-            const beforeValidation = await validateArticle(articlePayload);
-            const beforeScore = beforeValidation.geoScore.totalScore;
-
-            // Already passing?
-            if (beforeValidation.passed && beforeScore >= 80 && !geoNotes) {
-              results.push({
-                slug: post.slug,
-                status: 'already-passing',
-                beforeScore,
-                afterScore: beforeScore,
-                beforeHardFails: beforeValidation.hardFails,
-                afterHardFails: beforeValidation.hardFails,
-                changes: [],
-              });
-              send('article-result', { slug: post.slug, status: 'already-passing', beforeScore });
-              continue;
-            }
-
-            // ─── Streaming improvement (prevents gateway timeout) ────
-            const improveResult = await improveArticleStreaming(
-              articlePayload,
-              geoNotes,
-              (chunkCount) => {
-                if (chunkCount % 10 === 0) {
-                  send('progress', {
-                    phase: 'improving',
-                    slug: post.slug,
-                    chunks: chunkCount,
-                    current: i + 1,
-                    total: toImprove.length,
-                  });
-                }
-              },
-            );
-
-            if (improveResult.error || !improveResult.data) {
-              results.push({
-                slug: post.slug,
-                status: 'failed',
-                beforeScore,
-                afterScore: null,
-                beforeHardFails: beforeValidation.hardFails,
-                afterHardFails: [],
-                changes: [],
-                error: improveResult.error,
-              });
-              send('article-result', { slug: post.slug, status: 'failed', error: improveResult.error });
-              continue;
-            }
-
-            // Validate improved version
-            const afterValidation = await validateArticle(improveResult.data);
-            const afterScore = afterValidation.geoScore.totalScore;
-
-            // Reject-if-worse guard
-            if (afterScore < beforeScore && afterValidation.hardFails.length >= beforeValidation.hardFails.length) {
-              results.push({
-                slug: post.slug,
-                status: 'failed',
-                beforeScore,
-                afterScore,
-                beforeHardFails: beforeValidation.hardFails,
-                afterHardFails: afterValidation.hardFails,
-                changes: improveResult.changes,
-                error: `Improved version scored lower (${afterScore} vs ${beforeScore}) — keeping original`,
-              });
-              send('article-result', { slug: post.slug, status: 'rejected', beforeScore, afterScore });
-              continue;
-            }
-
-            // ─── Save + GEO rescore ──────────────────────────────────
-            send('progress', {
-              phase: 'saving',
-              message: `Saving "${post.slug}" and re-scoring GEO...`,
-              slug: post.slug,
-              current: i + 1,
-              total: toImprove.length,
-            });
-
-            const saveResult = await saveImprovedArticle(post.slug, improveResult.data, post.status, userEmail);
-
-            results.push({
-              slug: post.slug,
-              status: 'improved',
-              beforeScore,
-              afterScore: saveResult.geoScore ?? afterScore,
-              beforeHardFails: beforeValidation.hardFails,
-              afterHardFails: afterValidation.hardFails,
-              changes: improveResult.changes,
-            });
-
-            send('article-result', {
-              slug: post.slug,
-              status: 'improved',
-              beforeScore,
-              afterScore: saveResult.geoScore ?? afterScore,
-              changes: improveResult.changes,
-            });
-          } catch (err) {
-            const error = err instanceof Error ? err.message : String(err);
-            results.push({
-              slug: post.slug,
-              status: 'failed',
-              beforeScore: 0,
-              afterScore: null,
-              beforeHardFails: [],
-              afterHardFails: [],
-              changes: [],
-              error,
-            });
-            send('article-result', { slug: post.slug, status: 'failed', error });
-          }
-        }
-
-        // ─── Final summary ────────────────────────────────────────
-        const improved = results.filter((r) => r.status === 'improved').length;
-        const alreadyPassing = results.filter((r) => r.status === 'already-passing').length;
-        const failed = results.filter((r) => r.status === 'failed').length;
-
-        send('done', { improved, alreadyPassing, failed, total: results.length, results });
-        controller.close();
-      } catch (error) {
-        console.error('ContentOps improve stream error:', error);
-        send('error', { error: error instanceof Error ? error.message : 'Improvement failed' });
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  });
-  } catch (outerError) {
-    console.error('ContentOps improve outer error:', outerError);
-    return new Response(
-      JSON.stringify({
-        error: outerError instanceof Error ? outerError.message : 'Unexpected server error in improve route',
-        stack: outerError instanceof Error ? outerError.stack?.split('\n').slice(0, 5) : undefined,
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
-    );
   }
 }

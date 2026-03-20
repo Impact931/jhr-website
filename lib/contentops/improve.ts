@@ -8,7 +8,8 @@ import type { ArticlePayload } from './types';
 import { validateArticle } from './validate';
 import { getGenerationLessons, formatLessonsForPrompt, addLesson } from './lessons-store';
 
-const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
+// Haiku is ~3x faster than Sonnet — required to fit within Amplify's 30s Lambda timeout
+const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 
 // Load the improvement skill from file — cached after first read
 let _skillCache: string | null = null;
@@ -172,7 +173,7 @@ export async function improveArticle(
 
     const response = await client.messages.create({
       model: CLAUDE_MODEL,
-      max_tokens: 8192,
+      max_tokens: 6144,
       system: getImproveSystemPrompt(),
       messages: [{ role: 'user', content: userPrompt }],
       temperature: 0.3, // Lower temperature for targeted improvements
@@ -242,7 +243,7 @@ export async function improveArticleStreaming(
 
     const stream = client.messages.stream({
       model: CLAUDE_MODEL,
-      max_tokens: 8192,
+      max_tokens: 6144,
       system: getImproveSystemPrompt(),
       messages: [{ role: 'user', content: userPrompt }],
       temperature: 0.3,
