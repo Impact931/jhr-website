@@ -297,8 +297,17 @@ function decodeImageUrl(url: string): string {
   }
 }
 
+/** Default blog hero placeholder — not a real featured image */
+const DEFAULT_BLOG_HERO = '/images/blog-default-hero.jpg';
+
+/** Returns true if the URL is a real uploaded/CDN image, not a default placeholder */
+function isRealImage(url: string): boolean {
+  return !!url && url !== DEFAULT_BLOG_HERO && !url.startsWith('/images/blog-default-');
+}
+
 /**
  * Extracts featured image from sections (hero background or first image-gallery).
+ * Ignores default placeholder images that aren't real content.
  *
  * @param sections - Array of page sections
  * @returns Featured image URL or undefined
@@ -308,16 +317,18 @@ export function extractFeaturedImage(sections?: PageSectionContent[]): string | 
     return undefined;
   }
 
-  // First, look for hero section with background image
+  // First, look for hero section with a real background image
   const heroSection = sections.find(s => s.type === 'hero');
   if (heroSection && heroSection.type === 'hero' && heroSection.backgroundImage?.src) {
-    return decodeImageUrl(heroSection.backgroundImage.src);
+    const src = decodeImageUrl(heroSection.backgroundImage.src);
+    if (isRealImage(src)) return src;
   }
 
   // Fall back to first image in any image-gallery
   const gallerySection = sections.find(s => s.type === 'image-gallery');
   if (gallerySection && gallerySection.type === 'image-gallery' && gallerySection.images[0]?.src) {
-    return decodeImageUrl(gallerySection.images[0].src);
+    const src = decodeImageUrl(gallerySection.images[0].src);
+    if (isRealImage(src)) return src;
   }
 
   return undefined;
