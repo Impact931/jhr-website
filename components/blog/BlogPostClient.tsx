@@ -14,7 +14,6 @@ import {
   Check,
   Plus,
   Edit3,
-  Search,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { BlogPost } from '@/types/blog';
@@ -25,7 +24,6 @@ import { BlogContentProvider, useBlogContent } from '@/context/blog/BlogContentC
 import { SectionRenderer } from '@/components/inline-editor/SectionRenderer';
 import { SectionWrapper } from '@/components/inline-editor/SectionWrapper';
 import { AddSectionModal } from '@/components/inline-editor/AddSectionModal';
-import { PageSEOPanel } from '@/components/inline-editor/PageSEOPanel';
 
 // ============================================================================
 // Related Post Card
@@ -259,7 +257,6 @@ function SectionEditMode({ post }: { post: BlogPost }) {
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [insertIndex, setInsertIndex] = useState(0);
-  const [showSEOPanel, setShowSEOPanel] = useState(false);
 
   useEffect(() => {
     const postToLoad = post.sections && post.sections.length > 0
@@ -305,18 +302,7 @@ function SectionEditMode({ post }: { post: BlogPost }) {
         {saveState.error && (
           <span className="text-body-sm text-red-400">{saveState.error}</span>
         )}
-        <button
-          onClick={() => setShowSEOPanel(true)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-body-sm font-medium bg-jhr-black-lighter text-jhr-white-dim hover:text-jhr-gold hover:border-jhr-gold/50 transition-colors border border-transparent"
-        >
-          <Search className="w-3.5 h-3.5" />
-          SEO
-        </button>
       </div>
-
-      {showSEOPanel && (
-        <PageSEOPanel onClose={() => setShowSEOPanel(false)} />
-      )}
 
       {/* Render all sections with edit wrappers */}
       <section className="pt-28 pb-8">
@@ -440,7 +426,7 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   return (
     <>
       {isEditing ? (
-        <BlogContentProvider initialPost={post}>
+        <BlogContentProvider initialSlug={post.slug} initialPost={post}>
           <SectionEditMode post={post} />
         </BlogContentProvider>
       ) : (

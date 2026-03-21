@@ -286,7 +286,7 @@ export async function saveBlogPost(
   // Compute derived fields
   const body = sections ? sectionsToBody(sections) : (input.body || '');
   // Prefer extracting featured image from hero section (most up-to-date)
-  const featuredImage = (sections ? extractFeaturedImage(sections) : null) || input.featuredImage;
+  const featuredImage = (sections ? extractFeaturedImage(sections) : null) || input.featuredImage || input.seo?.ogImage;
   const excerpt = input.excerpt || extractExcerpt(sections);
   const readingTime = estimateReadingTime(body);
 
@@ -493,7 +493,7 @@ export async function listBlogs(status?: BlogPostStatus): Promise<BlogSummary[]>
       updatedAt: record.updatedAt,
       hasDraft: !!(draft || legacy),
       hasPublished: !!(published || (legacy?.status === 'published')),
-      featuredImage: record.featuredImage || extractFeaturedImage(record.sections),
+      featuredImage: record.featuredImage || extractFeaturedImage(record.sections) || record.seo?.ogImage,
       sectionCount: record.sections?.length || 0,
       excerpt: record.excerpt || extractExcerpt(record.sections),
       author: record.author,
