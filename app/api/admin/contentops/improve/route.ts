@@ -5,12 +5,12 @@ import { authOptions } from '@/lib/auth';
 /**
  * POST /api/admin/contentops/improve
  *
- * Thin proxy to standalone Lambda Function URL.
- * Auth check happens here (NextAuth session), then proxies to Lambda
- * which handles the full 3-phase improvement pipeline with 120s timeout.
+ * Auth-gate only. Returns the Lambda Function URL + API key so the
+ * browser can call the standalone Lambda directly (120s timeout).
+ * We do NOT proxy the stream — Amplify hard-caps this route at 30s.
  *
  * Body: { slug: string }
- * Response: Proxied SSE stream from Lambda
+ * Response: { lambdaUrl, apiKey, slug }
  */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -37,26 +37,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // Proxy to Lambda Function URL
-  const lambdaRes = await fetch(lambdaUrl, {
-    method: 'POST',
+  return new Response(JSON.stringify({ lambdaUrl, apiKey, slug }), {
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slug, apiKey }),
-  });
-
-  if (!lambdaRes.ok || !lambdaRes.body) {
-    const text = await lambdaRes.text().catch(() => 'Lambda call failed');
-    return new Response(JSON.stringify({ error: text }), {
-      status: lambdaRes.status || 502, headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Stream the Lambda response directly to the client
-  return new Response(lambdaRes.body, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
   });
 }

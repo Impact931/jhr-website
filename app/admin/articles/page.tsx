@@ -1559,21 +1559,35 @@ function ArticlesTab() {
 
   const timestamp = () => new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-  /** Improve a single article via SSE streaming (same pattern as generate). */
+  /** Improve a single article via SSE streaming — calls Lambda Function URL directly. */
   const improveSingle = useCallback(async (slug: string): Promise<{ status: string; afterScore?: number; changes?: string[]; error?: string }> => {
-    // Single call to improve route → proxied to standalone Lambda (120s timeout)
-    const res = await fetch('/api/admin/contentops/improve', {
+    // Step 1: Auth check + get Lambda URL (fast, runs on Amplify's 30s Lambda)
+    const authRes = await fetch('/api/admin/contentops/improve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug }),
     });
 
-    if (!res.ok || !res.body) {
-      const text = await res.text().catch(() => 'Unknown error');
+    if (!authRes.ok) {
+      const text = await authRes.text().catch(() => 'Unknown error');
       try { const j = JSON.parse(text); throw new Error(j.error || text); } catch (e) { if (e instanceof SyntaxError) throw new Error(text); throw e; }
     }
 
-    // Read SSE stream from Lambda
+    const { lambdaUrl, apiKey } = await authRes.json();
+
+    // Step 2: Call Lambda Function URL directly (bypasses Amplify's 30s limit)
+    const res = await fetch(lambdaUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, apiKey }),
+    });
+
+    if (!res.ok || !res.body) {
+      const text = await res.text().catch(() => 'Lambda call failed');
+      try { const j = JSON.parse(text); throw new Error(j.error || text); } catch (e) { if (e instanceof SyntaxError) throw new Error(text); throw e; }
+    }
+
+    // Read SSE stream directly from Lambda
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';

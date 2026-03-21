@@ -366,6 +366,22 @@ function computeGeoScore(body: string, quickAnswer: string, faqBlock: FAQItem[])
 
 export const handler = awslambda.streamifyResponse(
   async (event: any, responseStream: any): Promise<void> => {
+    // Handle CORS preflight for browser direct calls
+    if (event.requestContext?.http?.method === 'OPTIONS' || event.httpMethod === 'OPTIONS') {
+      const preflightMeta = {
+        statusCode: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Max-Age': '86400',
+        },
+      };
+      responseStream = awslambda.HttpResponseStream.from(responseStream, preflightMeta);
+      responseStream.end();
+      return;
+    }
+
     // Set up SSE
     const metadata = {
       statusCode: 200,
@@ -373,6 +389,7 @@ export const handler = awslambda.streamifyResponse(
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
     };
