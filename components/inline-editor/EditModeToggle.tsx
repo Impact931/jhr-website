@@ -11,10 +11,9 @@ import { PageSEOPanel } from './PageSEOPanel';
 import { getShortcutLabel } from './KeyboardShortcuts';
 
 export function EditModeToggle() {
-  const { isEditMode, setEditMode, isAuthenticated } = useEditMode();
-  const { pendingCount, saveState, publishState, publish, save, hasUnsavedChanges } = useContent();
+  const { isEditMode, setEditMode, isAuthenticated, showSEOPanel, setShowSEOPanel } = useEditMode();
+  const { pendingCount, saveState, publishState, publish, save, hasUnsavedChanges, pageSlug } = useContent();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showSEOPanel, setShowSEOPanel] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -280,8 +279,8 @@ export function EditModeToggle() {
         )}
       </div>
 
-      {/* SEO Panel Modal */}
-      {showSEOPanel && (
+      {/* SEO Panel Modal — only for non-blog pages (blog pages render their own inside BlogContentProvider) */}
+      {showSEOPanel && pageSlug && (
         <PageSEOPanel onClose={() => setShowSEOPanel(false)} />
       )}
 

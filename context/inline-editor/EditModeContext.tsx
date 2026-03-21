@@ -85,6 +85,9 @@ export function EditModeProvider({ children, forceEditMode = false }: EditModePr
     }
   }, [isAuthenticated, isEditMode]);
 
+  // SEO panel state — shared between FAB menu and page-level components
+  const [showSEOPanel, setShowSEOPanel] = useState(false);
+
   // Keyboard shortcut: Cmd/Ctrl + Shift + E to toggle edit mode
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -106,6 +109,8 @@ export function EditModeProvider({ children, forceEditMode = false }: EditModePr
     isAuthenticated,
     user,
     canEdit,
+    showSEOPanel,
+    setShowSEOPanel,
   };
 
   return (

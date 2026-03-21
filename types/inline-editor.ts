@@ -982,6 +982,8 @@ export interface EditModeContextValue {
   isAuthenticated: boolean;
   user: UserInfo | null;
   canEdit: boolean;
+  showSEOPanel: boolean;
+  setShowSEOPanel: (show: boolean) => void;
 }
 
 // Content key format: {pageSlug}:{sectionId}:{elementId}

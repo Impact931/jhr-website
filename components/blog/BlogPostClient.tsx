@@ -24,6 +24,7 @@ import { BlogContentProvider, useBlogContent } from '@/context/blog/BlogContentC
 import { SectionRenderer } from '@/components/inline-editor/SectionRenderer';
 import { SectionWrapper } from '@/components/inline-editor/SectionWrapper';
 import { AddSectionModal } from '@/components/inline-editor/AddSectionModal';
+import { PageSEOPanel } from '@/components/inline-editor/PageSEOPanel';
 
 // ============================================================================
 // Related Post Card
@@ -78,7 +79,7 @@ function isRealImage(src: string | undefined | null): src is string {
 }
 
 function ArticleView({ post }: { post: BlogPost }) {
-  const rawFeaturedImage = post.featuredImage || extractFeaturedImage(post.sections);
+  const rawFeaturedImage = post.featuredImage || extractFeaturedImage(post.sections) || post.seo?.ogImage;
   const featuredImage = isRealImage(rawFeaturedImage) ? rawFeaturedImage : null;
 
   // Extract FAQ items from sections
@@ -254,6 +255,7 @@ function SectionEditMode({ post }: { post: BlogPost }) {
     loadBlogPost,
     saveState,
   } = useBlogContent();
+  const { showSEOPanel, setShowSEOPanel } = useEditMode();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [insertIndex, setInsertIndex] = useState(0);
@@ -303,6 +305,11 @@ function SectionEditMode({ post }: { post: BlogPost }) {
           <span className="text-body-sm text-red-400">{saveState.error}</span>
         )}
       </div>
+
+      {/* SEO Panel — rendered inside BlogContentProvider so it gets the blog's ContentContext */}
+      {showSEOPanel && (
+        <PageSEOPanel onClose={() => setShowSEOPanel(false)} />
+      )}
 
       {/* Render all sections with edit wrappers */}
       <section className="pt-28 pb-8">
