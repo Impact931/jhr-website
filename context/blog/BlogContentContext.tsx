@@ -570,7 +570,10 @@ export function BlogContentProvider({
               tags: metadata.tags,
               categories: metadata.categories,
               scheduledPublishAt: metadata.scheduledPublishAt,
-              // Don't send version — avoids concurrency conflicts for single-user CMS
+              // Preserve published status — saving a published article should stay published
+              status: metadata.status,
+              // Sync OG image to featured image so listing page shows it
+              featuredImage: seo.ogImage || undefined,
             }),
           });
 
