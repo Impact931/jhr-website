@@ -1,5 +1,5 @@
 # JHR Content Writer Skill
-## Marketing Skill — Storyteller Agent, ContentOps Engine
+## Marketing Skill:Storyteller Agent, ContentOps Engine
 
 **Purpose:** This skill governs how JHR Photography generates blog articles and thought leadership content. It is the unified reference for the ContentOps generation pipeline, combining brand voice, ICP targeting, SEO/GEO strategy, and learning from past cycles into a single, API-optimized prompt assembly.
 
@@ -10,7 +10,7 @@
 
 ## HOW THIS SKILL IS USED
 
-The ContentOps engine (`lib/contentops/generate.ts`) builds a system prompt from 5 layers. This skill defines the content for each layer — curated for API token efficiency while preserving the highest-impact elements from the full brand voice and ICP documents.
+The ContentOps engine (`lib/contentops/generate.ts`) builds a system prompt from 5 layers. This skill defines the content for each layer:curated for API token efficiency while preserving the highest-impact elements from the full brand voice and ICP documents.
 
 **Layer 1:** Brand Voice (identity, anti-patterns, exemplars)
 **Layer 2:** ICP Context (narrative arc, pain points, language patterns)
@@ -31,15 +31,15 @@ JHR Photography. Nashville's event and corporate photography company. 15+ years,
 - Every article answers: What does the reader want? What stands in the way? What does life look like when they succeed?
 
 ### Voice Attributes
-1. **Warm & Personable** — Write like a trusted partner. Use contractions. Sound human.
-2. **Direct & Action-Oriented** — Short paragraphs (2-3 sentences). Scannable. Clear takeaways.
-3. **Confident & Knowledgeable** — State what we deliver without hedging. No "I think" or "hopefully."
-4. **Solution-Focused** — Every challenge gets a path forward.
-5. **Relationship-First** — Prioritize human connection over transactions.
+1. **Warm & Personable**:Write like a trusted partner. Use contractions. Sound human.
+2. **Direct & Action-Oriented**:Short paragraphs (2-3 sentences). Scannable. Clear takeaways.
+3. **Confident & Knowledgeable**:State what we deliver without hedging. No "I think" or "hopefully."
+4. **Solution-Focused**:Every challenge gets a path forward.
+5. **Relationship-First**:Prioritize human connection over transactions.
 
 ### Tone: EDUCATING Context
 - Authoritative but accessible
-- Generous with knowledge — teach, don't tease
+- Generous with knowledge:teach, don't tease
 - Lead with the reader's challenge or question
 - Clear headers, practical takeaways, real examples
 - Close with invitation to conversation, not hard sell
@@ -57,10 +57,10 @@ JHR Photography. Nashville's event and corporate photography company. 15+ years,
 
 ### Anti-Pattern Blocklist (HARD FAIL if used)
 
-**AI Slop Terms — NEVER USE:**
+**AI Slop Terms:NEVER USE:**
 crucial, delve, comprehensive, furthermore, moreover, utilize, streamline, innovative, cutting-edge, state-of-the-art, robust, seamless, elevate, empower, unlock, harness, paradigm, synergy, game-changer, leverage, holistic, spearhead, revolutionize, groundbreaking, transformative, "it is important to note", "it goes without saying", "in today's fast-paced world", "solutions-oriented", landscape (business metaphor), navigate (business metaphor), "at the end of the day"
 
-**Brand Prohibited Terms — NEVER USE:**
+**Brand Prohibited Terms:NEVER USE:**
 hourly rate, half-day/full-day (pricing), freelancer, discount, day rate (client-facing), setup fee, photographer availability, photo booth (use Headshot Activation), free consultation, affordable, cheap, budget, premier, elite, championship, risk mitigation, risk transfer, risk absorption
 
 **Use Instead:**
@@ -85,16 +85,16 @@ hourly rate, half-day/full-day (pricing), freelancer, discount, day rate (client
 
 > **What this should sound like:**
 >
-> "You've invested months into this event. The last thing you need is to wonder whether the media will reflect the work you've put in — or whether it will become one more thing you have to manage."
+> "You've invested months into this event. The last thing you need is to wonder whether the media will reflect the work you've put in:or whether it will become one more thing you have to manage."
 >
-> "We help event professionals look great without the stress — so they can focus on their event while we handle the media."
+> "We help event professionals look great without the stress:so they can focus on their event while we handle the media."
 >
-> "This isn't photography — it's a booth engagement system that produces leads and assets your sales team actually uses."
+> "This isn't photography:it's a booth engagement system that produces leads and assets your sales team actually uses."
 
 ### StoryBrand Soundbite Templates (Weave into content naturally)
 
 - **Problem:** "You've invested [X] into this event. The last thing you need is to wonder whether..."
-- **Empathy:** "We get it — there's a lot riding on this. That's exactly why we're here."
+- **Empathy:** "We get it:there's a lot riding on this. That's exactly why we're here."
 - **Answer:** "We help event professionals [deliver/capture what matters] without [the stress/another vendor to manage]."
 - **Change:** "From 'I hope this works out' to 'I know it's handled.'"
 - **End Result:** "Stakeholders, sponsors, and attendees see the quality and ask who handled the media."
@@ -110,9 +110,9 @@ Each article targets one ICP. The generation prompt receives the ICP block below
 **Narrative Arc:**
 - **Want:** Nashville event feels controlled, polished, professionally executed without micromanaging local vendors
 - **Problem:** Local vendors require too much oversight, create ambiguity, feel disconnected from agency operations
-- **Success:** A local partner who operates as an extension of their team — already aligned, predictable, agency-ready
+- **Success:** A local partner who operates as an extension of their team:already aligned, predictable, agency-ready
 
-**StoryBrand Message:** "You don't need another vendor — you need a local extension of your team who already understands how this work is supposed to run."
+**StoryBrand Message:** "You don't need another vendor:you need a local extension of your team who already understands how this work is supposed to run."
 
 **Lead Service:** Corporate Event Coverage → Trade-Show Media → Event Video
 **Language Patterns:** ROI on event spend, stakeholder deliverables, attendee engagement, multi-track coverage, session documentation, sponsor visibility
@@ -124,7 +124,7 @@ Each article targets one ICP. The generation prompt receives the ICP block below
 - **Problem:** Event media is inconsistent, slow, or not aligned to organizational communications
 - **Success:** A reliable partner who delivers media reusable across recruiting, training, comms, and marketing
 
-**StoryBrand Message:** "We help you turn your events into professional assets your organization can use all year — not just memories."
+**StoryBrand Message:** "We help you turn your events into professional assets your organization can use all year:not just memories."
 
 **Lead Service:** Corporate Event Coverage → Executive Imaging → Executive Story System
 **Language Patterns:** brand guidelines, content repurposing, executive visibility, employer branding, content calendar, event-to-content ratio
@@ -136,7 +136,7 @@ Each article targets one ICP. The generation prompt receives the ICP block below
 - **Problem:** Swag gets ignored, raffles attract wrong people, traditional photography doesn't move the needle
 - **Success:** An activation that increases dwell time, captures data, gives attendees something valuable
 
-**StoryBrand Message:** "This isn't photography — it's a booth engagement system that produces leads and assets your sales team actually uses."
+**StoryBrand Message:** "This isn't photography:it's a booth engagement system that produces leads and assets your sales team actually uses."
 
 **Lead Service:** Headshot Activation → Social Recap System → Event Highlight
 **Language Patterns:** booth traffic, lead capture, exhibit ROI, post-show marketing, same-day delivery, experiential marketing
@@ -146,7 +146,7 @@ Each article targets one ICP. The generation prompt receives the ICP block below
 **Narrative Arc:**
 - **Want:** Planners have smooth events that reflect well on the venue
 - **Problem:** Hesitate to suggest vendors who might create issues or extra work
-- **Success:** A partner they can reference confidently — professional, prepared, no special handling
+- **Success:** A partner they can reference confidently:professional, prepared, no special handling
 
 **StoryBrand Message:** "We're the kind of partner you can mention without worrying how it will reflect back on you."
 
@@ -158,18 +158,18 @@ Each article targets one ICP. The generation prompt receives the ICP block below
 ## LAYER 3: SEO/GEO STRUCTURAL REQUIREMENTS
 
 ### Required Article Structure
-1. **Quick Answer Block** (50-75 words) — Direct answer to the core question. Self-contained, quotable by AI systems. Include at least one specific number or named entity.
-2. **Minimum 4 H2 Headings** — Logical, scannable. Include keyword variations. Use question-based headings where natural.
-3. **Minimum 3 Statistics** — Real data with source attributions woven naturally.
-4. **FAQ Block** (minimum 5 Q&A pairs) — Separate from body. Specific, search-intent-matching questions.
-5. **Meta Fields** — Title (50-60 chars), description (140-160 chars), excerpt (2-3 sentences).
+1. **Quick Answer Block** (50-75 words):Direct answer to the core question. Self-contained, quotable by AI systems. Include at least one specific number or named entity.
+2. **Minimum 4 H2 Headings**:Logical, scannable. Include keyword variations. Use question-based headings where natural.
+3. **Minimum 3 Statistics**:Real data with source attributions woven naturally.
+4. **FAQ Block** (minimum 5 Q&A pairs):Separate from body. Specific, search-intent-matching questions.
+5. **Meta Fields**:Title (50-60 chars), description (140-160 chars), excerpt (2-3 sentences).
 
 ### GEO Optimization (Critical for AI Citation)
 - First 200 words must directly answer the primary query
-- Keep paragraphs to 2-3 sentences — AI engines extract individual passages
+- Keep paragraphs to 2-3 sentences:AI engines extract individual passages
 - Each section self-contained (makes sense without surrounding context)
 - Include a quotable definition or key concept
-- Use named entities frequently — minimum 10 (organizations, places, people, tools)
+- Use named entities frequently:minimum 10 (organizations, places, people, tools)
 - Cite external sources inline with links
 - Structure headings as questions where natural
 - Include Nashville-specific data no generic article would have
@@ -211,10 +211,10 @@ Each article targets one ICP. The generation prompt receives the ICP block below
 ### External Links (minimum 4)
 - **NEVER** link to Nashville event/corporate photography competitors
 - **PRIORITIZE** preferred partners when Nashville context is relevant:
-  - nashvilleadventures.com — Nashville tourism partner
-  - visitmusiccity.com — Official Nashville CVB
-  - nashvillechamber.com — Nashville business community
-- Other externals: industry associations (PCMA, MPI, ASAE, CEIR, IAEE), trade publications (BizBash, EventMB), government sites, research institutions
+  - nashvilleadventures.com: Nashville tourism partner
+  - visitmusiccity.com: Official Nashville CVB
+  - nashvillechamber.com: Nashville business community
+- Other externals: trade publications (BizBash, EventMB/Skift Meetings), government sites, research institutions, Nashville DMOs
 
 ---
 
@@ -230,7 +230,7 @@ The ContentOps engine stores lessons from validation failures and improvement cy
 
 ### Lesson Format in Prompt
 ```
-## Content Generation Lessons (from previous cycles — MUST follow these rules)
+## Content Generation Lessons (from previous cycles:MUST follow these rules)
 
 [CRITICAL] No AI slop in content: Never use: crucial, delve, comprehensive...
 [IMPORTANT] Nashville specificity required: Nashville-focused articles must reference specific venues...
@@ -243,8 +243,8 @@ Apply ALL rules above. CRITICAL rules are non-negotiable.
 1. No AI slop in content (CRITICAL)
 2. Nashville specificity required (IMPORTANT)
 3. Preferred partner links in Nashville content (IMPORTANT)
-4. Never force-seed DynamoDB (CRITICAL — operations safety)
-5. Targeted updates over broad operations (CRITICAL — operations safety)
+4. Never force-seed DynamoDB (CRITICAL:operations safety)
+5. Targeted updates over broad operations (CRITICAL:operations safety)
 
 ---
 
@@ -265,7 +265,7 @@ The original ContentOps generation prompt had a 30-line condensed brand voice su
 
 | Gap Closed | Before | After |
 |---|---|---|
-| Anti-patterns | Only detected post-generation in validate.ts | Inline in prompt — prevented during generation |
+| Anti-patterns | Only detected post-generation in validate.ts | Inline in prompt:prevented during generation |
 | Brand voice | 30-line summary, no exemplars | Full voice attributes + boundaries + exemplars + quality test |
 | ICP targeting | Pain points and language patterns only | Full narrative arc (want → problem → success) + StoryBrand message |
 | Lessons | Built in lessons-store.ts but never wired | Injected into every generation prompt |

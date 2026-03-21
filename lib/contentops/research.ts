@@ -89,9 +89,8 @@ Gather the following research data and return as a single JSON object:
 
   "authorityLinks": [
     // 6-8 URLs from authoritative sources directly relevant to the topic.
-    // REQUIRED types: industry associations (PCMA, MPI, CEIR, IAEE, ASAE), trade publications
-    // (BizBash, EventMB/Skift Meetings, Trade Show News Network, Convene), Nashville DMOs,
-    // government/research (.gov, .edu), and preferred partners listed below.
+    // REQUIRED types: trade publications (BizBash, EventMB/Skift Meetings, Trade Show News Network),
+    // Nashville DMOs, government/research (.gov, .edu), and preferred partners listed below.
     // Each URL must link to a SPECIFIC article or page, not a homepage.
     // NEVER include URLs from Nashville photography studios or photographers.
     { "url": "...", "title": "...", "domain": "..." }

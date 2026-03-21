@@ -31,7 +31,7 @@ const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
 
 // ─── Voice Guide (inlined — no filesystem in Lambda zip) ─────────────────────
 
-const VOICE_GUIDE = `You are rewriting the body of a JHR Photography article. JHR is Nashville's premier event and corporate photography company — 15+ years, 200+ events/year, 15+ venue partnerships.
+const VOICE_GUIDE = `You are rewriting the body of a JHR Photography article. JHR is Nashville's premier event and corporate photography company. 15+ years, 200+ events/year, 15+ venue partnerships.
 
 ## Voice
 StoryBrand framework: Client = Hero. JHR = Guide. Villain = Uncertainty.
@@ -39,16 +39,20 @@ Warm, direct, confident, solution-focused, relationship-first. Write like a capa
 Use contractions. Short paragraphs (2-3 sentences). Vary sentence length. Be generous with knowledge.
 
 ## Proprietary Systems (weave naturally)
-- Execution Confidence — certainty your event media is handled
-- Final Frame Guarantee™ — every image meets standard or doesn't leave our system
-- Zero Friction Onboarding — one call, one brief, confirmed
-- CMOC (Certified Media Operator Corps) — credentialed operators, not freelancers
+- Execution Confidence: certainty your event media is handled
+- Final Frame Guarantee™: every image meets standard or doesn't leave our system
+- Zero Friction Onboarding: one call, one brief, confirmed
+- CMOC (Certified Media Operator Corps): credentialed operators, not freelancers
 
 ## Trademarked Services (exact names)
 Headshot Activation™, Executive Imaging™, Corporate Event Coverage™, Event Highlight System™, Trade-Show Media Services™, Social Recap System™
 
 ## Substitute Language
 freelancer→operator | hourly rate→engagement pricing | photo booth→Headshot Activation | cost→investment | discount→strategic rate | coverage→intentional media
+
+## Rules
+- Never use em-dashes (the character —). Use commas, semicolons, colons, or periods instead.
+- Do not cite industry associations (IAEE, PCMA, MPI, CEIR), ISO standards, or regulatory frameworks. Write from direct experience, not institutional authority.
 
 ## Quality Check
 1. Could any vendor have written this? → add JHR/Nashville specifics
@@ -176,7 +180,7 @@ Analyze these deficiencies and produce a revised article outline.
 - Current H2s: ${h2s.map((h, i) => `\n  ${i + 1}. ${h}`).join('')}
 
 ## Deficiencies to Fix
-${deficiencies || 'General quality improvement needed — improve GEO score.'}
+${deficiencies || 'General quality improvement needed. Improve GEO score.'}
 
 ## Rules
 - H2s should use high-intent keywords and question formats where natural
@@ -214,7 +218,7 @@ async function phaseRewrite(
   }
 
   const outlineText = outline.map((s, i) =>
-    `${i + 1}. <h2>${s.h2}</h2> — Goal: ${s.goal}${s.mustInclude?.length ? ` | Include: ${s.mustInclude.join(', ')}` : ''}`
+    `${i + 1}. <h2>${s.h2}</h2> | Goal: ${s.goal}${s.mustInclude?.length ? ` | Include: ${s.mustInclude.join(', ')}` : ''}`
   ).join('\n');
 
   let fullText = '';
@@ -240,8 +244,8 @@ ${bodyContext}
 - Valid HTML only (<h2>, <p>, <ul>, <li>, <a>, <strong>, <em>, <blockquote>). NO markdown.
 - 2-3 sentence paragraphs. Vary sentence length. Use contractions.
 - Primary keyword in first 100 words and at least one H2
-- 4+ external links (target="_blank" rel="noopener noreferrer") — industry orgs, .gov, Nashville tourism
-- 2+ internal links — /services/corporate-event-coverage, /services/headshot-activation, /services/executive-imaging, /schedule
+- 4+ external links (target="_blank" rel="noopener noreferrer"): trade publications, .gov, Nashville tourism
+- 2+ internal links: /services/corporate-event-coverage, /services/headshot-activation, /services/executive-imaging, /schedule
 - Include statistics with numbers. Named entities (Nashville, Music City, PCMA, MPI).
 - Include a quotable definition or branded concept.
 - Minimum 900 words.

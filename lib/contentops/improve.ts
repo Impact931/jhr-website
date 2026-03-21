@@ -86,12 +86,12 @@ Analyze these deficiencies and produce a revised article outline.
 - Current H2s: ${currentH2s.map((h, i) => `\n  ${i + 1}. ${h}`).join('')}
 
 ## Deficiencies to Fix
-${deficiencies || 'General quality improvement needed — improve GEO score.'}
+${deficiencies || 'General quality improvement needed. Improve GEO score.'}
 
 ## Rules
 - H2s should use high-intent keywords and question formats where natural
 - Each section needs a clear goal (what information it delivers)
-- Must include entities: Nashville venues, industry orgs (PCMA, MPI, IAEE), JHR Photography
+- Must include entities: Nashville venues, JHR Photography, specific venue names, local landmarks
 - At least 4 H2 sections, at least 2 question-based
 - Quick answer must be 50-75 words, self-contained, quotable
 - Meta title: 50-60 chars with primary keyword
@@ -135,7 +135,7 @@ export async function phaseRewrite(
   }
 
   const outlineText = outline.map((s, i) =>
-    `${i + 1}. <h2>${s.h2}</h2> — Goal: ${s.goal}${s.mustInclude?.length ? ` | Include: ${s.mustInclude.join(', ')}` : ''}`
+    `${i + 1}. <h2>${s.h2}</h2> | Goal: ${s.goal}${s.mustInclude?.length ? ` | Include: ${s.mustInclude.join(', ')}` : ''}`
   ).join('\n');
 
   const prompt = `Rewrite this article body following the revised outline.
@@ -153,8 +153,8 @@ ${bodyContext}
 - Valid HTML only (<h2>, <p>, <ul>, <li>, <a>, <strong>, <em>, <blockquote>). NO markdown.
 - 2-3 sentence paragraphs. Vary sentence length. Use contractions.
 - Primary keyword in first 100 words and at least one H2
-- 4+ external links (target="_blank" rel="noopener noreferrer") — industry orgs, .gov, Nashville tourism
-- 2+ internal links — /services/corporate-event-coverage, /services/headshot-activation, /services/executive-imaging, /schedule
+- 4+ external links (target="_blank" rel="noopener noreferrer"): trade publications, .gov, Nashville tourism
+- 2+ internal links: /services/corporate-event-coverage, /services/headshot-activation, /services/executive-imaging, /schedule
 - Include statistics with numbers. Include named entities (Nashville, Music City, venues, PCMA, MPI).
 - Include a quotable definition or branded concept.
 - Minimum 900 words.

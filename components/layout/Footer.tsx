@@ -25,7 +25,7 @@ const footerLinks = {
   ],
   company: [
     { name: "About", href: "/about" },
-    { name: "Nashville Insider", href: "/blog" },
+    { name: "Insights & Articles", href: "/blog" },
     { name: "FAQs", href: "/faqs" },
     { name: "Contact", href: "/contact" },
     { name: "Talk With Our Team", href: "/schedule" },

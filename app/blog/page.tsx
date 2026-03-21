@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Calendar, Clock, Tag, ChevronRight, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { BlogPost } from '@/types/blog';
-import { formatBlogDate } from '@/types/blog';
+import { formatBlogDate, extractFeaturedImage } from '@/types/blog';
 
 // ============================================================================
 // Sample blog posts for static rendering (replaced by API data when available)
@@ -127,7 +127,7 @@ function getCategories(posts: BlogPost[]): string[] {
 
 function PostCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {
   // Support both old format (direct fields) and new format (sections)
-  const featuredImage = post.featuredImage;
+  const featuredImage = post.featuredImage || extractFeaturedImage(post.sections);
   const excerpt = post.excerpt;
 
   return (
@@ -266,7 +266,7 @@ export default function BlogPage() {
               Insights & Resources
             </p>
             <h1 className="text-display-sm sm:text-display-md lg:text-display-lg font-display font-bold text-jhr-white mb-4">
-              Nashville Insider
+              Insights &amp; Articles
             </h1>
             <p className="text-body-lg text-jhr-white-dim max-w-2xl mx-auto">
               Expert insights on corporate event photography, headshot activations, and making the

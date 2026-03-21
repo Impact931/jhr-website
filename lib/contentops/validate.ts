@@ -291,7 +291,7 @@ function scoreNamedEntityDensity(article: ArticlePayload): number {
   // 10 points max — check for named entities
   const namedEntities = [
     // Organizations
-    /\b(?:PCMA|MPI|ASAE|CEIR|IAEE|EventMB|BizBash)\b/g,
+    /\b(?:EventMB|BizBash)\b/g,
     // Locations
     /\b(?:Nashville|Music\s+City|Tennessee|Gaylord\s+Opryland|Music\s+City\s+Center)\b/g,
     // Brand

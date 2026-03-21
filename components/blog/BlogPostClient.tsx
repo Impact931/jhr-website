@@ -52,6 +52,11 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
           <h3 className="font-display font-semibold text-jhr-white group-hover:text-jhr-gold transition-colors text-body-sm line-clamp-2 mb-2">
             {post.title}
           </h3>
+          {post.excerpt && (
+            <p className="text-jhr-white-dim text-xs line-clamp-2 mb-2">
+              {post.excerpt}
+            </p>
+          )}
           <span className="text-xs text-jhr-white-dim">
             {formatBlogDate(post.publishedAt)}
           </span>
