@@ -1561,39 +1561,23 @@ function ArticlesTab() {
 
   /** Improve a single article via SSE streaming (same pattern as generate). */
   const improveSingle = useCallback(async (slug: string): Promise<{ status: string; afterScore?: number; changes?: string[]; error?: string }> => {
-    // ─── Phase 1: ANALYZE (JSON response, ~5s) ───────────────────
-    addLogEntry({ time: timestamp(), type: 'progress', message: 'Phase 1: Analyzing structure...', slug });
-
-    const analyzeRes = await fetch('/api/admin/contentops/improve', {
+    // Single call to improve route → proxied to standalone Lambda (120s timeout)
+    const res = await fetch('/api/admin/contentops/improve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, phase: 'analyze' }),
-    });
-    const analyzeData = await analyzeRes.json();
-    if (!analyzeRes.ok || analyzeData.error) {
-      throw new Error(analyzeData.error || 'Analysis failed');
-    }
-    addLogEntry({ time: timestamp(), type: 'progress', message: analyzeData.message || 'Outline ready', slug });
-
-    // ─── Phase 2: REWRITE (SSE streaming, ~15-20s) ───────────────
-    addLogEntry({ time: timestamp(), type: 'progress', message: 'Phase 2: Rewriting body...', slug });
-
-    const rewriteRes = await fetch('/api/admin/contentops/improve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, phase: 'rewrite' }),
+      body: JSON.stringify({ slug }),
     });
 
-    if (!rewriteRes.ok || !rewriteRes.body) {
-      const text = await rewriteRes.text().catch(() => 'Rewrite failed');
+    if (!res.ok || !res.body) {
+      const text = await res.text().catch(() => 'Unknown error');
       try { const j = JSON.parse(text); throw new Error(j.error || text); } catch (e) { if (e instanceof SyntaxError) throw new Error(text); throw e; }
     }
 
-    // Read SSE stream for Phase 2
-    const reader = rewriteRes.body.getReader();
+    // Read SSE stream from Lambda
+    const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-    let rewriteResult: { status?: string; wordCount?: number; error?: string } = {};
+    let result: { status: string; afterScore?: number; changes?: string[]; error?: string } = { status: 'failed' };
 
     while (true) {
       const { done, value } = await reader.read();
@@ -1612,37 +1596,16 @@ function ArticlesTab() {
             if (eventType === 'progress' && data.message) {
               addLogEntry({ time: timestamp(), type: 'progress', message: data.message, slug });
             } else if (eventType === 'done') {
-              rewriteResult = data;
+              result = { status: data.status || 'improved', afterScore: data.afterScore, changes: data.changes };
             } else if (eventType === 'error') {
-              throw new Error(data.error || 'Rewrite failed');
+              throw new Error(data.error || 'Improvement failed');
             }
           } catch (e) { if (e instanceof SyntaxError) continue; throw e; }
           eventType = '';
         }
       }
     }
-
-    if (rewriteResult.error) throw new Error(rewriteResult.error);
-    addLogEntry({ time: timestamp(), type: 'progress', message: rewriteResult.status === 'complete' ? `Body complete: ~${rewriteResult.wordCount} words` : 'Body rewritten', slug });
-
-    // ─── Phase 3: POLISH + SAVE (JSON response, ~5s) ─────────────
-    addLogEntry({ time: timestamp(), type: 'progress', message: 'Phase 3: Polishing metadata & saving...', slug });
-
-    const polishRes = await fetch('/api/admin/contentops/improve', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, phase: 'polish' }),
-    });
-    const polishData = await polishRes.json();
-    if (!polishRes.ok || polishData.error) {
-      throw new Error(polishData.error || 'Polish failed');
-    }
-
-    return {
-      status: polishData.status || 'improved',
-      afterScore: polishData.afterScore,
-      changes: polishData.changes,
-    };
+    return result;
   }, [addLogEntry]);
 
   /** Improve one or more articles with progress tracking. */

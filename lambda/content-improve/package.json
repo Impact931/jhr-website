@@ -1,0 +1,21 @@
+{
+  "name": "jhr-content-improve",
+  "version": "1.0.0",
+  "description": "Standalone Lambda for article improvement — bypasses Amplify 30s limit",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "package": "tsc && cd dist && cp ../package.json . && cp ../package-lock.json . 2>/dev/null; npm ci --omit=dev && zip -r ../function.zip . && cd ..",
+    "deploy": "npm run package && aws lambda update-function-code --function-name jhr-content-improve --zip-file fileb://function.zip --region us-east-1"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@aws-sdk/client-dynamodb": "^3.975.0",
+    "@aws-sdk/lib-dynamodb": "^3.975.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
