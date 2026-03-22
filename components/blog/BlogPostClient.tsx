@@ -380,6 +380,9 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   const { canEdit, isEditMode } = useEditMode();
   const isEditing = canEdit && isEditMode;
 
+  // Track the original published status — drafts should save back to published SK
+  const isPublished = initialPost.status === 'published';
+
   // Fetch draft version when entering edit mode
   useEffect(() => {
     if (!isEditing || hasFetchedDraft) return;
@@ -390,6 +393,10 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
         if (res.ok) {
           const data = await res.json();
           if (data.post) {
+            // Preserve published status — editing a published article should save to published SK
+            if (isPublished) {
+              data.post.status = 'published';
+            }
             setPost(data.post);
             setHasFetchedDraft(true);
           }
@@ -399,7 +406,7 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
       }
     }
     fetchDraft();
-  }, [isEditing, hasFetchedDraft, post.slug]);
+  }, [isEditing, hasFetchedDraft, post.slug, isPublished]);
 
   // Fetch related posts
   useEffect(() => {

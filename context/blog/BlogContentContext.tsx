@@ -519,7 +519,16 @@ export function BlogContentProvider({
   // ============================================================================
 
   const save = useCallback(async () => {
-    if (!hasUnsavedChanges || !slug) return;
+    if (!slug) return;
+
+    // If nothing changed, still acknowledge the save visually
+    if (!hasUnsavedChanges) {
+      setSaveState({ status: 'saved', lastSaved: new Date(), error: null });
+      setTimeout(() => {
+        setSaveState((prev) => ({ ...prev, status: 'idle' }));
+      }, 3000);
+      return;
+    }
 
     setSaveState({ status: 'saving', lastSaved: null, error: null });
 
