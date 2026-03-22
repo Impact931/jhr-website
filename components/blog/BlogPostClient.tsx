@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -260,12 +260,17 @@ function SectionEditMode({ post }: { post: BlogPost }) {
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [insertIndex, setInsertIndex] = useState(0);
+  const loadedPostRef = useRef<BlogPost | null>(null);
 
+  // Load blog post data into context — only when we get a genuinely new post object
+  // (initial load + draft fetch), NOT when React re-renders with the same data
   useEffect(() => {
+    if (loadedPostRef.current === post) return;
     const postToLoad = post.sections && post.sections.length > 0
       ? post
       : { ...post, sections: migrateLegacyBlogPost(post).sections || [] };
     loadBlogPost(postToLoad);
+    loadedPostRef.current = post;
   }, [post, loadBlogPost]);
 
   const handleOpenAddModal = useCallback((index: number) => {
