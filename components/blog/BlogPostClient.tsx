@@ -70,16 +70,17 @@ function RelatedPostCard({ post }: { post: BlogPost }) {
 // Layout: Featured Image → Title + Meta → Body → FAQ → CTA
 // ============================================================================
 
-const DEFAULT_HERO_PLACEHOLDER = '/images/blog-default-hero.jpg';
-
 function isRealImage(src: string | undefined | null): src is string {
   if (!src) return false;
-  if (src === DEFAULT_HERO_PLACEHOLDER) return false;
+  if (src === '/images/blog-default-hero.jpg') return false;
+  if (src.startsWith('/images/blog-default-')) return false;
+  if (src.includes('placehold.co/')) return false;
   return true;
 }
 
 function ArticleView({ post }: { post: BlogPost }) {
-  const rawFeaturedImage = post.featuredImage || extractFeaturedImage(post.sections) || post.seo?.ogImage;
+  // OG image (explicit user choice) takes priority over section-extracted images
+  const rawFeaturedImage = post.seo?.ogImage || post.featuredImage || extractFeaturedImage(post.sections);
   const featuredImage = isRealImage(rawFeaturedImage) ? rawFeaturedImage : null;
 
   // Extract FAQ items from sections

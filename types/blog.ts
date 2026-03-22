@@ -302,7 +302,7 @@ const DEFAULT_BLOG_HERO = '/images/blog-default-hero.jpg';
 
 /** Returns true if the URL is a real uploaded/CDN image, not a default placeholder */
 function isRealImage(url: string): boolean {
-  return !!url && url !== DEFAULT_BLOG_HERO && !url.startsWith('/images/blog-default-');
+  return !!url && url !== DEFAULT_BLOG_HERO && !url.startsWith('/images/blog-default-') && !url.includes('placehold.co/');
 }
 
 /**

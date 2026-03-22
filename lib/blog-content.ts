@@ -83,6 +83,14 @@ export interface BlogSummary {
 // Helper Functions
 // ============================================================================
 
+/** Filter out placeholder URLs that aren't real images */
+function filterPlaceholder(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith('/images/blog-default-')) return undefined;
+  if (url.includes('placehold.co/')) return undefined;
+  return url;
+}
+
 /**
  * Generate partition key for a blog post.
  */
@@ -176,7 +184,7 @@ export async function getBlogContent(
   const post: BlogPost = {
     ...record,
     body: record.body || (record.sections ? sectionsToBody(record.sections) : ''),
-    featuredImage: record.seo?.ogImage || decodeImageUrl(record.featuredImage) || extractFeaturedImage(record.sections),
+    featuredImage: filterPlaceholder(record.seo?.ogImage) || filterPlaceholder(decodeImageUrl(record.featuredImage)) || extractFeaturedImage(record.sections),
     excerpt: record.excerpt || extractExcerpt(record.sections),
   };
 
@@ -216,7 +224,7 @@ export async function saveBlogSections(
 
   // Compute derived fields from sections
   const body = sectionsToBody(sections);
-  const featuredImage = existing?.seo?.ogImage || extractFeaturedImage(sections) || existing?.featuredImage;
+  const featuredImage = filterPlaceholder(existing?.seo?.ogImage) || extractFeaturedImage(sections) || filterPlaceholder(existing?.featuredImage);
   const excerpt = extractExcerpt(sections);
   const readingTime = estimateReadingTime(body);
 
@@ -286,7 +294,7 @@ export async function saveBlogPost(
   // Compute derived fields
   const body = sections ? sectionsToBody(sections) : (input.body || '');
   // OG image (explicit user choice) takes priority, then section images, then explicit field
-  const featuredImage = input.seo?.ogImage || (sections ? extractFeaturedImage(sections) : null) || input.featuredImage || undefined;
+  const featuredImage = filterPlaceholder(input.seo?.ogImage) || (sections ? extractFeaturedImage(sections) : null) || filterPlaceholder(input.featuredImage) || undefined;
   const excerpt = input.excerpt || extractExcerpt(sections);
   const readingTime = estimateReadingTime(body);
 
@@ -493,7 +501,7 @@ export async function listBlogs(status?: BlogPostStatus): Promise<BlogSummary[]>
       updatedAt: record.updatedAt,
       hasDraft: !!(draft || legacy),
       hasPublished: !!(published || (legacy?.status === 'published')),
-      featuredImage: record.seo?.ogImage || record.featuredImage || extractFeaturedImage(record.sections),
+      featuredImage: filterPlaceholder(record.seo?.ogImage) || filterPlaceholder(record.featuredImage) || extractFeaturedImage(record.sections),
       sectionCount: record.sections?.length || 0,
       excerpt: record.excerpt || extractExcerpt(record.sections),
       author: record.author,

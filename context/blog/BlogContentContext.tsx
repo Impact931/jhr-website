@@ -527,7 +527,10 @@ export function BlogContentProvider({
       // Merge field-level changes into sections
       const mergedSections = mergePendingIntoSections(sections, pendingChanges);
 
-      // --- Primary store: localStorage (synchronous, never fails) ---
+      // Update live sections state with merged data so edits are baked in
+      setSections(mergedSections);
+
+      // --- Save to localStorage as backup ---
       saveToLocalStorage(slug, {
         sections: mergedSections,
         seo,
@@ -535,11 +538,40 @@ export function BlogContentProvider({
         version,
       });
 
-      // Update live sections state with merged data so edits are baked in
-      setSections(mergedSections);
+      // --- Persist to DynamoDB via admin API (PRIMARY store) ---
+      if (canEdit) {
+        const response = await fetch(`/api/admin/blog/${slug}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sections: mergedSections,
+            seo,
+            excerpt: metadata.excerpt,
+            tags: metadata.tags,
+            categories: metadata.categories,
+            scheduledPublishAt: metadata.scheduledPublishAt,
+            // Preserve published status — saving a published article should stay published
+            status: metadata.status,
+            // Sync OG image to featured image so listing page shows it
+            featuredImage: seo.ogImage || undefined,
+          }),
+        });
 
-      // Clear all change tracking immediately on localStorage success
-      // (matches ContentContext page save behavior)
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Save failed (${response.status})`);
+        }
+
+        const result = await response.json();
+        // Update version from server response
+        if (result.post?.version) {
+          setVersion(result.post.version);
+        }
+        // Clear localStorage after successful API save
+        clearLocalStorage(slug);
+      }
+
+      // Clear all change tracking after successful save
       setPendingChanges(new Map());
       setChangedSectionIds(new Set());
       setSectionStructureChanged(false);
@@ -556,42 +588,6 @@ export function BlogContentProvider({
       setTimeout(() => {
         setSaveState((prev) => ({ ...prev, status: 'idle' }));
       }, 3000);
-
-      // --- Persist to DynamoDB via admin API (background, non-blocking) ---
-      if (canEdit) {
-        try {
-          const response = await fetch(`/api/admin/blog/${slug}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              sections: mergedSections,
-              seo,
-              excerpt: metadata.excerpt,
-              tags: metadata.tags,
-              categories: metadata.categories,
-              scheduledPublishAt: metadata.scheduledPublishAt,
-              // Preserve published status — saving a published article should stay published
-              status: metadata.status,
-              // Sync OG image to featured image so listing page shows it
-              featuredImage: seo.ogImage || undefined,
-            }),
-          });
-
-          if (response.ok) {
-            const result = await response.json();
-            // Update version from server response
-            if (result.post?.version) {
-              setVersion(result.post.version);
-            }
-            // Clear localStorage after successful API save
-            clearLocalStorage(slug);
-          } else {
-            console.warn(`[BlogContentContext] API save returned ${response.status} — localStorage succeeded`);
-          }
-        } catch (apiErr) {
-          console.warn('[BlogContentContext] API save failed — localStorage succeeded:', apiErr);
-        }
-      }
     } catch (error) {
       console.error('Save error:', error);
       setSaveState({

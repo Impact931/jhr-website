@@ -125,9 +125,16 @@ function getCategories(posts: BlogPost[]): string[] {
 // Post Card Component
 // ============================================================================
 
+function isRealImage(src: string | undefined | null): boolean {
+  if (!src) return false;
+  if (src.startsWith('/images/blog-default-')) return false;
+  if (src.includes('placehold.co/')) return false;
+  return true;
+}
+
 function PostCard({ post, featured = false }: { post: BlogPost; featured?: boolean }) {
-  // Support both old format (direct fields) and new format (sections)
-  const featuredImage = post.featuredImage || extractFeaturedImage(post.sections);
+  const raw = post.featuredImage || extractFeaturedImage(post.sections);
+  const featuredImage = isRealImage(raw) ? raw : null;
   const excerpt = post.excerpt;
 
   return (

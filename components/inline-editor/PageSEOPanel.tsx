@@ -156,7 +156,7 @@ interface GeneratedSEO {
  * Allows editing: Page Title, Meta Description, OG Image, OG Title, OG Description.
  */
 export function PageSEOPanel({ onClose }: { onClose: () => void }) {
-  const { pageSEO, updatePageSEO, sections, pageSlug } = useContent();
+  const { pageSEO, updatePageSEO, sections, pageSlug, save } = useContent();
   const [activeTab, setActiveTab] = useState<SEOTab>('fields');
   const [showMediaPicker, setShowMediaPicker] = useState(false);
 
@@ -693,13 +693,13 @@ export function PageSEOPanel({ onClose }: { onClose: () => void }) {
         {/* Footer */}
         <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-700/50 bg-zinc-900/30">
           <p className="text-xs text-zinc-500">
-            Changes auto-save with page content
+            Click Save &amp; Close to persist changes
           </p>
           <button
-            onClick={onClose}
+            onClick={() => { save(); onClose(); }}
             className="px-4 py-2 text-sm font-medium bg-jhr-gold text-jhr-black rounded-lg hover:bg-jhr-gold-light transition-colors"
           >
-            Done
+            Save &amp; Close
           </button>
         </div>
       </div>
