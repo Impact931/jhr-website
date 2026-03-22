@@ -512,8 +512,8 @@ export async function listBlogs(status?: BlogPostStatus): Promise<BlogSummary[]>
     });
   }
 
-  // Sort by updated date, most recent first
-  summaries.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  // Sort by published date, most recent first (so newest article is always the featured post)
+  summaries.sort((a, b) => new Date(b.publishedAt || b.updatedAt).getTime() - new Date(a.publishedAt || a.updatedAt).getTime());
 
   return summaries;
 }
