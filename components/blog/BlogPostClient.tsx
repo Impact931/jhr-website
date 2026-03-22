@@ -385,20 +385,22 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
   const { canEdit, isEditMode } = useEditMode();
   const isEditing = canEdit && isEditMode;
 
-  // Track the original published status — drafts should save back to published SK
+  // Track the original published status
   const isPublished = initialPost.status === 'published';
 
-  // Fetch draft version when entering edit mode
+  // Fetch latest version when entering edit mode
+  // Published articles: fetch published version (not stale drafts)
+  // Draft articles: fetch draft version
   useEffect(() => {
     if (!isEditing || hasFetchedDraft) return;
 
-    async function fetchDraft() {
+    async function fetchLatest() {
       try {
-        const res = await fetch(`/api/admin/blog/${post.slug}?status=draft`);
+        const fetchStatus = isPublished ? 'published' : 'draft';
+        const res = await fetch(`/api/admin/blog/${post.slug}?status=${fetchStatus}`);
         if (res.ok) {
           const data = await res.json();
           if (data.post) {
-            // Preserve published status — editing a published article should save to published SK
             if (isPublished) {
               data.post.status = 'published';
             }
@@ -407,10 +409,10 @@ export default function BlogPostClient({ initialPost }: BlogPostClientProps) {
           }
         }
       } catch {
-        // If draft fetch fails, continue with published version
+        // If fetch fails, continue with SSR version
       }
     }
-    fetchDraft();
+    fetchLatest();
   }, [isEditing, hasFetchedDraft, post.slug, isPublished]);
 
   // Fetch related posts
